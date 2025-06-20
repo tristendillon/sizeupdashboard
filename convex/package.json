@@ -4,14 +4,17 @@
   "version": "0.0.0",
   "scripts": {
     "dev": "convex dev",
-    "predev": "convex dev --until-success && convex dashboard",
+    "predev": "convex dev --until-success",
     "logs": "convex logs",
     "lint": "tsc -p convex && eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
   },
   "dependencies": {
-    "convex": "^1.23.0"
+    "convex": "^1.23.0",
+    "convex-helpers": "^0.1.94",
+    "zod": "^3.25.67"
   },
   "devDependencies": {
+    "@types/node": "^24.0.3",
     "@typescript-eslint/eslint-plugin": "^6.7.0",
     "@typescript-eslint/parser": "^6.7.0",
     "eslint": "^8.49.0",

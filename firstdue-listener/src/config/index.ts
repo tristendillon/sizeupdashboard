@@ -14,4 +14,10 @@ export const config = {
     (process.env.NODE_ENV === 'development' ? 'debug' : 'info')) as LogLevel,
   firstdueApiKey: process.env.FIRSTDUE_API_KEY,
   firstdueApiUrl: 'https://sizeup.firstduesizeup.com/fd-api/v1',
+  weather: {
+    lat: process.env.WEATHER_LAT || '',
+    lng: process.env.WEATHER_LNG || '',
+    apiKey: process.env.WEATHER_API_KEY || '',
+    units: process.env.WEATHER_UNITS || 'imperial',
+  },
 }

@@ -1,16 +1,21 @@
 import express from 'express'
 import expressWinston from 'express-winston'
-import { DispatchListener } from '@/routines/dispatch'
+import { DispatchRoutine } from '@/routines/dispatch'
 import { createHealthRouter } from '@/routes/health'
 import { winstonInstance } from '@/logger'
 import { RoutineContext } from '@/context/RoutineContext'
+import { WeatherRoutine } from './routines/weather'
+import { BaseRoutine } from './routines/routine'
 
 export function createApp(): {
   app: express.Application
-  dispatchListener: DispatchListener
+  routines: BaseRoutine[]
 } {
   const app = express()
-  const dispatchListener = new DispatchListener(RoutineContext)
+  const dispatchRoutine = new DispatchRoutine(RoutineContext)
+  const weatherRoutine = new WeatherRoutine(RoutineContext)
+
+  const routines: BaseRoutine[] = [dispatchRoutine, weatherRoutine]
 
   app.use(express.json())
 
@@ -24,7 +29,7 @@ export function createApp(): {
     })
   )
 
-  app.use('/', createHealthRouter([dispatchListener]))
+  app.use('/', createHealthRouter(routines))
 
-  return { app, dispatchListener }
+  return { app, routines }
 }

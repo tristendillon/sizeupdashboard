@@ -1,25 +1,14 @@
 // convex/recipes.ts
-import { v } from 'convex/values'
-import { mutation, query } from './_generated/server'
+import { mutation } from '../lib/mutation'
+import { query } from './_generated/server'
 import { Dispatches } from './schema'
 import { paginationOptsValidator } from 'convex/server'
-export const filterNewDispatches = query({
-  args: {
-    dispatches: v.array(v.object(Dispatches.withoutSystemFields)),
-  },
-  handler: async (ctx, args) => {
-    const incomingDispatches = args.dispatches
-    const existingDispatches = await ctx.db.query('dispatches').collect()
-    return incomingDispatches.filter(
-      (i) => !existingDispatches.some((d) => d.dispatchId === i.dispatchId)
-    )
-  },
-})
 
 export const createDispatch = mutation({
   args: Dispatches.withoutSystemFields,
   handler: async (ctx, args) => {
-    return await ctx.db.insert('dispatches', args)
+    // Upsert the dispatch by the dispatchId (firstdue's id)
+    return await ctx.db.upsertByCustomId('dispatches', args, 'dispatchId')
   },
 })
 

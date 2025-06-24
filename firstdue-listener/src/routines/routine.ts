@@ -21,13 +21,20 @@ export abstract class BaseRoutine {
   protected stopReason?: RoutineStopReason
   readonly name: string
   protected abstract readonly interval: number
-
-  constructor(name: string, context: typeof RoutineContext) {
+  protected startFn?: () => Promise<void> | void
+  constructor(
+    name: string,
+    context: typeof RoutineContext,
+    options?: {
+      onStart?: () => Promise<void> | void
+    }
+  ) {
     this.name = name
     this.ctx = new context(this.name)
+    this.startFn = options?.onStart
   }
 
-  start(): void {
+  async start(): Promise<void> {
     if (this.isRunning) {
       this.ctx.logger.logAlreadyRunning()
       return
@@ -36,6 +43,11 @@ export abstract class BaseRoutine {
     this.ctx.logger.logStart(this.interval)
     this.isRunning = true
 
+    if (this.startFn) {
+      await this.startFn()
+    }
+
+    await this.executeRoutine()
     this.intervalId = setInterval(async () => {
       await this.executeRoutine()
     }, this.interval)

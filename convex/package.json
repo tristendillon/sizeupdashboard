@@ -6,7 +6,7 @@
     "dev": "convex dev",
     "predev": "convex dev --until-success",
     "logs": "convex logs",
-    "lint": "tsc -p convex && eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
+    "lint": "tsc -p ./ && eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
   },
   "dependencies": {
     "convex": "^1.23.0",

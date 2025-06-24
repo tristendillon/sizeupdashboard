@@ -3,12 +3,11 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "build": "tsup",
-    "dev": "tsup --watch --onSuccess \"node dist/index.js\"",
-    "start": "node dist/index.js",
-    "lint": "eslint . --ext .ts,.tsx",
-    "lint:fix": "eslint . --ext .ts,.tsx --fix",
+    "dev": "tsup --watch --onSuccess \"node dist/index.cjs\"",
+    "start": "node dist/index.cjs",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -20,6 +19,7 @@
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "express-winston": "^4.2.0",
+    "moment-timezone": "^0.6.0",
     "winston": "^3.17.0"
   },
   "devDependencies": {

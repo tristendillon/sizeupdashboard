@@ -186,12 +186,9 @@ export class DispatchRoutine extends BaseRoutine {
         new Date(a.dispatchCreatedAt).getTime()
     )
     this.lastDispatchTime = new Date(sortedDispatches[0].dispatchCreatedAt)
-    await this.ctx.client.mutation(
-      api.sync.setLastDispatchSync,
-      {
-        date: this.lastDispatchTime.toISOString(),
-      }
-    )
+    await this.ctx.client.mutation(api.sync.setLastDispatchSync, {
+      date: this.lastDispatchTime.toISOString(),
+    })
     await this.insertDispatches(parsedData)
   }
 

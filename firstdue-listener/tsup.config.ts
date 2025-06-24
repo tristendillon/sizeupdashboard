@@ -2,7 +2,7 @@ import { defineConfig } from 'tsup'
 
 export default defineConfig({
   entry: ['src/index.ts'],
-  format: ['cjs'],
+  format: ['esm'],
   target: 'node18',
   outDir: 'dist',
   clean: true,
@@ -11,9 +11,10 @@ export default defineConfig({
   minify: false,
   treeshake: true,
   replaceNodeEnv: true,
-  external: [
-    '@sizeupdashboard/convex/api/_generated/api',
-    '@sizeupdashboard/convex/lib',
-    '@sizeupdashboard/convex/api/schema'
-  ],
+  esbuildOptions(options) {
+    options.alias = {
+      '@sizeupdashboard/convex': '@sizeupdashboard/convex',
+    }
+  },
+  external: ['@sizeupdashboard/convex'],
 })

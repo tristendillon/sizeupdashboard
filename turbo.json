@@ -9,7 +9,11 @@
     "lint": {
       "dependsOn": ["^lint"]
     },
+    "build:watch": {
+      "cache": false
+    },
     "dev": {
+      "dependsOn": ["@sizeupdashboard/convex#build:watch"],
       "cache": false,
       "persistent": true
     },

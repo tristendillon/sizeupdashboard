@@ -1,5 +1,4 @@
 import dotenv from 'dotenv'
-
 dotenv.config({ path: '.env.local' })
 dotenv.config({ path: '.env' })
 
@@ -20,4 +19,5 @@ export const config = {
     apiKey: process.env.WEATHER_API_KEY || '',
     units: process.env.WEATHER_UNITS || 'imperial',
   },
+  convexUrl: process.env.CONVEX_URL || '',
 }

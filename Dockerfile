@@ -7,18 +7,24 @@ RUN npm install -g pnpm@10.11.0
 # Set working directory
 WORKDIR /app
 
-# Copy package files
-COPY firstdue-listener/package.json firstdue-listener/pnpm-lock.yaml ./
+# Copy convex package first
+COPY convex/ ./convex
+
+# Build convex package
+WORKDIR /app/convex
+RUN pnpm install --no-frozen-lockfile
+RUN pnpm run build
+
+# Go back to app directory and copy firstdue-listener files
+WORKDIR /app
+COPY firstdue-listener/ ./firstdue-listener/
+
+# Change to firstdue-listener directory
+WORKDIR /app/firstdue-listener
 
 # Install all dependencies (including dev dependencies for build)
 RUN pnpm install --no-frozen-lockfile
 RUN pnpm add -D tsup@8.5.0
-
-# Copy source code
-COPY firstdue-listener/ .
-
-# Copy convex directory
-COPY convex/ ./convex
 
 # Build the application
 RUN pnpm run build
@@ -32,17 +38,20 @@ RUN npm install -g pnpm@10.11.0
 # Set working directory
 WORKDIR /app
 
-# Copy package files
-COPY firstdue-listener/package.json firstdue-listener/pnpm-lock.yaml ./
+# Copy built convex package from builder stage
+COPY --from=builder /app/convex ./convex
+
+# Copy package files to a firstdue-listener directory
+COPY firstdue-listener/package.json firstdue-listener/pnpm-lock.yaml ./firstdue-listener/
+
+# Change to firstdue-listener directory
+WORKDIR /app/firstdue-listener
 
 # Install only production dependencies
 RUN pnpm install --prod --no-frozen-lockfile
 
 # Copy built application from builder stage
-COPY --from=builder /app/dist ./dist
-
-# Copy convex directory for runtime dependencies
-COPY --from=builder /app/convex ./convex
+COPY --from=builder /app/firstdue-listener/dist ./dist
 
 EXPOSE 8080
 

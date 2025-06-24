@@ -2,7 +2,16 @@
   "name": "@sizeupdashboard/convex",
   "private": true,
   "version": "0.0.0",
+  "type": "module",
+  "main": "dist/lib/index.js",
+  "exports": {
+    "./lib": "./dist/lib/index.js",
+    "./api/_generated/api": "./src/api/_generated/api.js",
+    "./api/schema": "./dist/api/schema.js"
+  },
   "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "build:watch": "tsc -p tsconfig.build.json --watch &",
     "dev": "convex dev",
     "predev": "convex dev --until-success",
     "logs": "convex logs",

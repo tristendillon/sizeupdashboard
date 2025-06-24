@@ -8,7 +8,7 @@ export type LogMeta = Record<string, unknown>
 interface PerfOptions {
   level?: LogLevel
   id?: string
-  startLog?: () => void
+  onStart?: () => void
   printf?: (duration: number) => string
 }
 
@@ -49,8 +49,8 @@ class Perf {
       this.logger.log('timer', message)
     }
 
-    if (options.startLog) {
-      options.startLog()
+    if (options.onStart) {
+      options.onStart()
     }
 
     return { logNow, end }

@@ -1,0 +1,31 @@
+# Node modules from all packages
+**/node_modules
+node_modules
+
+# Build artifacts
+**/dist
+firstdue-listener/dist
+
+# Logs
+**/*.log
+*.log
+
+# Environment files
+**/.env
+**/.env.local
+.env
+.env.local
+
+# Git and documentation
+.git
+.gitignore
+README.md
+.dockerignore
+
+# IDE files
+.vscode
+.idea
+
+# OS files
+.DS_Store
+Thumbs.db

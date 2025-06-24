@@ -9,12 +9,4 @@ export class BaseContext {
     this.logger = new BaseLogger(context)
     this.client = client
   }
-
-  getLogger(): BaseLogger {
-    return this.logger
-  }
-
-  getClient(): typeof client {
-    return this.client
-  }
 }

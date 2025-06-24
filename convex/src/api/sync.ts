@@ -1,5 +1,6 @@
 import { v } from 'convex/values'
-import { mutation, query } from './_generated/server'
+import { query } from './_generated/server'
+import { mutation } from '../lib/mutation'
 
 export const setLastDispatchSync = mutation({
   args: {
@@ -8,7 +9,8 @@ export const setLastDispatchSync = mutation({
   handler: async (ctx, args) => {
     const existingSyncInfo = await ctx.db.query('syncInfo').first()
     if (existingSyncInfo) {
-      return await ctx.db.patch(existingSyncInfo._id, {
+      return await ctx.db.upsert('syncInfo', {
+        ...existingSyncInfo,
         dispatchLastSync: args.date,
       })
     }
@@ -26,7 +28,8 @@ export const setLastWeatherSync = mutation({
   handler: async (ctx, args) => {
     const existingSyncInfo = await ctx.db.query('syncInfo').first()
     if (existingSyncInfo) {
-      return await ctx.db.patch(existingSyncInfo._id, {
+      return await ctx.db.upsert('syncInfo', {
+        ...existingSyncInfo,
         weatherLastSync: args.date,
       })
     }

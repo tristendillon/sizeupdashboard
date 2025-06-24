@@ -59,9 +59,11 @@ export abstract class BaseRoutine {
       this.intervalId = null
       this.isRunning = false
       this.ctx.logger.logStop()
-      this.stopReason = {
-        error: e,
-        message: e?.message || '',
+      if (e) {
+        this.stopReason = {
+          error: e,
+          message: e?.message || '',
+        }
       }
     }
   }
@@ -70,7 +72,7 @@ export abstract class BaseRoutine {
     this.lastExecution = new Date()
     const timer = this.ctx.logger.perf.start({
       id: `${this.name}:executeRoutine`,
-      startLog: () => {
+      onStart: () => {
         this.ctx.logger.info(`Executing routine ${this.name}...`)
       },
       printf: (duration: number) => {

@@ -68,7 +68,9 @@ export class DispatchRoutine extends BaseRoutine {
         return `Synced dispatches in ${duration}ms`
       },
     })
-    const getDispatches = async (page: number): Promise<FirstDueDispatch[]> => {
+    const getDispatches = async (
+      page: number = 1
+    ): Promise<FirstDueDispatch[]> => {
       const lastSync = await this.ctx.client.query(api.sync.getSyncInfo, {})
       const qp = new URLSearchParams()
       qp.set('page', page.toString())
@@ -121,17 +123,16 @@ export class DispatchRoutine extends BaseRoutine {
       }
     }
 
-    const dispatches = await getDispatches(1)
+    const dispatches = await getDispatches()
     if (dispatches.length === 0) {
       this.ctx.logger.info('No new dispatches found')
       syncTimer.end()
-      return
+    } else {
+      const parsedData: PostDispatch[] = dispatches.map(
+        this.parseFirstDueDispatch
+      )
+      await this.insertDispatches(parsedData)
     }
-    const parsedData: PostDispatch[] = []
-    for (const dispatch of dispatches) {
-      parsedData.push(this.parseFirstDueDispatch(dispatch))
-    }
-    await this.insertDispatches(parsedData)
     const result = await this.ctx.client.mutation(
       api.sync.setLastDispatchSync,
       {
@@ -139,7 +140,7 @@ export class DispatchRoutine extends BaseRoutine {
       }
     )
     this.ctx.logger.info(
-      `Synced ${parsedData.length} dispatches and set last sync to ${result}`
+      `Synced ${dispatches.length} dispatches and set last sync to ${result}`
     )
     syncTimer.end()
   }
@@ -147,11 +148,11 @@ export class DispatchRoutine extends BaseRoutine {
   private async checkForNewDispatchesSizeup(): Promise<void> {
     const fetchTimer = this.ctx.logger.perf.start({
       id: 'fetchFirstDueDispatches',
-      startLog: () => {
-        this.ctx.logger.info('Fetching and parsing dispatches from FirstDue')
+      onStart: () => {
+        this.ctx.logger.info('Fetching dispatches from FirstDue')
       },
       printf: (duration: number) => {
-        return `Fetched and parsed dispatches in ${duration}ms`
+        return `Fetched dispatches from FirstDue in ${duration}ms`
       },
     })
     const res = await fetch(
@@ -172,33 +173,25 @@ export class DispatchRoutine extends BaseRoutine {
       fetchTimer.end()
       return
     }
-    const data: FirstDueDispatch[] = await res.json()
-    const parsedData: PostDispatch[] = []
-    for (const dispatch of data) {
-      parsedData.push({
-        dispatchId: dispatch.id,
-        type: dispatch.type,
-        message: dispatch.message,
-        address: dispatch.address,
-        address2: dispatch.address2,
-        city: dispatch.city,
-        stateCode: dispatch.state_code,
-        latitude: dispatch.latitude,
-        longitude: dispatch.longitude,
-        unitCodes: dispatch.unit_codes,
-        incidentTypeCode: dispatch.incident_type_code,
-        statusCode: dispatch.status_code,
-        xrefId: dispatch.xref_id,
-        dispatchCreatedAt: dispatch.created_at,
-      })
-    }
     fetchTimer.end()
+    const data: FirstDueDispatch[] = await res.json()
+    if (data.length === 0) {
+      this.ctx.logger.info('No new dispatches found in FirstDue')
+      return
+    }
+    const parsedData: PostDispatch[] = data.map(this.parseFirstDueDispatch)
     const sortedDispatches = parsedData.sort(
       (a, b) =>
         new Date(b.dispatchCreatedAt).getTime() -
         new Date(a.dispatchCreatedAt).getTime()
     )
     this.lastDispatchTime = new Date(sortedDispatches[0].dispatchCreatedAt)
+    await this.ctx.client.mutation(
+      api.sync.setLastDispatchSync,
+      {
+        date: this.lastDispatchTime.toISOString(),
+      }
+    )
     await this.insertDispatches(parsedData)
   }
 
@@ -207,19 +200,12 @@ export class DispatchRoutine extends BaseRoutine {
       api.temp.getIncomingDispatch,
       {}
     )
-    const timer = this.ctx.logger.perf.start({
-      id: 'filterNewDispatches',
-      printf: (duration: number) => {
-        return `Filtered out new dispatches in ${duration}ms`
-      },
-    })
     const newDispatches = await this.ctx.client.query(
       api.temp.filterNewDispatches,
       {
         dispatches,
       }
     )
-    timer.end()
     await this.insertDispatches(newDispatches)
   }
 

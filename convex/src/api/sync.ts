@@ -17,6 +17,7 @@ export const setLastDispatchSync = mutation({
     return await ctx.db.insert('syncInfo', {
       dispatchLastSync: args.date,
       weatherLastSync: '',
+      hydrantLastSync: '',
     })
   },
 })
@@ -36,6 +37,27 @@ export const setLastWeatherSync = mutation({
     return await ctx.db.insert('syncInfo', {
       dispatchLastSync: '',
       weatherLastSync: args.date,
+      hydrantLastSync: '',
+    })
+  },
+})
+
+export const setLastHydrantSync = mutation({
+  args: {
+    date: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const existingSyncInfo = await ctx.db.query('syncInfo').first()
+    if (existingSyncInfo) {
+      return await ctx.db.upsert('syncInfo', {
+        ...existingSyncInfo,
+        hydrantLastSync: args.date,
+      })
+    }
+    return await ctx.db.insert('syncInfo', {
+      dispatchLastSync: '',
+      weatherLastSync: '',
+      hydrantLastSync: args.date,
     })
   },
 })

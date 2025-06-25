@@ -134,6 +134,7 @@ export type PostWeatherHour = WithoutSystemFields<Doc<'weatherHours'>>
 export const SyncInfo = Table('syncInfo', {
   dispatchLastSync: v.string(),
   weatherLastSync: v.string(),
+  hydrantLastSync: v.string(),
 })
 
 export const SyncInfoSchema = convexToZod(SyncInfo.table.validator)
@@ -160,6 +161,27 @@ export const CurrentWeather = Table('currentWeather', {
 export const CurrentWeatherSchema = convexToZod(CurrentWeather.table.validator)
 export type PostCurrentWeather = WithoutSystemFields<Doc<'currentWeather'>>
 
+export const Hydrants = Table('hydrants', {
+  hydrantId: v.number(),
+  hydrantTypeCode: v.string(),
+  year: v.optional(v.string()),
+  latitude: v.number(),
+  longitude: v.number(),
+  hydrantStatusCode: v.optional(v.string()),
+  hydrantTypeName: v.optional(v.string()),
+  address: v.optional(v.string()),
+  closestAddress: v.optional(v.string()),
+  xrefId: v.optional(v.string()),
+  numOutlet: v.optional(v.number()),
+  notes: v.optional(v.string()),
+  calculatedFlowRate: v.string(),
+  hydrantTypeBgColor: v.optional(v.string()),
+  iconFilePath: v.optional(v.string()),
+})
+
+export const HydrantsSchema = convexToZod(Hydrants.table.validator)
+export type PostHydrant = WithoutSystemFields<Doc<'hydrants'>>
+
 export default defineSchema(
   {
     dispatches: Dispatches.table
@@ -175,6 +197,7 @@ export default defineSchema(
     weatherDetails: WeatherDetail.table.index('by_detailId', ['detailId']),
     currentWeather: CurrentWeather.table,
     syncInfo: SyncInfo.table,
+    hydrants: Hydrants.table.index('by_hydrantId', ['hydrantId']),
     // TEMP
     incomingDispatches: IncomingDispatch.table
       .index('by_dispatchId', ['dispatchId'])

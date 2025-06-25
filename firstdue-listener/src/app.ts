@@ -6,6 +6,7 @@ import { winstonInstance } from '@/logger'
 import { RoutineContext } from '@/context/RoutineContext'
 import { WeatherRoutine } from './routines/weather'
 import { BaseRoutine } from './routines/routine'
+import { HydrantsRoutine } from './routines/hydrants'
 
 export function createApp(): {
   app: express.Application
@@ -14,8 +15,13 @@ export function createApp(): {
   const app = express()
   const dispatchRoutine = new DispatchRoutine(RoutineContext)
   const weatherRoutine = new WeatherRoutine(RoutineContext)
+  const hydrantsRoutine = new HydrantsRoutine(RoutineContext)
 
-  const routines: BaseRoutine[] = [dispatchRoutine, weatherRoutine]
+  const routines: BaseRoutine[] = [
+    dispatchRoutine,
+    weatherRoutine,
+    hydrantsRoutine,
+  ]
 
   app.use(express.json())
 

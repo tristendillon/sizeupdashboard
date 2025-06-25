@@ -88,7 +88,7 @@ export class DispatchRoutine extends BaseRoutine {
       )
       if (!res.ok) {
         this.ctx.logger.error(
-          `Failed to fetch dispatches from FirstDue: ${res.statusText}`
+          `Failed to fetch dispatches from FirstDue during sync: ${res.statusText}`
         )
         return []
       }
@@ -133,14 +133,15 @@ export class DispatchRoutine extends BaseRoutine {
       )
       await this.insertDispatches(parsedData)
     }
+    const lastSyncDate = new Date().toISOString()
     const result = await this.ctx.client.mutation(
       api.sync.setLastDispatchSync,
       {
-        date: new Date().toISOString(),
+        date: lastSyncDate,
       }
     )
     this.ctx.logger.info(
-      `Synced ${dispatches.length} dispatches and set last sync to ${result}`
+      `Synced ${dispatches.length} dispatches and set last sync to ${lastSyncDate}`
     )
     syncTimer.end()
   }
@@ -186,9 +187,11 @@ export class DispatchRoutine extends BaseRoutine {
         new Date(a.dispatchCreatedAt).getTime()
     )
     this.lastDispatchTime = new Date(sortedDispatches[0].dispatchCreatedAt)
+    const lastSyncDate = this.lastDispatchTime.toISOString()
     await this.ctx.client.mutation(api.sync.setLastDispatchSync, {
-      date: this.lastDispatchTime.toISOString(),
+      date: lastSyncDate,
     })
+    this.ctx.logger.info(`Set last dispatch sync to ${lastSyncDate}`)
     await this.insertDispatches(parsedData)
   }
 

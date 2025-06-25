@@ -1,7 +1,10 @@
 name: Deploy FirstDue Listener (Node)
 
 on:
-  workflow_dispatch:
+  push:
+    branches: ['main']
+  pull_request:
+    branches: ['main']
 
 jobs:
   deploy:
@@ -19,16 +22,16 @@ jobs:
 
       - name: Create .env file safely
         run: |
-          printf 'NODE_ENV="production"\n' > .env
-          printf 'FIRSTDUE_API_KEY="%s"\n' "${{ secrets.FIRSTDUE_API_KEY }}" >> .env
-          printf 'PORT="%s"\n' "${{ secrets.PORT }}" >> .env
-          printf 'TIMEZONE="%s"\n' "${{ vars.TIMEZONE }}" >> .env
-          printf 'LOG_LEVEL="%s"\n' "${{ vars.LOG_LEVEL }}" >> .env
-          printf 'CONVEX_URL="%s"\n' "${{ vars.CONVEX_URL }}" >> .env
-          printf 'WEATHER_API_KEY="%s"\n' "${{ secrets.WEATHER_API_KEY }}" >> .env
-          printf 'WEATHER_LAT="%s"\n' "${{ vars.WEATHER_LAT }}" >> .env
-          printf 'WEATHER_LNG="%s"\n' "${{ vars.WEATHER_LNG }}" >> .env
-          printf 'WEATHER_UNITS="%s"\n' "${{ vars.WEATHER_UNITS }}" >> .env
+          printf 'NODE_ENV=production\n' > .env
+          printf 'FIRSTDUE_API_KEY=%s\n' "${{ secrets.FIRSTDUE_API_KEY }}" >> .env
+          printf 'PORT=%s\n' "${{ secrets.PORT }}" >> .env
+          printf 'TIMEZONE=%s\n' "${{ vars.TIMEZONE }}" >> .env
+          printf 'LOG_LEVEL=%s\n' "${{ vars.LOG_LEVEL }}" >> .env
+          printf 'CONVEX_URL=%s\n' "${{ vars.CONVEX_URL }}" >> .env
+          printf 'WEATHER_API_KEY=%s\n' "${{ secrets.WEATHER_API_KEY }}" >> .env
+          printf 'WEATHER_LAT=%s\n' "${{ vars.WEATHER_LAT }}" >> .env
+          printf 'WEATHER_LNG=%s\n' "${{ vars.WEATHER_LNG }}" >> .env
+          printf 'WEATHER_UNITS=%s\n' "${{ vars.WEATHER_UNITS }}" >> .env
 
       - name: Run container with env file
         run: |

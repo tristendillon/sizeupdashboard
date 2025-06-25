@@ -1,9 +1,9 @@
-name: Deploy FirstDue Listener (Node)
+name: Deploy to VPS
 
 on:
-  push:
-    branches: ['main']
-  pull_request:
+  workflow_run:
+    workflows: ['Push Docker Image']
+    types: completed
     branches: ['main']
 
 jobs:

@@ -1,0 +1,47 @@
+name: Deploy FirstDue Listener (Node)
+
+on:
+  workflow_dispatch:
+    inputs:
+      NODE_ENV:
+        description: "Node environment (production, staging, etc.)"
+        required: true
+      API_KEY:
+        description: "API key for external services"
+        required: true
+      PORT:
+        description: "Port to expose"
+        required: false
+        default: "8080"
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, linux]
+
+    steps:
+      - name: Log in to Docker Hub
+        run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+
+      - name: Pull latest image
+        run: docker pull kickedsoda/firstdue-listener:latest
+
+      - name: Stop and remove existing container (if any)
+        run: docker rm -f firstdue-listener || true
+
+      - name: Create .env file safely
+        run: |
+          printf 'NODE_ENV="%s"\n' "${{ github.event.inputs.NODE_ENV }}" > .env
+          printf 'API_KEY="%s"\n' "${{ github.event.inputs.API_KEY }}" >> .env
+          printf 'PORT="%s"\n' "${{ github.event.inputs.PORT }}" >> .env
+
+      - name: Run container with env file
+        run: |
+          docker run -d \
+            --name firstdue-listener \
+            --restart unless-stopped \
+            --env-file .env \
+            -p ${{ github.event.inputs.PORT }}:${{ github.event.inputs.PORT }} \
+            kickedsoda/firstdue-listener:latest
+
+      - name: Clean up env file
+        run: rm .env

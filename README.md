@@ -6,7 +6,7 @@ git ls-files | grep -vE '\.md$|\.mdc$|package(-lock)?\.json$|pnpm-lock\.yaml$' |
 
 docker build -t yourusername/firstdue-listener:latest .
 docker push yourusername/firstdue-listener:latest
-docker run --env-file ./firstdue-listener/.env.local --name firstdue-listener yourusername/firstdue-listener:latest
+docker run --env-file ./firstdue-listener/.env.local --name firstdue-listener -p 8080:8080 -d yourusername/firstdue-listener:latest
 docker remove firstdue-listener
 
 ## CONVEX DEPLOY COMMAND

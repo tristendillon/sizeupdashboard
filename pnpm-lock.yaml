@@ -51,7 +51,7 @@ importers:
   firstdue-listener:
     dependencies:
       '@sizeupdashboard/convex':
-        specifier: file:../convex
+        specifier: workspace:*
         version: link:../convex
       chalk:
         specifier: ^5.4.1

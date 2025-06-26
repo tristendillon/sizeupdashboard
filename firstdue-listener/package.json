@@ -15,7 +15,7 @@
   "license": "ISC",
   "packageManager": "pnpm@10.11.0",
   "dependencies": {
-    "@sizeupdashboard/convex": "file:../convex",
+    "@sizeupdashboard/convex": "workspace:*",
     "chalk": "^5.4.1",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",

@@ -30,7 +30,10 @@ export class DispatchRoutine extends BaseRoutine {
   private lastDispatchtimeInvalid: boolean = false
   constructor(context: typeof RoutineContext) {
     super(DISPATCH_NAME, context, {
-      onStart: () => this.syncDispatches(),
+      onStart: () => {
+        this.lastDispatchtimeInvalid = true
+        this.syncDispatches()
+      },
     })
   }
 
@@ -67,7 +70,7 @@ export class DispatchRoutine extends BaseRoutine {
     return isoWithOffset
   }
 
-  private async syncDispatches(): Promise<void> {
+  public async syncDispatches(): Promise<void> {
     const syncTimer = this.ctx.logger.perf.start({
       id: 'syncDispatches',
       printf: (duration: number) => {

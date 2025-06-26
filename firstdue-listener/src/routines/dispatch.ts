@@ -136,7 +136,6 @@ export class DispatchRoutine extends BaseRoutine {
         last: last ? last.split(';')[0].trim() : null,
       }
     }
-
     const dispatches = await getDispatches()
     if (dispatches.length === 0) {
       this.ctx.logger.info('No new dispatches found')

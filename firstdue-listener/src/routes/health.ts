@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import { BaseRoutine } from '@/routines/routine'
+import { config } from '@/config'
 
 export function createHealthRouter(routines: BaseRoutine[]): Router {
   const router = Router()
@@ -8,6 +9,7 @@ export function createHealthRouter(routines: BaseRoutine[]): Router {
     const routineStatus = routines.map((routine) => routine.getStatus())
 
     res.json({
+      deploymentSha: config.deploymentSha,
       status: 'Webserver is healthy',
       timestamp: new Date().toISOString(),
       routines: routineStatus,

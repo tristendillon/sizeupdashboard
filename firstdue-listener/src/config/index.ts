@@ -20,4 +20,5 @@ export const config = {
     units: process.env.WEATHER_UNITS || 'imperial',
   },
   convexUrl: process.env.CONVEX_URL || '',
+  deploymentSha: process.env.GITHUB_COMMIT_SHA || 'local-deployment',
 }

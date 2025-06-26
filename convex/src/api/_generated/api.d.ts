@@ -16,7 +16,6 @@ import type {
 import type * as dispatches from "../dispatches.js";
 import type * as hydrants from "../hydrants.js";
 import type * as sync from "../sync.js";
-import type * as temp from "../temp.js";
 import type * as weather from "../weather.js";
 
 /**
@@ -31,7 +30,6 @@ declare const fullApi: ApiFromModules<{
   dispatches: typeof dispatches;
   hydrants: typeof hydrants;
   sync: typeof sync;
-  temp: typeof temp;
   weather: typeof weather;
 }>;
 export declare const api: FilterApi<

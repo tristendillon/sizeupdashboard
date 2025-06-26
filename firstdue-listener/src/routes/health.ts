@@ -5,13 +5,20 @@ import { config } from '@/config'
 export function createHealthRouter(routines: BaseRoutine[]): Router {
   const router = Router()
 
+  const healthRouterStartTime = new Date()
+
   router.get('/', (req, res) => {
     const routineStatus = routines.map((routine) => routine.getStatus())
 
     res.json({
       deploymentSha: config.deploymentSha,
       status: 'Webserver is healthy',
-      timestamp: new Date().toISOString(),
+      deploymentAt: {
+        iso: healthRouterStartTime.toISOString(),
+        tz: healthRouterStartTime.toLocaleString('en-US', {
+          timeZone: config.timezone,
+        }),
+      },
       routines: routineStatus,
     })
   })

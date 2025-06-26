@@ -76,8 +76,8 @@ export class BaseLogger {
         error: 0,
         warn: 1,
         info: 2,
-        timer: 3,
-        debug: 4,
+        debug: 3,
+        timer: 4,
         verbose: 5,
       },
       format: winston.format.combine(

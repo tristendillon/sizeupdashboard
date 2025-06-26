@@ -38,27 +38,32 @@ export class DispatchRoutine extends BaseRoutine {
     if (!config.firstdueApiKey) {
       throw new Error('FIRSTDUE_API_KEY is not set')
     }
-    // await this.checkForNewDispatchesSizeup()
-    await this.checkForNewDispatches()
+    await this.checkForNewDispatchesSizeup()
   }
 
   private parseFirstDueDispatch(dispatch: FirstDueDispatch): PostDispatch {
     return {
-      dispatchId: dispatch.id,
+      dispatchId: Number(dispatch.id),
       type: dispatch.type,
       message: dispatch.message,
       address: dispatch.address,
       address2: dispatch.address2,
       city: dispatch.city,
       stateCode: dispatch.state_code,
-      latitude: dispatch.latitude,
-      longitude: dispatch.longitude,
+      latitude: Number(dispatch.latitude),
+      longitude: Number(dispatch.longitude),
       unitCodes: dispatch.unit_codes,
       incidentTypeCode: dispatch.incident_type_code,
       statusCode: dispatch.status_code,
       xrefId: dispatch.xref_id,
       dispatchCreatedAt: dispatch.created_at,
     }
+  }
+
+  private createIsoDateWithOffset(date: string): string {
+    const dateObj = new Date(date)
+    const isoWithOffset = dateObj.toISOString().replace(/\.\d{1,3}Z$/, '+00:00')
+    return isoWithOffset
   }
 
   private async syncDispatches(): Promise<void> {
@@ -68,24 +73,27 @@ export class DispatchRoutine extends BaseRoutine {
         return `Synced dispatches in ${duration}ms`
       },
     })
+    const lastSync = await this.ctx.client.query(api.sync.getSyncInfo, {})
     const getDispatches = async (
       page: number = 1
     ): Promise<FirstDueDispatch[]> => {
-      const lastSync = await this.ctx.client.query(api.sync.getSyncInfo, {})
-      const qp = new URLSearchParams()
-      qp.set('page', page.toString())
-      if (lastSync?.dispatchLastSync && lastSync.dispatchLastSync.length > 0) {
-        qp.set('since', lastSync.dispatchLastSync)
+      const url = new URL(`${config.firstdueApiUrl}/dispatches`)
+      url.searchParams.set('page', page.toString())
+      if (lastSync?.dispatchLastSync) {
+        url.searchParams.set(
+          'since',
+          this.createIsoDateWithOffset(lastSync.dispatchLastSync)
+        )
       }
-      const res = await fetch(
-        `${config.firstdueApiUrl}/dispatches?${qp.toString()}`,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${config.firstdueApiKey}`,
-          },
-        }
+      this.ctx.logger.debug(
+        `Fetching dispatches from FirstDue: ${url.toString()}`
       )
+      const res = await fetch(url, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${config.firstdueApiKey}`,
+        },
+      })
       if (!res.ok) {
         this.ctx.logger.error(
           `Failed to fetch dispatches from FirstDue during sync: ${res.statusText}`
@@ -96,6 +104,12 @@ export class DispatchRoutine extends BaseRoutine {
       const linkHeader = res.headers.get('Link')
       const pagination = parseLinkHeader(linkHeader)
       const data: FirstDueDispatch[] = await res.json()
+      // Rate limit self so as to not bother FirstDue
+      const parsedData = data.map(this.parseFirstDueDispatch)
+      if (parsedData.length > 0) {
+        await this.insertDispatches(parsedData)
+      }
+      await new Promise((resolve) => setTimeout(resolve, 1000))
       if (pagination.next) {
         return [...data, ...(await getDispatches(page + 1))]
       }
@@ -127,19 +141,11 @@ export class DispatchRoutine extends BaseRoutine {
     if (dispatches.length === 0) {
       this.ctx.logger.info('No new dispatches found')
       syncTimer.end()
-    } else {
-      const parsedData: PostDispatch[] = dispatches.map(
-        this.parseFirstDueDispatch
-      )
-      await this.insertDispatches(parsedData)
     }
-    const lastSyncDate = new Date().toISOString()
-    const result = await this.ctx.client.mutation(
-      api.sync.setLastDispatchSync,
-      {
-        date: lastSyncDate,
-      }
-    )
+    const lastSyncDate = this.createIsoDateWithOffset(new Date().toISOString())
+    await this.ctx.client.mutation(api.sync.setLastDispatchSync, {
+      date: lastSyncDate,
+    })
     this.ctx.logger.info(
       `Synced ${dispatches.length} dispatches and set last sync to ${lastSyncDate}`
     )
@@ -156,17 +162,21 @@ export class DispatchRoutine extends BaseRoutine {
         return `Fetched dispatches from FirstDue in ${duration}ms`
       },
     })
-    const res = await fetch(
-      `${
-        config.firstdueApiUrl
-      }/dispatches?since=${this.lastDispatchTime.toISOString()}`,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${config.firstdueApiKey}`,
-        },
-      }
+    const url = new URL(`${config.firstdueApiUrl}/dispatches`)
+
+    url.searchParams.set(
+      'since',
+      this.createIsoDateWithOffset(this.lastDispatchTime.toISOString())
     )
+    this.ctx.logger.debug(
+      `Fetching dispatches from FirstDue: ${url.toString()}`
+    )
+    const res = await fetch(url, {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${config.firstdueApiKey}`,
+      },
+    })
     if (!res.ok) {
       this.ctx.logger.error(
         `Failed to fetch dispatches from FirstDue: ${res.statusText}`
@@ -187,7 +197,9 @@ export class DispatchRoutine extends BaseRoutine {
         new Date(a.dispatchCreatedAt).getTime()
     )
     this.lastDispatchTime = new Date(sortedDispatches[0].dispatchCreatedAt)
-    const lastSyncDate = this.lastDispatchTime.toISOString()
+    const lastSyncDate = this.createIsoDateWithOffset(
+      this.lastDispatchTime.toISOString()
+    )
     await this.ctx.client.mutation(api.sync.setLastDispatchSync, {
       date: lastSyncDate,
     })
@@ -195,29 +207,11 @@ export class DispatchRoutine extends BaseRoutine {
     await this.insertDispatches(parsedData)
   }
 
-  private async checkForNewDispatches(): Promise<void> {
-    const dispatches = await this.ctx.client.query(
-      api.temp.getIncomingDispatch,
-      {}
-    )
-    const newDispatches = await this.ctx.client.query(
-      api.temp.filterNewDispatches,
-      {
-        dispatches,
-      }
-    )
-    await this.insertDispatches(newDispatches)
-  }
-
   private async insertDispatches(dispatches: PostDispatch[]): Promise<void> {
-    for (const dispatch of dispatches) {
-      const result = await this.ctx.client.mutation(
-        api.dispatches.createDispatch,
-        dispatch
-      )
-      this.ctx.logger.info(
-        `Created dispatch ${dispatch.dispatchId} with result ${result}`
-      )
-    }
+    const result = await this.ctx.client.mutation(
+      api.dispatches.createDispatchs,
+      { dispatches }
+    )
+    this.ctx.logger.info(`Created ${result.length} dispatches`)
   }
 }

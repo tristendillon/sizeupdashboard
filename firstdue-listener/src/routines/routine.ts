@@ -1,11 +1,22 @@
 import { RoutineLogger } from '@/logger'
 import { RoutineContext } from '@/context/RoutineContext'
+import { config } from '@/config'
 
 export interface RoutineStatus {
   running: boolean
-  interval: number
+  interval: {
+    ms: number
+    formatted: string
+  }
   name: string
-  lastExecution?: string
+  lastExecution?: {
+    iso: string
+    tz: string
+  }
+  nextExecution?: {
+    iso: string
+    tz: string
+  }
   stopReason?: RoutineStopReason
 }
 interface RoutineStopReason {
@@ -22,6 +33,7 @@ export abstract class BaseRoutine {
   readonly name: string
   protected abstract readonly interval: number
   protected startFn?: () => Promise<void> | void
+  protected startedAt?: Date
   constructor(
     name: string,
     context: typeof RoutineContext,
@@ -30,6 +42,7 @@ export abstract class BaseRoutine {
     }
   ) {
     this.name = name
+    this.startedAt = new Date()
     this.ctx = new context(this.name)
     this.startFn = options?.onStart
   }
@@ -91,12 +104,68 @@ export abstract class BaseRoutine {
 
   protected abstract execute(): void | Promise<void>
 
+  private formatInterval(interval: number): string {
+    const ms = interval
+
+    const seconds = Math.floor(ms / 1000)
+    const minutes = Math.floor(seconds / 60)
+    const hours = Math.floor(minutes / 60)
+    const days = Math.floor(hours / 24)
+
+    const remainingHours = hours % 24
+    const remainingMinutes = minutes % 60
+    const remainingSeconds = seconds % 60
+
+    const parts: string[] = []
+
+    if (days > 0) parts.push(`${days} day${days !== 1 ? 's' : ''}`)
+    if (remainingHours > 0)
+      parts.push(`${remainingHours} hour${remainingHours !== 1 ? 's' : ''}`)
+    if (remainingMinutes > 0)
+      parts.push(
+        `${remainingMinutes} minute${remainingMinutes !== 1 ? 's' : ''}`
+      )
+    if (remainingSeconds > 0 && parts.length === 0) {
+      // only include seconds if no larger units were added
+      parts.push(`${remainingSeconds}s`)
+    }
+
+    if (parts.length > 1) {
+      const last = parts.pop()
+      return parts.join(', ') + ' and ' + last
+    }
+
+    return parts[0] || `${ms}ms`
+  }
+
   getStatus(): RoutineStatus {
+    const next = new Date(
+      (this.lastExecution?.getTime() || this.startedAt?.getTime() || 0) +
+        this.interval
+    )
     return {
       running: this.isRunning,
-      interval: this.interval,
+      interval: {
+        ms: this.interval,
+        formatted: this.formatInterval(this.interval),
+      },
       name: this.name,
-      lastExecution: this.lastExecution?.toISOString(),
+      lastExecution: this.lastExecution
+        ? {
+            iso: this.lastExecution.toISOString(),
+            tz:
+              this.lastExecution.toLocaleString('en-US', {
+                timeZone: config.timezone,
+              }) || '',
+          }
+        : undefined,
+      nextExecution: {
+        iso: next.toISOString(),
+        tz:
+          next.toLocaleString('en-US', {
+            timeZone: config.timezone,
+          }) || '',
+      },
       stopReason: this.stopReason,
     }
   }

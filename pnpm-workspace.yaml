@@ -1,2 +1,4 @@
 packages:
-  - './*'
+  - 'convex'
+  - 'firstdue-listener'
+  - 'web'

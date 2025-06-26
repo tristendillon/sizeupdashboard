@@ -12,7 +12,7 @@ COPY convex/package.json ./convex/
 COPY firstdue-listener/package.json ./firstdue-listener/
 
 # Step 3: install all dependencies (including dev deps for build tools)
-RUN pnpm install --no-frozen-lockfile
+RUN pnpm install --frozen-lockfile
 
 # Step 4: copy source files only (cache bust only on source changes)
 COPY convex ./convex
@@ -32,9 +32,13 @@ WORKDIR /app
 COPY --from=builder /app/convex ./convex
 COPY --from=builder /app/firstdue-listener ./firstdue-listener
 
-WORKDIR /app/firstdue-listener
+COPY --from=builder /app/pnpm-lock.yaml ./pnpm-lock.yaml
+COPY --from=builder /app/pnpm-workspace.yaml ./pnpm-workspace.yaml
+COPY --from=builder /app/package.json ./package.json
 
-RUN pnpm install --prod --no-frozen-lockfile
+RUN pnpm install --prod --frozen-lockfile
+
+WORKDIR /app/firstdue-listener
 
 EXPOSE 8080
 

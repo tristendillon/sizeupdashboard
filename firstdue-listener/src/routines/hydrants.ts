@@ -67,7 +67,7 @@ export interface FirstDueHydrant {
 }
 
 const ROUTINE_NAME = 'Hydrants'
-const INTERVAL = 1000 * 60 * 60 * 24 // 24 hours
+const INTERVAL = 1000 * 60 * 60 * 24
 
 export class HydrantsRoutine extends BaseRoutine {
   readonly interval = INTERVAL

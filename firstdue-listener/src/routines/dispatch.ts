@@ -26,7 +26,6 @@ interface FirstDueDispatch {
 
 export class DispatchRoutine extends BaseRoutine {
   protected readonly interval: number = DISPATCH_INTERVAL
-  private lastDispatchTime: Date = new Date()
 
   constructor(context: typeof RoutineContext) {
     super(DISPATCH_NAME, context, {
@@ -136,6 +135,7 @@ export class DispatchRoutine extends BaseRoutine {
         last: last ? last.split(';')[0].trim() : null,
       }
     }
+
     const dispatches = await getDispatches()
     if (dispatches.length === 0) {
       this.ctx.logger.info('No new dispatches found')
@@ -163,9 +163,12 @@ export class DispatchRoutine extends BaseRoutine {
     })
     const url = new URL(`${config.firstdueApiUrl}/dispatches`)
 
+    const lastSync = await this.ctx.client.query(api.sync.getSyncInfo, {})
+    const lastDispatchTime = new Date(lastSync?.dispatchLastSync || 0)
+
     url.searchParams.set(
       'since',
-      this.createIsoDateWithOffset(this.lastDispatchTime.toISOString())
+      this.createIsoDateWithOffset(lastDispatchTime.toISOString())
     )
     this.ctx.logger.debug(
       `Fetching dispatches from FirstDue: ${url.toString()}`
@@ -195,10 +198,11 @@ export class DispatchRoutine extends BaseRoutine {
         new Date(b.dispatchCreatedAt).getTime() -
         new Date(a.dispatchCreatedAt).getTime()
     )
-    this.lastDispatchTime = new Date(sortedDispatches[0].dispatchCreatedAt)
-    const lastSyncDate = this.createIsoDateWithOffset(
-      this.lastDispatchTime.toISOString()
+    const newSyncDate = new Date(
+      sortedDispatches[0].dispatchCreatedAt // Add one minute
     )
+    newSyncDate.setMinutes(newSyncDate.getMinutes() + 1)
+    const lastSyncDate = this.createIsoDateWithOffset(newSyncDate.toISOString())
     await this.ctx.client.mutation(api.sync.setLastDispatchSync, {
       date: lastSyncDate,
     })

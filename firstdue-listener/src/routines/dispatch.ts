@@ -26,7 +26,8 @@ interface FirstDueDispatch {
 
 export class DispatchRoutine extends BaseRoutine {
   protected readonly interval: number = DISPATCH_INTERVAL
-
+  private lastDispatchTime: number = 0
+  private lastDispatchtimeInvalid: boolean = false
   constructor(context: typeof RoutineContext) {
     super(DISPATCH_NAME, context, {
       onStart: () => this.syncDispatches(),
@@ -73,10 +74,7 @@ export class DispatchRoutine extends BaseRoutine {
         return `Synced dispatches in ${duration}ms`
       },
     })
-    const lastDispatchTime = await this.ctx.client.query(
-      api.dispatches.getLastDispatchTime,
-      {}
-    )
+    const lastDispatchTime = await this.getLastDispatchTime()
     const getDispatches = async (
       page: number = 1
     ): Promise<FirstDueDispatch[]> => {
@@ -157,6 +155,19 @@ export class DispatchRoutine extends BaseRoutine {
     syncTimer.end()
   }
 
+  private async getLastDispatchTime(): Promise<number> {
+    if (this.lastDispatchTime > 0 && !this.lastDispatchtimeInvalid) {
+      return this.lastDispatchTime
+    }
+    const lastDispatchTime = await this.ctx.client.query(
+      api.dispatches.getLastDispatchTime,
+      {}
+    )
+    this.lastDispatchTime = lastDispatchTime
+    this.lastDispatchtimeInvalid = false
+    return this.lastDispatchTime
+  }
+
   private async checkForNewDispatchesSizeup(): Promise<void> {
     const fetchTimer = this.ctx.logger.perf.start({
       id: 'fetchFirstDueDispatches',
@@ -169,10 +180,7 @@ export class DispatchRoutine extends BaseRoutine {
     })
     const url = new URL(`${config.firstdueApiUrl}/dispatches`)
 
-    const lastDispatchTime = await this.ctx.client.query(
-      api.dispatches.getLastDispatchTime,
-      {}
-    )
+    const lastDispatchTime = await this.getLastDispatchTime()
     if (!lastDispatchTime) {
       this.ctx.logger.info(
         'No last dispatch time found, fetching all dispatches'
@@ -215,5 +223,6 @@ export class DispatchRoutine extends BaseRoutine {
       { dispatches }
     )
     this.ctx.logger.info(`Created ${result.length} dispatches`)
+    this.lastDispatchtimeInvalid = true
   }
 }

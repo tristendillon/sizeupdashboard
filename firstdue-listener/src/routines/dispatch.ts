@@ -29,12 +29,7 @@ export class DispatchRoutine extends BaseRoutine {
   private lastDispatchTime: number = 0
   private lastDispatchtimeInvalid: boolean = false
   constructor(context: typeof RoutineContext) {
-    super(DISPATCH_NAME, context, {
-      onStart: () => {
-        this.lastDispatchtimeInvalid = true
-        this.syncDispatches()
-      },
-    })
+    super(DISPATCH_NAME, context)
   }
 
   protected async execute(): Promise<void> {
@@ -77,18 +72,17 @@ export class DispatchRoutine extends BaseRoutine {
         return `Synced dispatches in ${duration}ms`
       },
     })
-    const lastDispatchTime = await this.getLastDispatchTime()
+    const clearedDispatches = await this.ctx.client.mutation(
+      api.dispatches.clearDispatches,
+      {}
+    )
+    this.ctx.logger.info(`Cleared ${clearedDispatches.length} dispatches`)
+    this.lastDispatchtimeInvalid = true
     const getDispatches = async (
       page: number = 1
     ): Promise<FirstDueDispatch[]> => {
       const url = new URL(`${config.firstdueApiUrl}/dispatches`)
       url.searchParams.set('page', page.toString())
-      if (lastDispatchTime) {
-        url.searchParams.set(
-          'since',
-          this.createIsoDateWithOffset(lastDispatchTime)
-        )
-      }
       this.ctx.logger.debug(
         `Fetching dispatches from FirstDue: ${url.toString()}`
       )

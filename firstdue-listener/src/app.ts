@@ -7,6 +7,7 @@ import { RoutineContext } from '@/context/RoutineContext'
 import { WeatherRoutine } from './routines/weather'
 import { BaseRoutine } from './routines/routine'
 import { HydrantsRoutine } from './routines/hydrants'
+import { createRoutineRouter } from './routes/routine'
 
 export function createApp(): {
   app: express.Application
@@ -35,7 +36,7 @@ export function createApp(): {
     })
   )
 
-  app.use('/', createHealthRouter(routines))
-
+  app.use('/health', createHealthRouter(routines))
+  app.use('/routines', createRoutineRouter(routines))
   return { app, routines }
 }

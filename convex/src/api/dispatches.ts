@@ -5,6 +5,17 @@ import { Dispatches } from './schema'
 import { paginationOptsValidator } from 'convex/server'
 import { v } from 'convex/values'
 
+export const clearDispatches = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const dispatches = await ctx.db.query('dispatches').collect()
+    for (const dispatch of dispatches) {
+      await ctx.db.delete(dispatch._id)
+    }
+    return dispatches.map((dispatch) => dispatch.dispatchId)
+  },
+})
+
 export const createDispatchs = mutation({
   args: {
     dispatches: v.array(v.object(Dispatches.withoutSystemFields)),

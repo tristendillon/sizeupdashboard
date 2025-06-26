@@ -40,5 +40,41 @@ export function createHealthRouter(routines: BaseRoutine[]): Router {
     res.json(routine.getStatus())
   })
 
+  router.delete('/:routine', (req, res) => {
+    const routineName = req.params.routine
+    const routine = routines.find(
+      (r) => r.name.toLowerCase() === routineName.toLowerCase()
+    )
+    if (!routine) {
+      res.status(404).json({
+        error: 'Routine not found',
+        availableRoutines: routines.map((r) => r.name),
+      })
+      return
+    }
+    routine.stop()
+    res.json({
+      message: 'Routine stopped',
+    })
+  })
+
+  router.post('/:routine', async (req, res) => {
+    const routineName = req.params.routine
+    const routine = routines.find(
+      (r) => r.name.toLowerCase() === routineName.toLowerCase()
+    )
+    if (!routine) {
+      res.status(404).json({
+        error: 'Routine not found',
+        availableRoutines: routines.map((r) => r.name),
+      })
+      return
+    }
+    await routine.start()
+    res.json({
+      message: 'Routine started',
+    })
+  })
+
   return router
 }

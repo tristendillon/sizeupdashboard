@@ -124,13 +124,17 @@ export class HydrantsRoutine extends BaseRoutine {
       )
       this.ctx.logger.info(`Synced ${createdHydrants.length} hydrants`)
     }
-    const lastSyncDate = new Date().toISOString()
+    const newDate = new Date()
     const lastSync = await this.ctx.client.mutation(
       api.sync.setLastHydrantSync,
       {
-        date: lastSyncDate,
+        date: newDate.getTime(),
       }
     )
-    this.ctx.logger.info(`Set last hydrant sync to ${lastSyncDate}`)
+    this.ctx.logger.info(
+      `Set last hydrant sync to ${newDate.toLocaleString('en-US', {
+        timeZone: config.timezone,
+      })}`
+    )
   }
 }

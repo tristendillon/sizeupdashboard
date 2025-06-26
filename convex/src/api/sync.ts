@@ -2,29 +2,9 @@ import { v } from 'convex/values'
 import { query } from './_generated/server'
 import { mutation } from '../lib/mutation'
 
-export const setLastDispatchSync = mutation({
-  args: {
-    date: v.string(),
-  },
-  handler: async (ctx, args) => {
-    const existingSyncInfo = await ctx.db.query('syncInfo').first()
-    if (existingSyncInfo) {
-      return await ctx.db.upsert('syncInfo', {
-        ...existingSyncInfo,
-        dispatchLastSync: args.date,
-      })
-    }
-    return await ctx.db.insert('syncInfo', {
-      dispatchLastSync: args.date,
-      weatherLastSync: '',
-      hydrantLastSync: '',
-    })
-  },
-})
-
 export const setLastWeatherSync = mutation({
   args: {
-    date: v.string(),
+    date: v.number(),
   },
   handler: async (ctx, args) => {
     const existingSyncInfo = await ctx.db.query('syncInfo').first()
@@ -35,16 +15,15 @@ export const setLastWeatherSync = mutation({
       })
     }
     return await ctx.db.insert('syncInfo', {
-      dispatchLastSync: '',
       weatherLastSync: args.date,
-      hydrantLastSync: '',
+      hydrantLastSync: 0,
     })
   },
 })
 
 export const setLastHydrantSync = mutation({
   args: {
-    date: v.string(),
+    date: v.number(),
   },
   handler: async (ctx, args) => {
     const existingSyncInfo = await ctx.db.query('syncInfo').first()
@@ -55,8 +34,7 @@ export const setLastHydrantSync = mutation({
       })
     }
     return await ctx.db.insert('syncInfo', {
-      dispatchLastSync: '',
-      weatherLastSync: '',
+      weatherLastSync: 0,
       hydrantLastSync: args.date,
     })
   },

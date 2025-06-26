@@ -55,12 +55,13 @@ export class DispatchRoutine extends BaseRoutine {
       incidentTypeCode: dispatch.incident_type_code,
       statusCode: dispatch.status_code,
       xrefId: dispatch.xref_id,
-      dispatchCreatedAt: dispatch.created_at,
+      dispatchCreatedAt: new Date(dispatch.created_at).getTime(),
     }
   }
 
-  private createIsoDateWithOffset(date: string): string {
+  private createIsoDateWithOffset(date: number): string {
     const dateObj = new Date(date)
+    dateObj.setMinutes(dateObj.getMinutes() + 1)
     const isoWithOffset = dateObj.toISOString().replace(/\.\d{1,3}Z$/, '+00:00')
     return isoWithOffset
   }
@@ -72,27 +73,37 @@ export class DispatchRoutine extends BaseRoutine {
         return `Synced dispatches in ${duration}ms`
       },
     })
-    const lastSync = await this.ctx.client.query(api.sync.getSyncInfo, {})
+    const lastDispatchTime = await this.ctx.client.query(
+      api.dispatches.getLastDispatchTime,
+      {}
+    )
     const getDispatches = async (
       page: number = 1
     ): Promise<FirstDueDispatch[]> => {
       const url = new URL(`${config.firstdueApiUrl}/dispatches`)
       url.searchParams.set('page', page.toString())
-      if (lastSync?.dispatchLastSync) {
+      if (lastDispatchTime) {
         url.searchParams.set(
           'since',
-          this.createIsoDateWithOffset(lastSync.dispatchLastSync)
+          this.createIsoDateWithOffset(lastDispatchTime)
         )
       }
       this.ctx.logger.debug(
         `Fetching dispatches from FirstDue: ${url.toString()}`
       )
+      const fetchTimer = this.ctx.logger.perf.start({
+        id: 'fetchDispatches',
+        printf: (duration: number) => {
+          return `Fetched ${page} pages of dispatches in ${duration}ms`
+        },
+      })
       const res = await fetch(url, {
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${config.firstdueApiKey}`,
         },
       })
+      fetchTimer.end()
       if (!res.ok) {
         this.ctx.logger.error(
           `Failed to fetch dispatches from FirstDue during sync: ${res.statusText}`
@@ -104,6 +115,7 @@ export class DispatchRoutine extends BaseRoutine {
       const pagination = parseLinkHeader(linkHeader)
       const data: FirstDueDispatch[] = await res.json()
       // Rate limit self so as to not bother FirstDue
+      this.ctx.logger.debug(`pagination: ${JSON.stringify(pagination)}`)
       const parsedData = data.map(this.parseFirstDueDispatch)
       if (parsedData.length > 0) {
         await this.insertDispatches(parsedData)
@@ -141,13 +153,7 @@ export class DispatchRoutine extends BaseRoutine {
       this.ctx.logger.info('No new dispatches found')
       syncTimer.end()
     }
-    const lastSyncDate = this.createIsoDateWithOffset(new Date().toISOString())
-    await this.ctx.client.mutation(api.sync.setLastDispatchSync, {
-      date: lastSyncDate,
-    })
-    this.ctx.logger.info(
-      `Synced ${dispatches.length} dispatches and set last sync to ${lastSyncDate}`
-    )
+    this.ctx.logger.info(`Synced ${dispatches.length} dispatches`)
     syncTimer.end()
   }
 
@@ -163,13 +169,20 @@ export class DispatchRoutine extends BaseRoutine {
     })
     const url = new URL(`${config.firstdueApiUrl}/dispatches`)
 
-    const lastSync = await this.ctx.client.query(api.sync.getSyncInfo, {})
-    const lastDispatchTime = new Date(lastSync?.dispatchLastSync || 0)
-
-    url.searchParams.set(
-      'since',
-      this.createIsoDateWithOffset(lastDispatchTime.toISOString())
+    const lastDispatchTime = await this.ctx.client.query(
+      api.dispatches.getLastDispatchTime,
+      {}
     )
+    if (!lastDispatchTime) {
+      this.ctx.logger.info(
+        'No last dispatch time found, fetching all dispatches'
+      )
+    } else {
+      url.searchParams.set(
+        'since',
+        this.createIsoDateWithOffset(lastDispatchTime)
+      )
+    }
     this.ctx.logger.debug(
       `Fetching dispatches from FirstDue: ${url.toString()}`
     )
@@ -193,20 +206,6 @@ export class DispatchRoutine extends BaseRoutine {
       return
     }
     const parsedData: PostDispatch[] = data.map(this.parseFirstDueDispatch)
-    const sortedDispatches = parsedData.sort(
-      (a, b) =>
-        new Date(b.dispatchCreatedAt).getTime() -
-        new Date(a.dispatchCreatedAt).getTime()
-    )
-    const newSyncDate = new Date(
-      sortedDispatches[0].dispatchCreatedAt // Add one minute
-    )
-    newSyncDate.setMinutes(newSyncDate.getMinutes() + 1)
-    const lastSyncDate = this.createIsoDateWithOffset(newSyncDate.toISOString())
-    await this.ctx.client.mutation(api.sync.setLastDispatchSync, {
-      date: lastSyncDate,
-    })
-    this.ctx.logger.info(`Set last dispatch sync to ${lastSyncDate}`)
     await this.insertDispatches(parsedData)
   }
 

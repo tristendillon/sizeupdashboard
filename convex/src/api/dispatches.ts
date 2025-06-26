@@ -32,3 +32,18 @@ export const getDispatches = query({
       .paginate(paginationOpts)
   },
 })
+
+export const getLastDispatchTime = query({
+  args: {},
+  handler: async (ctx) => {
+    const lastDispatch = await ctx.db
+      .query('dispatches')
+      .withIndex('by_dispatchCreatedAt')
+      .order('desc')
+      .first()
+    if (!lastDispatch) {
+      return 0
+    }
+    return lastDispatch.dispatchCreatedAt
+  },
+})

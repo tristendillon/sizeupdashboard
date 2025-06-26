@@ -19,7 +19,7 @@ export const Dispatches = Table('dispatches', {
   incidentTypeCode: v.optional(v.union(v.string(), v.null())),
   statusCode: v.optional(v.union(v.string(), v.null())),
   xrefId: v.optional(v.union(v.string(), v.null())),
-  dispatchCreatedAt: v.string(),
+  dispatchCreatedAt: v.number(),
 })
 export const DispatchesSchema = convexToZod(Dispatches.table.validator)
 export type PostDispatch = WithoutSystemFields<Doc<'dispatches'>>
@@ -110,9 +110,8 @@ export type PostWeatherHour = WithoutSystemFields<Doc<'weatherHours'>>
 
 // This is like an org field but we dont have an org table
 export const SyncInfo = Table('syncInfo', {
-  dispatchLastSync: v.string(),
-  weatherLastSync: v.string(),
-  hydrantLastSync: v.string(),
+  weatherLastSync: v.number(),
+  hydrantLastSync: v.number(),
 })
 
 export const SyncInfoSchema = convexToZod(SyncInfo.table.validator)

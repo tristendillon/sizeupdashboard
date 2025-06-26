@@ -276,10 +276,14 @@ export class WeatherRoutine extends BaseRoutine {
       current: convexData.current,
       alerts: convexData.alerts ?? [],
     })
-    const lastSyncDate = new Date().toISOString()
+    const newDate = new Date()
     await this.ctx.client.mutation(api.sync.setLastWeatherSync, {
-      date: lastSyncDate,
+      date: newDate.getTime(),
     })
-    this.ctx.logger.info(`Set last weather sync to ${lastSyncDate}`)
+    this.ctx.logger.info(
+      `Set last weather sync to ${newDate.toLocaleString('en-US', {
+        timeZone: config.timezone,
+      })}`
+    )
   }
 }

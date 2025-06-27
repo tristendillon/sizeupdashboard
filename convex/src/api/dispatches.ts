@@ -5,28 +5,23 @@ import { Dispatches } from './schema'
 import { paginationOptsValidator } from 'convex/server'
 import { v } from 'convex/values'
 
-export const clearDispatches = mutation({
-  args: {},
-  handler: async (ctx) => {
-    const numItems = 1000
-    let count = 0
-    while (true) {
-      const queried = await ctx.db
-        .query('dispatches')
-        .withIndex('by_dispatchCreatedAt')
-        .order('desc')
-        .take(numItems)
-
-      for (const dispatch of queried) {
-        await ctx.db.delete(dispatch._id)
-      }
-      count += queried.length
-      if (queried.length < numItems) {
-        break
-      }
+export const paginatedClearDispatches = mutation({
+  args: {
+    numItems: v.number(),
+  },
+  handler: async (ctx, { numItems }) => {
+    const dispatches = await ctx.db
+      .query('dispatches')
+      .withIndex('by_dispatchCreatedAt')
+      .order('desc')
+      .take(numItems)
+    for (const dispatch of dispatches) {
+      await ctx.db.delete(dispatch._id)
     }
-
-    return count
+    if (dispatches.length < numItems) {
+      return false
+    }
+    return true
   },
 })
 

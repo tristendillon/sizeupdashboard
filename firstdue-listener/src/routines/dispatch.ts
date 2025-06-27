@@ -72,11 +72,14 @@ export class DispatchRoutine extends BaseRoutine {
         return `Synced dispatches in ${duration}ms`
       },
     })
-    const clearedDispatches = await this.ctx.client.mutation(
-      api.dispatches.clearDispatches,
-      {}
-    )
-    this.ctx.logger.info(`Cleared ${clearedDispatches} dispatches`)
+    let clearedDispatches = true
+    while (clearedDispatches) {
+      clearedDispatches = await this.ctx.client.mutation(
+        api.dispatches.paginatedClearDispatches,
+        { numItems: 1000 }
+      )
+    }
+    this.ctx.logger.info(`Cleared all dispatches`)
     this.lastDispatchtimeInvalid = true
     const getDispatches = async (
       page: number = 1

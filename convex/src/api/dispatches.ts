@@ -8,11 +8,25 @@ import { v } from 'convex/values'
 export const clearDispatches = mutation({
   args: {},
   handler: async (ctx) => {
-    const dispatches = await ctx.db.query('dispatches').collect()
-    for (const dispatch of dispatches) {
-      await ctx.db.delete(dispatch._id)
+    const numItems = 1000
+    let count = 0
+    while (true) {
+      const queried = await ctx.db
+        .query('dispatches')
+        .withIndex('by_dispatchCreatedAt')
+        .order('desc')
+        .take(numItems)
+
+      for (const dispatch of queried) {
+        await ctx.db.delete(dispatch._id)
+      }
+      count += queried.length
+      if (queried.length < numItems) {
+        break
+      }
     }
-    return dispatches.map((dispatch) => dispatch.dispatchId)
+
+    return count
   },
 })
 

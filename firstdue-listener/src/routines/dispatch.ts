@@ -76,7 +76,7 @@ export class DispatchRoutine extends BaseRoutine {
       api.dispatches.clearDispatches,
       {}
     )
-    this.ctx.logger.info(`Cleared ${clearedDispatches.length} dispatches`)
+    this.ctx.logger.info(`Cleared ${clearedDispatches} dispatches`)
     this.lastDispatchtimeInvalid = true
     const getDispatches = async (
       page: number = 1

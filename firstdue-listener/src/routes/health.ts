@@ -7,6 +7,12 @@ export function createHealthRouter(routines: BaseRoutine[]): Router {
 
   const healthRouterStartTime = new Date()
 
+  router.get('/test', async (req, res) => {
+    res.json({
+      message: 'Hello, world!',
+    })
+  })
+
   router.get('/', (req, res) => {
     const routineStatus = routines.map((routine) => routine.getStatus())
 

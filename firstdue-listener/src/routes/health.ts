@@ -9,7 +9,7 @@ export function createHealthRouter(routines: BaseRoutine[]): Router {
 
   router.get('/test', async (req, res) => {
     res.json({
-      message: 'Hello, world!',
+      message: 'Trev Caps Alot!',
     })
   })
 

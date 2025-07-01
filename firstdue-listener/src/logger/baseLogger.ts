@@ -13,8 +13,8 @@ interface PerfOptions {
 }
 
 interface PerfInstance {
-  logNow(decimals?: number): void
-  end(decimals?: number): void
+  logNow(decimals?: number): number
+  end(decimals?: number): number
 }
 
 class Perf {
@@ -38,6 +38,7 @@ class Perf {
           )}ms`
 
       this.logger.log('timer', message)
+      return currentDuration
     }
 
     const end = (decimals: number = 2) => {
@@ -47,6 +48,7 @@ class Perf {
         : `Timer "${timerId}" completed in ${duration.toFixed(decimals)}ms`
 
       this.logger.log('timer', message)
+      return duration
     }
 
     if (options.onStart) {
@@ -68,8 +70,16 @@ interface LogInfo {
 export class BaseLogger {
   protected logger: winston.Logger
   public perf: Perf
+  private logs: LogInfo[] = []
+  private context?: string
+  private readonly maxLogs: number = 500 // Keep last 500 logs
+
+  public getRecentLogs(limit: number): LogInfo[] {
+    return this.logs.slice(-limit)
+  }
 
   constructor(context?: string) {
+    this.context = context
     this.logger = winston.createLogger({
       level: config.logLevel,
       levels: {
@@ -119,24 +129,44 @@ export class BaseLogger {
     this.perf = new Perf(this.logger)
   }
 
+  private addLog(level: LogLevel, message: string, meta?: LogMeta): void {
+    this.logs.push({
+      timestamp: moment()
+        .tz(config.timezone)
+        .format('YYYY-MM-DD HH:mm:ss.SSS Z'),
+      level,
+      message,
+      context: this.context,
+      ...meta,
+    })
+    if (this.logs.length > this.maxLogs) {
+      this.logs.shift()
+    }
+  }
+
   info(message: string, meta?: LogMeta): void {
     this.logger.info(message, meta)
+    this.addLog('info', message, meta)
   }
 
   warn(message: string, meta?: LogMeta): void {
     this.logger.warn(message, meta)
+    this.addLog('warn', message, meta)
   }
 
   error(message: string, meta?: LogMeta): void {
     this.logger.error(message, meta)
+    this.addLog('error', message, meta)
   }
 
   debug(message: string, meta?: LogMeta): void {
     this.logger.debug(message, meta)
+    this.addLog('debug', message, meta)
   }
 
   timer(message: string, meta?: LogMeta): void {
     this.logger.log('timer', message, meta)
+    this.addLog('timer', message, meta)
   }
 
   getWinstonInstance(): winston.Logger {

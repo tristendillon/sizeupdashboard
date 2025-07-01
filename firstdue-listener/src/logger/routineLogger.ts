@@ -1,4 +1,4 @@
-import { BaseLogger, LogMeta } from './BaseLogger'
+import { BaseLogger, LogMeta } from './baseLogger'
 
 export class RoutineLogger extends BaseLogger {
   private routineName: string

@@ -1,28 +1,18 @@
 import express from 'express'
 import expressWinston from 'express-winston'
-import { DispatchRoutine } from '@/routines/dispatch'
-import { createHealthRouter } from '@/routes/health'
 import { winstonInstance } from '@/logger'
-import { RoutineContext } from '@/context/RoutineContext'
-import { WeatherRoutine } from './routines/weather'
-import { BaseRoutine } from './routines/routine'
-import { HydrantsRoutine } from './routines/hydrants'
-import { createRoutineRouter } from './routes/routine'
+import { DispatchRoutineRouter } from './routes/dispatches'
+import { RoutineRouter } from './routes/routineRouter'
 
 export function createApp(): {
   app: express.Application
-  routines: BaseRoutine[]
+  routines: RoutineRouter[]
 } {
   const app = express()
-  const dispatchRoutine = new DispatchRoutine(RoutineContext)
-  const weatherRoutine = new WeatherRoutine(RoutineContext)
-  const hydrantsRoutine = new HydrantsRoutine(RoutineContext)
 
-  const routines: BaseRoutine[] = [
-    dispatchRoutine,
-    weatherRoutine,
-    hydrantsRoutine,
-  ]
+  const dispatchRouter = new DispatchRoutineRouter()
+
+  const routineRoutes: RoutineRouter[] = [dispatchRouter]
 
   app.use(express.json())
 
@@ -36,7 +26,13 @@ export function createApp(): {
     })
   )
 
-  app.use('/health', createHealthRouter(routines))
-  app.use('/routines', createRoutineRouter(routines))
-  return { app, routines }
+  routineRoutes.forEach(async (routineRouter) => {
+    const routeName = routineRouter.name.toLowerCase()
+    app.use(`/api/routines/${routeName}`, routineRouter.getRoutes())
+    routineRouter.routineContext.logger.info(
+      `Mounted ${routineRouter.name} routes at /api/routines/${routeName} with ${routineRouter.routes.stack.length} routes`
+    )
+  })
+
+  return { app, routines: routineRoutes }
 }

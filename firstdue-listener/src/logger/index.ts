@@ -1,6 +1,6 @@
-export { BaseLogger, LogMeta } from './BaseLogger'
+export { BaseLogger, LogMeta } from './baseLogger'
 export { LogLevel } from '@/config'
-export { RoutineLogger } from './RoutineLogger'
+export { RoutineLogger } from './routineLogger'
 
 import winston from 'winston'
 import moment from 'moment-timezone'
@@ -11,7 +11,8 @@ export const winstonInstance = winston.createLogger({
   level: config.logLevel,
   format: winston.format.combine(
     winston.format.timestamp({
-      format: () => moment().tz(config.timezone).format('YYYY-MM-DD HH:mm:ss.SSS Z')
+      format: () =>
+        moment().tz(config.timezone).format('YYYY-MM-DD HH:mm:ss.SSS Z'),
     }),
     winston.format.errors({ stack: true }),
     winston.format.printf((info: winston.Logform.TransformableInfo) => {
@@ -21,20 +22,21 @@ export const winstonInstance = winston.createLogger({
         warn: chalk.yellow,
         info: chalk.blue,
         debug: chalk.gray,
-        verbose: chalk.cyan
+        verbose: chalk.cyan,
       }
-      
+
       const coloredTimestamp = chalk.gray(timestamp)
-      const coloredLevel = (levelColors[level] || chalk.white)(level.toUpperCase())
+      const coloredLevel = (levelColors[level] || chalk.white)(
+        level.toUpperCase()
+      )
       const coloredMessage = chalk.white(message)
-      const coloredMeta = Object.keys(meta).length > 0 
-        ? ' ' + chalk.dim(JSON.stringify(meta, null, 2))
-        : ''
-      
+      const coloredMeta =
+        Object.keys(meta).length > 0
+          ? ' ' + chalk.dim(JSON.stringify(meta, null, 2))
+          : ''
+
       return `${coloredTimestamp} ${coloredLevel} ${coloredMessage}${coloredMeta}`
     })
   ),
-  transports: [
-    new winston.transports.Console()
-  ]
+  transports: [new winston.transports.Console()],
 })

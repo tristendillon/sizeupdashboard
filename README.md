@@ -13,4 +13,3 @@ docker remove firstdue-listener
 
 cd convex
 pnpm dlx convex deploy --cmd "pnpm build"
-

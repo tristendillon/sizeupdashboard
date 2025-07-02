@@ -5,6 +5,7 @@ on:
     workflows: ['Push Docker Image']
     types: completed
     branches: ['main']
+  workflow_dispatch:
 
 jobs:
   deploy:

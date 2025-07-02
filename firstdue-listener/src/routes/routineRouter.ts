@@ -491,7 +491,7 @@ export abstract class RoutineRouter {
   /**
    * Get the routine context
    */
-  public get routineContext(): RoutineContext {
+  public get ctx(): RoutineContext {
     return this.context
   }
 

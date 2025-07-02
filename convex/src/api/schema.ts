@@ -109,13 +109,6 @@ export const WeatherHoursSchema = convexToZod(WeatherHours.table.validator)
 export type PostWeatherHour = WithoutSystemFields<Doc<'weatherHours'>>
 
 // This is like an org field but we dont have an org table
-export const SyncInfo = Table('syncInfo', {
-  weatherLastSync: v.number(),
-  hydrantLastSync: v.number(),
-})
-
-export const SyncInfoSchema = convexToZod(SyncInfo.table.validator)
-export type PostSyncInfo = WithoutSystemFields<Doc<'syncInfo'>>
 
 export const CurrentWeather = Table('currentWeather', {
   dt: v.number(),
@@ -173,7 +166,6 @@ export default defineSchema(
     weatherHours: WeatherHours.table,
     weatherDetails: WeatherDetail.table.index('by_detailId', ['detailId']),
     currentWeather: CurrentWeather.table,
-    syncInfo: SyncInfo.table,
     hydrants: Hydrants.table.index('by_hydrantId', ['hydrantId']),
   },
   // If you ever get an error about schema mismatch

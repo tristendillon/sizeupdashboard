@@ -13,6 +13,7 @@ interface PerfOptions {
 }
 
 interface PerfInstance {
+  getCurrentDuration(): number
   logNow(decimals?: number): number
   end(decimals?: number): number
 }
@@ -28,6 +29,10 @@ class Perf {
   start(options: PerfOptions = {}): PerfInstance {
     const startTime = performance.now()
     const timerId = options.id || `timer_${++this.timerCounter}`
+
+    const getCurrentDuration = () => {
+      return performance.now() - startTime
+    }
 
     const logNow = (decimals: number = 2) => {
       const currentDuration = performance.now() - startTime
@@ -55,7 +60,7 @@ class Perf {
       options.onStart()
     }
 
-    return { logNow, end }
+    return { getCurrentDuration, logNow, end }
   }
 }
 

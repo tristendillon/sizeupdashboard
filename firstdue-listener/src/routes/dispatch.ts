@@ -12,6 +12,15 @@ import {
 const DISPATCH_INTERVAL = 5000
 const DISPATCH_NAME = 'Dispatch'
 
+// Retry configuration
+const RETRY_CONFIG = {
+  maxRetries: 5,
+  baseDelayMs: 1000, // Start with 1 second
+  maxDelayMs: 30000, // Cap at 30 seconds
+  backoffMultiplier: 2,
+  jitterMax: 0.1, // Add up to 10% jitter
+}
+
 interface FirstDueDispatch {
   id: string
   type: string
@@ -35,6 +44,13 @@ interface PaginationLinks {
   last: string | null
 }
 
+interface RetryStats {
+  totalRetryAttempts: number
+  successfulRetries: number
+  failedRetries: number
+  longestBackoffMs: number
+}
+
 interface DispatchStats {
   totalFetched: number
   totalInserted: number
@@ -42,6 +58,7 @@ interface DispatchStats {
   lastFetchTime?: FormattedDateTime
   apiCallCount: number
   errorCount: number
+  retryStats: RetryStats
 }
 
 export class DispatchRoutineRouter extends RoutineRouter {
@@ -50,6 +67,7 @@ export class DispatchRoutineRouter extends RoutineRouter {
   private lastDispatchTimeInvalid: boolean = false
   public stats: DispatchStats = this.defaultStats()
   public isSyncing: boolean = false
+
   constructor(options: RoutineRouterOptions = {}) {
     super(DISPATCH_NAME, {
       ...options,
@@ -66,7 +84,138 @@ export class DispatchRoutineRouter extends RoutineRouter {
       totalInserted: 0,
       apiCallCount: 0,
       errorCount: 0,
+      retryStats: {
+        totalRetryAttempts: 0,
+        successfulRetries: 0,
+        failedRetries: 0,
+        longestBackoffMs: 0,
+      },
     }
+  }
+
+  /**
+   * Exponential backoff with jitter
+   */
+  private calculateBackoffDelay(attempt: number): number {
+    const exponentialDelay =
+      RETRY_CONFIG.baseDelayMs *
+      Math.pow(RETRY_CONFIG.backoffMultiplier, attempt)
+    const cappedDelay = Math.min(exponentialDelay, RETRY_CONFIG.maxDelayMs)
+
+    // Add jitter to prevent thundering herd
+    const jitter = cappedDelay * RETRY_CONFIG.jitterMax * Math.random()
+    const finalDelay = cappedDelay + jitter
+
+    return Math.round(finalDelay)
+  }
+
+  /**
+   * Sleep utility for delays
+   */
+  private sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms))
+  }
+
+  /**
+   * Determine if an error is retryable
+   */
+  private isRetryableError(error: unknown): boolean {
+    if (error instanceof TypeError && error.message === 'fetch failed') {
+      // Check the cause for specific network errors
+      const cause = (error as any).cause
+      if (cause) {
+        // Retry on connection timeouts, connection refused, DNS errors, etc.
+        return (
+          cause.code === 'UND_ERR_CONNECT_TIMEOUT' ||
+          cause.code === 'ECONNREFUSED' ||
+          cause.code === 'ENOTFOUND' ||
+          cause.code === 'ECONNRESET' ||
+          cause.code === 'ETIMEDOUT'
+        )
+      }
+      return true // Generic fetch failed, assume retryable
+    }
+
+    // Also retry on HTTP 5xx errors and 429 (rate limit)
+    if (error instanceof Error && error.message.includes('Failed to fetch')) {
+      return true
+    }
+
+    return false
+  }
+
+  /**
+   * Enhanced fetch with exponential backoff retry logic
+   */
+  private async fetchWithRetry(url: URL, options: RequestInit) {
+    let lastError: unknown
+
+    for (let attempt = 0; attempt <= RETRY_CONFIG.maxRetries; attempt++) {
+      try {
+        this.stats.apiCallCount++
+
+        if (attempt > 0) {
+          this.stats.retryStats.totalRetryAttempts++
+          this.ctx.logger.info(
+            `Retry attempt ${attempt}/${
+              RETRY_CONFIG.maxRetries
+            } for ${url.toString()}`
+          )
+        }
+
+        const response = await fetch(url, options)
+
+        // Check for HTTP errors that should trigger retry
+        if (!response.ok) {
+          const statusCode = response.status
+          if (statusCode >= 500 || statusCode === 429) {
+            throw new Error(`HTTP ${statusCode}: ${response.statusText}`)
+          }
+          // For 4xx errors (except 429), don't retry
+          throw new Error(`HTTP ${statusCode}: ${response.statusText}`)
+        }
+
+        if (attempt > 0) {
+          this.stats.retryStats.successfulRetries++
+          this.ctx.logger.info(`Retry succeeded on attempt ${attempt}`)
+        }
+
+        return response
+      } catch (error) {
+        lastError = error
+
+        // If this is the last attempt or error is not retryable, throw
+        if (
+          attempt === RETRY_CONFIG.maxRetries ||
+          !this.isRetryableError(error)
+        ) {
+          if (attempt > 0) {
+            this.stats.retryStats.failedRetries++
+          }
+          this.stats.errorCount++
+          throw error
+        }
+
+        // Calculate backoff delay
+        const delayMs = this.calculateBackoffDelay(attempt)
+        this.stats.retryStats.longestBackoffMs = Math.max(
+          this.stats.retryStats.longestBackoffMs,
+          delayMs
+        )
+
+        this.ctx.logger.warn(
+          `Fetch failed (attempt ${attempt + 1}/${
+            RETRY_CONFIG.maxRetries + 1
+          }), retrying in ${delayMs}ms`,
+          { error: error instanceof Error ? error.message : String(error) }
+        )
+
+        await this.sleep(delayMs)
+      }
+    }
+
+    // This should never be reached, but just in case
+    throw lastError
   }
 
   protected defineRoutes(): void {
@@ -95,6 +244,7 @@ export class DispatchRoutineRouter extends RoutineRouter {
     await this.validateConfiguration()
     await this.checkForNewDispatches()
   }
+
   protected shouldNotStart(): { shouldNotStart: boolean; reason: string } {
     if (this.isSyncing) {
       return {
@@ -105,8 +255,6 @@ export class DispatchRoutineRouter extends RoutineRouter {
     return { shouldNotStart: false, reason: '' }
   }
 
-  // ==================== ROUTE HANDLERS ====================
-
   private async handleFullSync(req: Request, res: Response): Promise<void> {
     if (this.isSyncing) {
       res.status(400).json({
@@ -114,12 +262,12 @@ export class DispatchRoutineRouter extends RoutineRouter {
       })
       return
     }
-    this.routineContext.logger.info('Manual full sync requested via API')
+    this.ctx.logger.info('Manual full sync requested via API')
     this.isSyncing = true
     await this.stop('Manual full sync requested via API')
     try {
       this.syncAllDispatches().then(async (result) => {
-        this.routineContext.logger.info(
+        this.ctx.logger.info(
           `Full sync completed successfully with ${result.totalSynced} dispatches synced and ${result.clearedCount} dispatches cleared`
         )
         // Start the routine again
@@ -159,6 +307,7 @@ export class DispatchRoutineRouter extends RoutineRouter {
       apiUrl: config.firstdueApiUrl,
       interval: this.interval,
       intervalFormatted: this.getStatus().interval.formatted,
+      retryConfig: RETRY_CONFIG,
     })
   }
 
@@ -169,7 +318,7 @@ export class DispatchRoutineRouter extends RoutineRouter {
     try {
       await this.validateConfiguration()
 
-      const testTimer = this.routineContext.logger.perf.start({
+      const testTimer = this.ctx.logger.perf.start({
         id: 'testFirstDueConnection',
         printf: (duration: number) =>
           `FirstDue API connection test completed in ${duration}ms`,
@@ -178,7 +327,8 @@ export class DispatchRoutineRouter extends RoutineRouter {
       const url = new URL(`${config.firstdueApiUrl}/dispatches`)
       url.searchParams.set('page', '1')
 
-      const response = await fetch(url, {
+      // Use the retry logic for the test connection
+      const response = await this.fetchWithRetry(url, {
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${config.firstdueApiKey}`,
@@ -187,12 +337,6 @@ export class DispatchRoutineRouter extends RoutineRouter {
 
       testTimer.end()
 
-      if (!response.ok) {
-        throw new Error(
-          `API returned ${response.status}: ${response.statusText}`
-        )
-      }
-
       const data = await response.json()
 
       res.json({
@@ -200,6 +344,7 @@ export class DispatchRoutineRouter extends RoutineRouter {
         status: response.status,
         sampleDataCount: Array.isArray(data) ? data.length : 0,
         headers: Object.fromEntries(response.headers.entries()),
+        retryStats: this.stats.retryStats,
       })
     } catch (error) {
       this.stats.errorCount++
@@ -207,7 +352,7 @@ export class DispatchRoutineRouter extends RoutineRouter {
     }
   }
 
-  // ==================== CORE BUSINESS LOGIC ====================
+  // ==================== CORE BUSINESS LOGIC (UPDATED) ====================
 
   private async validateConfiguration(): Promise<void> {
     if (!config.firstdueApiKey) {
@@ -248,7 +393,7 @@ export class DispatchRoutineRouter extends RoutineRouter {
     totalSynced: number
     clearedCount: number
   }> {
-    const syncTimer = this.routineContext.logger.perf.start({
+    const syncTimer = this.ctx.logger.perf.start({
       id: 'syncAllDispatches',
       printf: (duration: number) =>
         `Full dispatch sync completed in ${duration}ms`,
@@ -259,12 +404,12 @@ export class DispatchRoutineRouter extends RoutineRouter {
       let clearedCount = 0
       let clearedDispatches = true
 
-      this.routineContext.logger.info(
+      this.ctx.logger.info(
         'Starting full dispatch sync - clearing existing dispatches'
       )
 
       while (clearedDispatches) {
-        const batchCleared = await this.routineContext.client.mutation(
+        const batchCleared = await this.ctx.client.mutation(
           api.dispatches.paginatedClearDispatches,
           { numItems: 1000 }
         )
@@ -272,16 +417,14 @@ export class DispatchRoutineRouter extends RoutineRouter {
         if (batchCleared) clearedCount += 1000
       }
 
-      this.routineContext.logger.info(
-        `Cleared approximately ${clearedCount} dispatches`
-      )
+      this.ctx.logger.info(`Cleared approximately ${clearedCount} dispatches`)
       this.lastDispatchTimeInvalid = true
 
       // Fetch all dispatches with pagination
       const allDispatches = await this.fetchAllDispatchesWithPagination()
 
       if (allDispatches.length === 0) {
-        this.routineContext.logger.info('No dispatches found during full sync')
+        this.ctx.logger.info('No dispatches found during full sync')
         this.stats.lastSyncTime = formatDateTime(new Date())
         return { totalSynced: 0, clearedCount }
       }
@@ -294,7 +437,7 @@ export class DispatchRoutineRouter extends RoutineRouter {
 
       this.stats.totalFetched += allDispatches.length
       this.stats.lastSyncTime = formatDateTime(new Date())
-      this.routineContext.logger.info(
+      this.ctx.logger.info(
         `Full sync completed: ${allDispatches.length} dispatches synced`
       )
 
@@ -316,32 +459,26 @@ export class DispatchRoutineRouter extends RoutineRouter {
       const url = new URL(`${config.firstdueApiUrl}/dispatches`)
       url.searchParams.set('page', page.toString())
 
-      this.routineContext.logger.info(`Fetching page ${page} from FirstDue API`)
+      this.ctx.logger.info(`Fetching page ${page} from FirstDue API`)
 
-      const fetchTimer = this.routineContext.logger.perf.start({
+      const fetchTimer = this.ctx.logger.perf.start({
         id: `fetchDispatchesPage${page}`,
         printf: (duration: number) => `Fetched page ${page} in ${duration}ms`,
       })
 
       try {
-        this.stats.apiCallCount++
-        const response = await fetch(url, {
+        // Use fetchWithRetry instead of direct fetch
+        const response = await this.fetchWithRetry(url, {
           headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${config.firstdueApiKey}`,
           },
         })
 
-        if (!response.ok) {
-          throw new Error(
-            `Failed to fetch page ${page}: ${response.status} ${response.statusText}`
-          )
-        }
-
         const data: FirstDueDispatch[] = await response.json()
         const pagination = this.parseLinkHeader(response.headers.get('Link'))
 
-        this.routineContext.logger.debug(
+        this.ctx.logger.debug(
           `Page ${page}: ${
             data.length
           } dispatches, hasNext: ${!!pagination.next}`
@@ -366,7 +503,7 @@ export class DispatchRoutineRouter extends RoutineRouter {
 
       // Rate limiting - be nice to the API
       if (hasNext) {
-        await new Promise((resolve) => setTimeout(resolve, 1000))
+        await this.sleep(1000)
       }
     }
 
@@ -395,14 +532,14 @@ export class DispatchRoutineRouter extends RoutineRouter {
       return this.lastDispatchTime
     }
 
-    const queryTimer = this.routineContext.logger.perf.start({
+    const queryTimer = this.ctx.logger.perf.start({
       id: 'getLastDispatchTime',
       printf: (duration: number) =>
         `Retrieved last dispatch time in ${duration}ms`,
     })
 
     try {
-      const lastDispatchTime = await this.routineContext.client.query(
+      const lastDispatchTime = await this.ctx.client.query(
         api.dispatches.getLastDispatchTime,
         {}
       )
@@ -410,7 +547,7 @@ export class DispatchRoutineRouter extends RoutineRouter {
       this.lastDispatchTime = lastDispatchTime
       this.lastDispatchTimeInvalid = false
 
-      this.routineContext.logger.debug(
+      this.ctx.logger.debug(
         `Last dispatch time: ${
           lastDispatchTime
             ? formatTimezoneDate(new Date(lastDispatchTime))
@@ -428,12 +565,10 @@ export class DispatchRoutineRouter extends RoutineRouter {
     newDispatches: number
     lastDispatchTime: number
   }> {
-    const fetchTimer = this.routineContext.logger.perf.start({
+    const fetchTimer = this.ctx.logger.perf.start({
       id: 'checkForNewDispatches',
       onStart: () => {
-        this.routineContext.logger.info(
-          'Checking for new dispatches from FirstDue'
-        )
+        this.ctx.logger.info('Checking for new dispatches from FirstDue')
       },
       printf: (duration: number) =>
         `Checked for new dispatches in ${duration}ms`,
@@ -444,7 +579,7 @@ export class DispatchRoutineRouter extends RoutineRouter {
       const lastDispatchTime = await this.getLastDispatchTime()
 
       if (!lastDispatchTime) {
-        this.routineContext.logger.info(
+        this.ctx.logger.info(
           'No last dispatch time found, will fetch recent dispatches'
         )
       } else {
@@ -452,40 +587,32 @@ export class DispatchRoutineRouter extends RoutineRouter {
           'since',
           this.createIsoDateWithOffset(lastDispatchTime)
         )
-        this.routineContext.logger.info(
+        this.ctx.logger.info(
           `Fetching dispatches since: ${formatTimezoneDate(
             new Date(lastDispatchTime)
           )}`
         )
       }
 
-      this.routineContext.logger.debug(`API URL: ${url.toString()}`)
+      this.ctx.logger.debug(`API URL: ${url.toString()}`)
 
-      this.stats.apiCallCount++
-      const response = await fetch(url, {
+      // Use fetchWithRetry instead of direct fetch
+      const response = await this.fetchWithRetry(url, {
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${config.firstdueApiKey}`,
         },
       })
 
-      if (!response.ok) {
-        this.routineContext.logger.error(
-          `FirstDue API error: ${response.status} ${response.statusText}`
-        )
-        this.stats.errorCount++
-        return { newDispatches: 0, lastDispatchTime }
-      }
-
-      const data: FirstDueDispatch[] = await response.json()
+      const data = await response.json()
       this.stats.lastFetchTime = formatDateTime(new Date())
 
       if (data.length === 0) {
-        this.routineContext.logger.info('No new dispatches found')
+        this.ctx.logger.info('No new dispatches found')
         return { newDispatches: 0, lastDispatchTime }
       }
 
-      this.routineContext.logger.info(`Found ${data.length} new dispatches`)
+      this.ctx.logger.info(`Found ${data.length} new dispatches`)
       const parsedData: PostDispatch[] = data.map((dispatch) =>
         this.parseFirstDueDispatch(dispatch)
       )
@@ -500,14 +627,14 @@ export class DispatchRoutineRouter extends RoutineRouter {
   }
 
   private async insertDispatches(dispatches: PostDispatch[]): Promise<void> {
-    const insertTimer = this.routineContext.logger.perf.start({
+    const insertTimer = this.ctx.logger.perf.start({
       id: 'insertDispatches',
       printf: (duration: number) =>
         `Inserted ${dispatches.length} dispatches in ${duration}ms`,
     })
 
     try {
-      const result = await this.routineContext.client.mutation(
+      const result = await this.ctx.client.mutation(
         api.dispatches.createDispatchs,
         { dispatches }
       )
@@ -515,9 +642,7 @@ export class DispatchRoutineRouter extends RoutineRouter {
       this.stats.totalInserted += result.length
       this.lastDispatchTimeInvalid = true
 
-      this.routineContext.logger.info(
-        `Successfully inserted ${result.length} dispatches`
-      )
+      this.ctx.logger.info(`Successfully inserted ${result.length} dispatches`)
     } finally {
       insertTimer.end()
     }

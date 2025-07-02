@@ -1,8 +1,9 @@
 import express from 'express'
 import expressWinston from 'express-winston'
 import { winstonInstance } from '@/logger'
-import { DispatchRoutineRouter } from './routes/dispatches'
+import { DispatchRoutineRouter } from './routes/dispatch'
 import { RoutineRouter } from './routes/routineRouter'
+import { WeatherRoutineRouter } from './routes/weather'
 
 export function createApp(): {
   app: express.Application
@@ -11,8 +12,9 @@ export function createApp(): {
   const app = express()
 
   const dispatchRouter = new DispatchRoutineRouter()
+  const weatherRouter = new WeatherRoutineRouter()
 
-  const routineRoutes: RoutineRouter[] = [dispatchRouter]
+  const routineRoutes: RoutineRouter[] = [dispatchRouter, weatherRouter]
 
   app.use(express.json())
 
@@ -29,7 +31,7 @@ export function createApp(): {
   routineRoutes.forEach(async (routineRouter) => {
     const routeName = routineRouter.name.toLowerCase()
     app.use(`/api/routines/${routeName}`, routineRouter.getRoutes())
-    routineRouter.routineContext.logger.info(
+    routineRouter.ctx.logger.info(
       `Mounted ${routineRouter.name} routes at /api/routines/${routeName} with ${routineRouter.routes.stack.length} routes`
     )
   })

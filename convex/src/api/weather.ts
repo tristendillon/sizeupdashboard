@@ -24,6 +24,55 @@ export const createWeatherDetails = mutation({
   },
 })
 
+export const getWeatherDetails = query({
+  handler: async (ctx) => {
+    const weatherDetails = await ctx.db.query('weatherDetails').collect()
+    return weatherDetails
+  },
+})
+
+export const deleteWeatherDataWithoutIds = mutation({
+  handler: async (ctx) => {
+    const weatherHours = await ctx.db.query('weatherHours').collect()
+    const weatherDays = await ctx.db.query('weatherDays').collect()
+    const currentWeather = await ctx.db.query('currentWeather').first()
+    const activeWeatherAlerts = await ctx.db
+      .query('activeWeatherAlerts')
+      .collect()
+    for (const hour of weatherHours) {
+      await ctx.db.delete(hour._id)
+    }
+    for (const day of weatherDays) {
+      await ctx.db.delete(day._id)
+    }
+    if (currentWeather) {
+      await ctx.db.delete(currentWeather._id)
+    }
+    for (const alert of activeWeatherAlerts) {
+      await ctx.db.delete(alert._id)
+    }
+  },
+})
+
+export const deleteWeatherData = mutation({
+  args: {
+    ids: v.array(
+      v.union(
+        v.id('weatherHours'),
+        v.id('weatherDays'),
+        v.id('currentWeather'),
+        v.id('activeWeatherAlerts')
+      )
+    ),
+  },
+  handler: async (ctx, args) => {
+    const { ids } = args
+    for (const id of ids) {
+      await ctx.db.delete(id)
+    }
+  },
+})
+
 export const createWeather = mutation({
   args: {
     hours: v.array(WeatherHours.table.validator),
@@ -33,29 +82,9 @@ export const createWeather = mutation({
   },
   handler: async (ctx, args) => {
     const { hours, days, current, alerts } = args
-    const weatherHours = await ctx.db.upsertManyByCustomId(
-      'weatherHours',
-      hours,
-      'dt'
-    )
-    const weatherDays = await ctx.db.upsertManyByCustomId(
-      'weatherDays',
-      days,
-      'dt'
-    )
-    const existingCurrentWeather = await ctx.db.query('currentWeather').first()
-    if (existingCurrentWeather) {
-      await ctx.db.delete(existingCurrentWeather._id)
-    }
+    const weatherHours = await ctx.db.insertMany('weatherHours', hours)
+    const weatherDays = await ctx.db.insertMany('weatherDays', days)
     const currentWeather = await ctx.db.insert('currentWeather', current)
-    const existingActiveWeatherAlerts = await ctx.db
-      .query('activeWeatherAlerts')
-      .collect()
-    if (existingActiveWeatherAlerts.length > 0) {
-      await Promise.all(
-        existingActiveWeatherAlerts.map((alert) => ctx.db.delete(alert._id))
-      )
-    }
     const activeWeatherAlerts = await ctx.db.insertMany(
       'activeWeatherAlerts',
       alerts

@@ -1,4 +1,4 @@
-import { RoutineContext } from '@/context/RoutineContext'
+import { RoutineContext } from '@/context/routineContext'
 import { BaseRoutine } from './routine'
 import { PostHydrant } from '@sizeupdashboard/convex/api/schema'
 import { config } from '@/config'

@@ -193,7 +193,6 @@ export class DispatchRoutineRouter extends RoutineRouter {
             this.stats.retryStats.failedRetries++
           }
           this.stats.errorCount++
-          throw error
         }
 
         // Calculate backoff delay

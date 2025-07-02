@@ -8,9 +8,20 @@ import {
   formatDateTime,
   formatTimezoneDate,
 } from '@/lib/utils'
+import { Doc } from '@sizeupdashboard/convex/api/_generated/dataModel'
 
 const DISPATCH_INTERVAL = 5000
 const DISPATCH_NAME = 'Dispatch'
+// This is the distance in ms from the last dispatch time to continue diffing the nfirs data from the inital dispatch
+// data to the nfirs data.
+const DISTANCE_TO_CONTINUE_DIFFING = 60 * 5 * 1000 // 5 minutes
+
+interface DiffResult {
+  hasDiff: boolean
+  // key is the json path so "dispatch_number" or "aid_fdid_numbers[0]" or "timestamp.cst" (fake keys used for example)
+  // and the value is the new value of the diff
+  diff: Record<string, unknown>
+}
 
 // Retry configuration
 const RETRY_CONFIG = {
@@ -19,6 +30,42 @@ const RETRY_CONFIG = {
   maxDelayMs: 30000, // Cap at 30 seconds
   backoffMultiplier: 2,
   jitterMax: 0.1, // Add up to 10% jitter
+}
+
+interface FirstDueNfirsNotification {
+  id: number
+  dispatch_number: string
+  incident_number: string
+  dispatch_type: string
+  dispatch_incident_type_code: string
+  alarm_at: string
+  dispatch_notified_at: string
+  alarms: number
+  place_name: string
+  location_info: string
+  venue: string
+  address: string
+  unit: string
+  cross_streets: string
+  city: string
+  state_code: string
+  zip_code: string
+  latitude: number
+  longitude: number
+  narratives: string
+  shift_name: string
+  notification_type: string
+  aid_type_code: number
+  aid_fdid_number: string
+  aid_fdid_numbers: string[]
+  controlled_at: string
+  officer_in_charge: string
+  call_completed_at: string
+  zone: string
+  ems_incident_number: string
+  ems_response_number: string
+  station: string
+  emd_card_number: string
 }
 
 interface FirstDueDispatch {
@@ -63,6 +110,7 @@ interface DispatchStats {
 
 export class DispatchRoutineRouter extends RoutineRouter {
   protected readonly interval: number = DISPATCH_INTERVAL
+  private latestDispatchData: Doc<'dispatches'>
   private lastDispatchTime: number = 0
   private lastDispatchTimeInvalid: boolean = false
   public stats: DispatchStats = this.defaultStats()
@@ -242,6 +290,7 @@ export class DispatchRoutineRouter extends RoutineRouter {
   public async execute(): Promise<void> {
     await this.validateConfiguration()
     await this.checkForNewDispatches()
+    await this.updateNfirsData()
   }
 
   protected shouldNotStart(): { shouldNotStart: boolean; reason: string } {
@@ -352,6 +401,124 @@ export class DispatchRoutineRouter extends RoutineRouter {
   }
 
   // ==================== CORE BUSINESS LOGIC (UPDATED) ====================
+
+  private async diffLatestDispatchToNfirs(
+    data: FirstDueNfirsNotification
+  ): Promise<DiffResult> {
+    const diff: Record<string, unknown> = {}
+    let hasDiff = false
+
+    // Helper function to safely compare values
+    const compareAndSetDiff = (
+      jsonPath: string,
+      newValue: unknown,
+      oldValue: unknown
+    ) => {
+      // Handle null/undefined comparisons
+      const normalizedNew = newValue === null ? undefined : newValue
+      const normalizedOld = oldValue === null ? undefined : oldValue
+
+      if (normalizedNew !== normalizedOld) {
+        diff[jsonPath] = newValue
+        hasDiff = true
+      }
+    }
+
+    // Compare narratives -> narrative
+    compareAndSetDiff(
+      'narrative',
+      data.narratives,
+      this.latestDispatchData.narrative
+    )
+
+    // Compare dispatch_type -> type
+    compareAndSetDiff('type', data.dispatch_type, this.latestDispatchData.type)
+
+    // Compare address -> address
+    compareAndSetDiff('address', data.address, this.latestDispatchData.address)
+
+    // Compare city -> city
+    compareAndSetDiff('city', data.city, this.latestDispatchData.city)
+
+    // Compare state_code -> stateCode
+    compareAndSetDiff(
+      'stateCode',
+      data.state_code,
+      this.latestDispatchData.stateCode
+    )
+
+    // Compare latitude -> latitude
+    compareAndSetDiff(
+      'latitude',
+      Number(data.latitude),
+      this.latestDispatchData.latitude
+    )
+
+    // Compare longitude -> longitude
+    compareAndSetDiff(
+      'longitude',
+      Number(data.longitude),
+      this.latestDispatchData.longitude
+    )
+
+    // Note: aid_fdid_numbers and unitCodes represent different data structures
+    // (NFIRS FDID numbers vs database IDs), so we don't compare them directly
+
+    // Compare dispatch_incident_type_code -> incidentTypeCode
+    compareAndSetDiff(
+      'incidentTypeCode',
+      data.dispatch_incident_type_code,
+      this.latestDispatchData.incidentTypeCode
+    )
+
+    return {
+      hasDiff,
+      diff,
+    }
+  }
+
+  private async updateNfirsData(): Promise<void> {
+    if (!this.latestDispatchData || !this.latestDispatchData.xrefId) {
+      return
+    }
+
+    if (this.lastDispatchTime < Date.now() - DISTANCE_TO_CONTINUE_DIFFING) {
+      return
+    }
+
+    this.ctx.logger.info(
+      `Diffing NFIRS data for dispatch ${this.latestDispatchData.xrefId}`
+    )
+
+    const xrefId = this.latestDispatchData.xrefId
+    const url = new URL(
+      `${config.firstdueApiUrl}/nfirs-notifications/dispatch-number/${xrefId}`
+    )
+    const response = await this.fetchWithRetry(url, {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${config.firstdueApiKey}`,
+      },
+    })
+    if (!response.ok) {
+      this.ctx.logger.warn(
+        `Failed to fetch NFIRS data for dispatch ${xrefId}: ${response.statusText}`
+      )
+      return
+    }
+    const data = (await response.json()) as FirstDueNfirsNotification
+    const { hasDiff, diff } = await this.diffLatestDispatchToNfirs(data)
+    if (hasDiff) {
+      this.ctx.logger.info(`Diff found for dispatch ${xrefId}`)
+      for (const [key, value] of Object.entries(diff)) {
+        this.latestDispatchData[key] = value
+      }
+      await this.ctx.client.mutation(api.dispatches.updateDispatch, {
+        id: this.latestDispatchData._id,
+        diff,
+      })
+    }
+  }
 
   private async validateConfiguration(): Promise<void> {
     if (!config.firstdueApiKey) {
@@ -538,18 +705,23 @@ export class DispatchRoutineRouter extends RoutineRouter {
     })
 
     try {
-      const lastDispatchTime = await this.ctx.client.query(
-        api.dispatches.getLastDispatchTime,
+      const lastDispatchData = await this.ctx.client.query(
+        api.dispatches.getLastDispatchData,
         {}
       )
 
-      this.lastDispatchTime = lastDispatchTime
+      if (!lastDispatchData) {
+        return 0
+      }
+
+      this.lastDispatchTime = lastDispatchData.dispatchCreatedAt
       this.lastDispatchTimeInvalid = false
+      this.latestDispatchData = lastDispatchData
 
       this.ctx.logger.debug(
         `Last dispatch time: ${
-          lastDispatchTime
-            ? formatTimezoneDate(new Date(lastDispatchTime))
+          this.lastDispatchTime
+            ? formatTimezoneDate(new Date(this.lastDispatchTime))
             : 'none'
         }`
       )

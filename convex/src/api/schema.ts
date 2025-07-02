@@ -7,6 +7,7 @@ import type { WithoutSystemFields } from 'convex/server'
 
 export const Dispatches = Table('dispatches', {
   dispatchId: v.number(),
+  narrative: v.optional(v.string()),
   type: v.string(),
   message: v.optional(v.union(v.string(), v.null())),
   address: v.string(),

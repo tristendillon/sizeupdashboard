@@ -1,4 +1,5 @@
 // convex/recipes.ts
+import { partial } from 'convex-helpers/validators'
 import { mutation } from '../lib/mutation'
 import { query } from './_generated/server'
 import { Dispatches } from './schema'
@@ -53,7 +54,17 @@ export const getDispatches = query({
   },
 })
 
-export const getLastDispatchTime = query({
+export const updateDispatch = mutation({
+  args: {
+    id: v.id('dispatches'),
+    diff: v.object(partial(Dispatches.withoutSystemFields)),
+  },
+  handler: async (ctx, { id, diff }) => {
+    return await ctx.db.patch(id, diff)
+  },
+})
+
+export const getLastDispatchData = query({
   args: {},
   handler: async (ctx) => {
     const lastDispatch = await ctx.db
@@ -62,8 +73,8 @@ export const getLastDispatchTime = query({
       .order('desc')
       .first()
     if (!lastDispatch) {
-      return 0
+      return null
     }
-    return lastDispatch.dispatchCreatedAt
+    return lastDispatch
   },
 })

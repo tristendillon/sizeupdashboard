@@ -44,6 +44,3 @@ jobs:
             --env-file .env \
             -p "${{ secrets.PORT }}":"${{ secrets.PORT }}" \
             kickedsoda/firstdue-listener:latest
-
-      - name: Clean up env file
-        run: rm .env

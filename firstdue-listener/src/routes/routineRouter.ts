@@ -323,15 +323,6 @@ export abstract class RoutineRouter {
     this.isRunning = true
 
     if (this.onStart) {
-      const startTimer = this.context.logger.perf.start({
-        id: `${this.name}:onStart`,
-        onStart: () => {
-          this.context.logger.info('Executing onStart callback...')
-        },
-        printf: (duration: number) => {
-          return `onStart callback completed in ${duration}ms`
-        },
-      })
 
       try {
         await this.onStart()
@@ -340,7 +331,6 @@ export abstract class RoutineRouter {
         this.isRunning = false
         throw error
       } finally {
-        startTimer.end()
       }
     }
 

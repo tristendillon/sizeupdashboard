@@ -8,13 +8,31 @@ export const createHydrants = mutation({
     hydrants: v.array(v.object(Hydrants.withoutSystemFields)),
   },
   handler: async (ctx, args) => {
-    const { hydrants: hydrantsToUpsert } = args
-    const hydrants = await ctx.db.upsertManyByCustomId(
-      'hydrants',
-      hydrantsToUpsert,
-      'hydrantId'
+    const existingHydrants = await ctx.db.query('hydrants').collect()
+    const existingHydrantsMap = new Map(
+      existingHydrants.map((hydrant) => [hydrant.hydrantId, hydrant])
     )
-    return hydrants
+    const newHydrants = []
+    for (const hydrant of args.hydrants) {
+      if (existingHydrantsMap.has(hydrant.hydrantId)) {
+        const existingHydrant = existingHydrantsMap.get(hydrant.hydrantId)!
+        await ctx.db.patch(existingHydrant._id, {
+          ...hydrant,
+        })
+        newHydrants.push({
+          ...hydrant,
+          _id: existingHydrant._id,
+        })
+        existingHydrantsMap.delete(hydrant.hydrantId)
+      } else {
+        const id = await ctx.db.insert('hydrants', hydrant)
+        newHydrants.push({
+          ...hydrant,
+          _id: id,
+        })
+      }
+    }
+    return newHydrants
   },
 })
 

@@ -4,6 +4,7 @@ import { winstonInstance } from '@/logger'
 import { DispatchRoutineRouter } from './routes/dispatch'
 import { RoutineRouter } from './routes/routineRouter'
 import { WeatherRoutineRouter } from './routes/weather'
+import { HydrantsRoutineRouter } from './routes/hydrants'
 
 export function createApp(): {
   app: express.Application
@@ -13,8 +14,13 @@ export function createApp(): {
 
   const dispatchRouter = new DispatchRoutineRouter()
   const weatherRouter = new WeatherRoutineRouter()
+  const hydrantsRouter = new HydrantsRoutineRouter()
 
-  const routineRoutes: RoutineRouter[] = [dispatchRouter, weatherRouter]
+  const routineRoutes: RoutineRouter[] = [
+    dispatchRouter,
+    weatherRouter,
+    hydrantsRouter,
+  ]
 
   app.use(express.json())
 

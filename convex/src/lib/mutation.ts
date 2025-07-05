@@ -39,14 +39,17 @@ const upsertByCustomId = async <T extends TableNames>(
   data: UpsertData<T>,
   customId: keyof WithoutSystemFields<Doc<T>>
 ) => {
-  const existing = await ctx.db.query(table).collect()
-  const existingItem = existing.find(
-    (item) => item[customId] === data[customId]
-  )
-  if (existingItem) {
+  const existing = await ctx.db
+    .query(table)
+    .withIndex(`by_${String(customId)}`, (q) =>
+      q.eq(String(customId), data[customId])
+    )
+    .first()
+
+  if (existing) {
     return await upsert(ctx, table, {
       ...data,
-      _id: existingItem._id,
+      _id: existing._id,
     })
   }
   return await ctx.db.insert(table, data)

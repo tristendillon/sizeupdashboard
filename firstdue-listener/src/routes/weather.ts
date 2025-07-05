@@ -131,8 +131,8 @@ interface WeatherStats {
   totalWeatherDetailsProcessed: number
   totalCurrentWeatherUpdates: number
   totalDataPointsDeleted: number
-  lastFetchTime?: string
-  lastUpdateTime?: string
+  lastFetchTime?: FormattedDateTime
+  lastUpdateTime?: FormattedDateTime
   errorCount: number
   averageApiResponseTime?: number
   averageProcessingTime?: number
@@ -152,14 +152,12 @@ export class WeatherRoutineRouter extends RoutineRouter {
     super(WEATHER_NAME, {
       ...options,
       onStart: async () => {
-        this.ctx.logger.info('Weather routine starting up...')
-        await this.validateConfiguration()
+        this.validateConfiguration()
         await this.deleteOldWeatherDataWithoutIds()
         await this.getAllWeatherDetails()
         await options.onStart?.()
       },
       onStop: async () => {
-        this.ctx.logger.info('Weather routine shutting down...')
         await options.onStop?.()
       },
     })
@@ -237,7 +235,7 @@ export class WeatherRoutineRouter extends RoutineRouter {
         ids.current,
         ...ids.alerts,
       ]
-      this.stats.lastUpdateTime = new Date().toISOString()
+      this.stats.lastUpdateTime = formatDateTime(new Date())
 
       // Track processing time
       const processingTime = executionTimer.getCurrentDuration()
@@ -246,13 +244,7 @@ export class WeatherRoutineRouter extends RoutineRouter {
         this.processingTimes.shift()
       }
 
-      this.ctx.logger.info('Weather update cycle completed successfully', {
-        hoursProcessed: convexWeatherData.hours.length,
-        daysProcessed: convexWeatherData.days.length,
-        alertsProcessed: convexWeatherData.alerts?.length || 0,
-        detailsProcessed: weatherDetails.length,
-        oldDataCleaned: this.oldWeatherIds.length,
-      })
+      this.ctx.logger.info('Weather update cycle completed successfully')
     } catch (error) {
       this.stats.errorCount++
       this.ctx.logger.error('Weather execution cycle failed', {
@@ -265,19 +257,6 @@ export class WeatherRoutineRouter extends RoutineRouter {
   }
 
   // ==================== ROUTE HANDLERS ====================
-
-  private async handleGetStats(req: Request, res: Response): Promise<void> {
-    const currentStats = this.calculateCurrentStats()
-    res.json({
-      stats: currentStats,
-      weatherDetailsCache: {
-        uniqueDetails: this.weatherDetails.size,
-        sampleDetails: Array.from(this.weatherDetails).slice(0, 10),
-      },
-      oldWeatherIds: this.oldWeatherIds.length,
-      routineStatus: this.getStatus(),
-    })
-  }
 
   private async handleResetStats(req: Request, res: Response): Promise<void> {
     this.stats = this.defaultStats()
@@ -311,7 +290,7 @@ export class WeatherRoutineRouter extends RoutineRouter {
     res: Response
   ): Promise<void> {
     try {
-      await this.validateConfiguration()
+      this.validateConfiguration()
       const url = this.getWeatherUrl()
 
       const testTimer = this.ctx.logger.perf.start({
@@ -458,14 +437,7 @@ export class WeatherRoutineRouter extends RoutineRouter {
   protected async pushWeatherDetails(
     data: OpenMapWeather
   ): Promise<PostWeatherDetail[]> {
-    const detailsTimer = this.ctx.logger.perf.start({
-      id: 'processWeatherDetails',
-      printf: (duration: number) =>
-        `Processed weather details in ${duration}ms`,
-    })
-
     const weatherDetails: PostWeatherDetail[] = []
-    const newDetailsCount = weatherDetails.length
 
     const addWeatherDetail = (weather: OpenMapWeatherMeta) => {
       if (this.weatherDetails.has(weather.id)) return
@@ -498,21 +470,6 @@ export class WeatherRoutineRouter extends RoutineRouter {
     for (const weather of data.current.weather) {
       addWeatherDetail(weather)
     }
-
-    detailsTimer.end()
-
-    this.ctx.logger.info('Weather details processed', {
-      newDetails: weatherDetails.length,
-      totalCached: this.weatherDetails.size,
-      hourlyWeatherTypes: data.hourly
-        .map((h) => h.weather.length)
-        .reduce((a, b) => a + b, 0),
-      dailyWeatherTypes: data.daily
-        .map((d) => d.weather.length)
-        .reduce((a, b) => a + b, 0),
-      currentWeatherTypes: data.current.weather.length,
-    })
-
     return weatherDetails
   }
 
@@ -559,16 +516,9 @@ export class WeatherRoutineRouter extends RoutineRouter {
       }
 
       const data = (await res.json()) as OpenMapWeather
-      this.stats.lastFetchTime = new Date().toISOString()
+      this.stats.lastFetchTime = formatDateTime(new Date())
 
-      this.ctx.logger.info('Weather data fetched successfully', {
-        timezone: data.timezone,
-        currentTemp: data.current.temp,
-        hourlyPoints: data.hourly.length,
-        dailyPoints: data.daily.length,
-        alertsCount: data.alerts?.length || 0,
-        responseTime,
-      })
+      this.ctx.logger.info('Weather data fetched successfully')
 
       return data
     } catch (error) {
@@ -583,11 +533,6 @@ export class WeatherRoutineRouter extends RoutineRouter {
   }
 
   protected parseWeatherData(data: OpenMapWeather): ConvexWeatherData {
-    const parseTimer = this.ctx.logger.perf.start({
-      id: 'parseWeatherData',
-      printf: (duration: number) => `Parsed weather data in ${duration}ms`,
-    })
-
     const convexData: ConvexWeatherData = {
       hours: data.hourly.map((hour) => ({
         dt: hour.dt,
@@ -666,15 +611,6 @@ export class WeatherRoutineRouter extends RoutineRouter {
       })),
     }
 
-    parseTimer.end()
-
-    this.ctx.logger.debug('Weather data parsing completed', {
-      hoursParsed: convexData.hours.length,
-      daysParsed: convexData.days.length,
-      alertsParsed: convexData.alerts?.length || 0,
-      currentWeatherParsed: !!convexData.current,
-    })
-
     return convexData
   }
 
@@ -688,12 +624,6 @@ export class WeatherRoutineRouter extends RoutineRouter {
     if (!config.weather.lng) {
       throw new Error('WEATHER_LNG is not configured')
     }
-
-    this.ctx.logger.debug('Weather configuration validated', {
-      hasApiKey: !!config.weather.apiKey,
-      coordinates: `${config.weather.lat},${config.weather.lng}`,
-      units: config.weather.units,
-    })
   }
 
   private async deleteOldWeatherData(): Promise<void> {
@@ -739,11 +669,6 @@ export class WeatherRoutineRouter extends RoutineRouter {
   private async deleteOldWeatherDataWithoutIds(): Promise<void> {
     const deleteTimer = this.ctx.logger.perf.start({
       id: 'deleteOldWeatherDataWithoutIds',
-      onStart: () => {
-        this.ctx.logger.info(
-          'Cleaning up old weather data without specific IDs'
-        )
-      },
       printf: (duration: number) =>
         `Cleaned up old weather data in ${duration}ms`,
     })
@@ -783,10 +708,7 @@ export class WeatherRoutineRouter extends RoutineRouter {
         weatherDetails.map((detail) => detail.detailId)
       )
 
-      this.ctx.logger.info('Weather details loaded successfully', {
-        detailsCount: this.weatherDetails.size,
-        sampleDetails: Array.from(this.weatherDetails).slice(0, 5),
-      })
+      this.ctx.logger.info('Weather details loaded successfully')
     } catch (error) {
       this.ctx.logger.error('Failed to load weather details', {
         error,
@@ -807,12 +729,7 @@ export class WeatherRoutineRouter extends RoutineRouter {
     const insertTimer = this.ctx.logger.perf.start({
       id: 'insertWeatherData',
       onStart: () => {
-        this.ctx.logger.info('Inserting weather data into database', {
-          hours: data.hours.length,
-          days: data.days.length,
-          alerts: data.alerts?.length || 0,
-          hasCurrent: !!data.current,
-        })
+        this.ctx.logger.info('Inserting weather data into database')
       },
       printf: (duration: number) => `Inserted weather data in ${duration}ms`,
     })
@@ -831,12 +748,7 @@ export class WeatherRoutineRouter extends RoutineRouter {
       this.stats.totalAlertsProcessed += data.alerts?.length || 0
       this.stats.totalCurrentWeatherUpdates += 1
 
-      this.ctx.logger.info('Weather data inserted successfully', {
-        hoursInserted: ids.hours.length,
-        daysInserted: ids.days.length,
-        alertsInserted: ids.alerts.length,
-        currentInserted: !!ids.current,
-      })
+      this.ctx.logger.info('Weather data inserted successfully')
 
       return ids
     } catch (error) {
@@ -871,12 +783,7 @@ export class WeatherRoutineRouter extends RoutineRouter {
       })
 
       this.stats.totalWeatherDetailsProcessed += data.length
-      this.ctx.logger.info('Weather details inserted successfully', {
-        newDetails: data.length,
-        sampleDetails: data
-          .slice(0, 3)
-          .map((d) => `${d.main}: ${d.description}`),
-      })
+      this.ctx.logger.info('Weather details inserted successfully')
     } catch (error) {
       this.ctx.logger.error('Failed to insert weather details', {
         error,

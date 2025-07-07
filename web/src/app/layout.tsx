@@ -21,7 +21,6 @@ const geist = Geist({
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const isProduction = process.env.NODE_ENV === "production";
   return (
     <html lang="en" className={`${geist.variable} !smooth-scroll h-screen`}>
       <body className="h-full w-full">

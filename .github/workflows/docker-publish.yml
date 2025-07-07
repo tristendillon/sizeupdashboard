@@ -3,6 +3,9 @@ name: Push Docker Image
 on:
   push:
     branches: ['main']
+    paths:
+      - 'convex/**'
+      - 'firstdue-listener/**'
   pull_request:
     branches: ['main']
     paths:

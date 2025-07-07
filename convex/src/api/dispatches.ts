@@ -78,3 +78,27 @@ export const getLastDispatchData = query({
     return lastDispatch
   },
 })
+
+export const getRecentDispatch = query({
+  args: {
+    since: v.number(),
+  },
+  handler: async (ctx, { since }) => {
+    const sinceDate = new Date(Date.now() - since)
+    const dispatch = await ctx.db
+      .query('dispatches')
+      .withIndex('by_dispatchCreatedAt', (q) =>
+        q.gte('dispatchCreatedAt', sinceDate.getTime())
+      )
+      .order('desc')
+      .first()
+    if (!dispatch) {
+      return {
+        dispatch: null,
+      }
+    }
+    return {
+      dispatch,
+    }
+  },
+})

@@ -57,15 +57,15 @@ export const getHydrantsByBounds = query({
     const { topLeft, bottomRight } = args
     const hydrants = await ctx.db.query('hydrants').collect()
     const filteredHydrants = hydrants.filter((hydrant) => {
+      const minLat = Math.min(topLeft.latitude, bottomRight.latitude)
+      const maxLat = Math.max(topLeft.latitude, bottomRight.latitude)
+      const minLng = Math.min(topLeft.longitude, bottomRight.longitude)
+      const maxLng = Math.max(topLeft.longitude, bottomRight.longitude)
+
       const latInBounds =
-        hydrant.latitude >= bottomRight.latitude &&
-        hydrant.latitude <= topLeft.latitude
+        hydrant.latitude >= minLat && hydrant.latitude <= maxLat
       const longInBounds =
-        topLeft.longitude <= bottomRight.longitude
-          ? hydrant.longitude >= topLeft.longitude &&
-            hydrant.longitude <= bottomRight.longitude
-          : hydrant.longitude >= topLeft.longitude ||
-            hydrant.longitude <= bottomRight.longitude
+        hydrant.longitude >= minLng && hydrant.longitude <= maxLng
 
       return latInBounds && longInBounds
     })

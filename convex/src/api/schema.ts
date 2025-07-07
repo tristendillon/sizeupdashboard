@@ -4,6 +4,7 @@ import { v } from 'convex/values'
 import { Table } from 'convex-helpers/server'
 import type { Doc } from './_generated/dataModel'
 import type { WithoutSystemFields } from 'convex/server'
+import { z } from 'zod'
 
 export const Dispatches = Table('dispatches', {
   dispatchId: v.number(),
@@ -130,6 +131,7 @@ export const CurrentWeather = Table('currentWeather', {
 })
 
 export const CurrentWeatherSchema = convexToZod(CurrentWeather.table.validator)
+
 export type PostCurrentWeather = WithoutSystemFields<Doc<'currentWeather'>>
 
 export const Hydrants = Table('hydrants', {

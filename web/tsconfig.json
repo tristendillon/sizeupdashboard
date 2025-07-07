@@ -27,7 +27,8 @@
     /* Path Aliases */
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@sizeupdashboard/convex/*": ["../convex/src/*"]
     }
   },
   "include": [

@@ -1,4 +1,7 @@
 import { AlertPopover } from "@/components/alert-popover";
+import { Header } from "@/components/ui/header";
+import { AlertPopoverProvider } from "@/providers/alert-popover-provider";
+import { WeatherProvider } from "@/providers/weather-provider";
 import { z } from "zod";
 
 interface ViewTokenPageProps {
@@ -19,10 +22,13 @@ export default async function ViewTokenPage({ params }: ViewTokenPageProps) {
   }
 
   return (
-    <>
-      <main className="h-screen w-screen">
-        <AlertPopover />
-      </main>
-    </>
+    <WeatherProvider>
+      <AlertPopoverProvider>
+        <main className="h-screen w-screen overflow-hidden">
+          <Header />
+          <AlertPopover />
+        </main>
+      </AlertPopoverProvider>
+    </WeatherProvider>
   );
 }

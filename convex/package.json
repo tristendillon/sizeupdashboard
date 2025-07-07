@@ -7,8 +7,10 @@
   "exports": {
     "./lib": "./dist/lib/index.js",
     "./api/_generated/api": "./src/api/_generated/api.js",
+    "./api/_generated/dataModel": "./src/api/_generated/dataModel.js",
     "./api/schema": "./dist/api/schema.js"
   },
+  "types": "./dist/api/schema.d.ts",
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "build:watch": "tsc -p tsconfig.build.json --watch &",

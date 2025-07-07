@@ -1,7 +1,6 @@
 import { env } from "@/env";
 import type { LatLng } from "@/lib/types";
 import { APIProvider, Map } from "@vis.gl/react-google-maps";
-import { forwardRef } from "react";
 
 // Define map types
 export type MapType = "roadmap" | "satellite" | "hybrid" | "terrain";
@@ -11,7 +10,6 @@ interface GoogleMapProps extends React.HTMLAttributes<HTMLDivElement> {
   center: LatLng;
   zoom?: number;
   mapClassName?: string;
-  mapStyle?: string;
   mapType?: MapType;
 }
 
@@ -22,7 +20,6 @@ export function GoogleMap({
   children,
   className,
   mapClassName,
-  mapStyle,
   mapType = "roadmap",
   ref,
   ...props

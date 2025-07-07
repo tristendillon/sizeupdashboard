@@ -160,13 +160,7 @@ const GetWeatherByDateRange = async (
     const dayObj = new Date(day.dt * 1000)
     return dayObj >= startDate && dayObj <= endDate
   })
-  const joinedDays = await Promise.all(
-    realWeatherDays.map(async (day) => {
-      const details = await GetWeatherDetails(ctx, day.weather)
-      return { ...day, weather: details }
-    })
-  )
-  return joinedDays
+  return realWeatherDays
 }
 
 const GetWeatherHoursByDate = async (ctx: QueryCtx, date: number) => {
@@ -178,30 +172,8 @@ const GetWeatherHoursByDate = async (ctx: QueryCtx, date: number) => {
     const hourObj = new Date(hour.dt * 1000)
     return hourObj >= startOfDay && hourObj <= endOfDay
   })
-  const joinedHours = await Promise.all(
-    realWeatherHours.map(async (hour) => {
-      const details = await GetWeatherDetails(ctx, hour.weather)
-      return { ...hour, weather: details }
-    })
-  )
-  return joinedHours
+  return realWeatherHours
 }
-
-// const GetWeatherHoursByDateRange = async (
-//   ctx: QueryCtx,
-//   start: number,
-//   end: number
-// ): Promise<Doc<'weatherHours'>[]> => {
-//   const startDate = new Date(start * 1000)
-//   const endDate = new Date(end * 1000)
-//   const weatherHours = await ctx.db.query('weatherHours').collect()
-//   const realWeatherHours = weatherHours.filter((hour) => {
-//     const hourObj = new Date(hour.dt * 1000)
-//     return hourObj >= startDate && hourObj <= endDate
-//   })
-//   return realWeatherHours
-// }
-
 export const getWeatherByDate = query({
   args: {
     date: v.number(),
@@ -226,21 +198,20 @@ export const getWeatherForecast = query({
   },
   handler: async (ctx, args) => {
     const { date, days } = args
+    const alerts = await ctx.db.query('activeWeatherAlerts').collect()
     const currentWeather = await ctx.db.query('currentWeather').first()
-    const joinedCurrentWeather = {
-      ...currentWeather,
-      weather: await GetWeatherDetails(ctx, currentWeather?.weather ?? []),
-    }
     const weatherDays = await GetWeatherByDateRange(
       ctx,
       date,
       date + days * 24 * 60 * 60
     )
     const weatherHours = await GetWeatherHoursByDate(ctx, date)
-    return {
+    const value = {
       days: weatherDays,
       hours: weatherHours,
-      current: joinedCurrentWeather,
+      current: currentWeather,
+      alerts: alerts,
     }
+    return value
   },
 })

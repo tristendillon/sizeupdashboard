@@ -4,6 +4,7 @@ import React from "react";
 import { Marker } from "@vis.gl/react-google-maps";
 import { useBounds } from "@/hooks/use-bounds";
 import type { LatLngBounds } from "@/lib/types";
+import { getFlowRateColor } from "@/lib/utils";
 
 interface HydrantsRendererProps {
   mapId: string;
@@ -12,11 +13,11 @@ interface HydrantsRendererProps {
 export function HydrantsRenderer({ mapId }: HydrantsRendererProps) {
   const mapBounds = useBounds(mapId);
 
+  console.log(mapBounds);
   if (!mapBounds) {
     return null;
   }
 
-  console.log(mapBounds);
   return <Hydrants {...mapBounds} />;
 }
 
@@ -42,13 +43,20 @@ const Hydrants = (bounds: LatLngBounds) => {
   if (error) {
     return <div>Error: {error.message}</div>;
   }
-  console.log(data);
+  const hydrantsWithIcons = data.map((hydrant) => ({
+    ...hydrant,
+    icon: `icons/hydrants/hydrant-${getFlowRateColor(Number(hydrant.calculatedFlowRate))}.png`,
+  }));
   return (
     <React.Fragment>
-      {data.map((hydrant) => (
+      {hydrantsWithIcons.map((hydrant) => (
         <Marker
           key={hydrant._id}
           position={{ lat: hydrant.latitude, lng: hydrant.longitude }}
+          icon={{
+            url: hydrant.icon,
+            scaledSize: new google.maps.Size(40, 40),
+          }}
         />
       ))}
     </React.Fragment>

@@ -1,99 +1,102 @@
 "use client";
 
-import { useQuery } from "@/hooks/use-query";
 import { useRef } from "react";
 import { GoogleMap } from "../maps/google-map";
-import { HydrantsRenderer } from "../maps/hydrants-renderer";
-import { api } from "@sizeupdashboard/convex/api/_generated/api";
+import { HydrantsRenderer } from "./hydrants-renderer";
+import IncidentMarker from "./incident-marker";
+import { WeatherAlert, WeatherAlertTitle } from "../ui/weather-alert-overlay";
+import AlertPopoverSidebar from "./alert-popover-sidebar";
+import { useAlertPopover } from "@/providers/alert-popover-provider";
+import StreetView from "./street-view";
 
-const SINCE_MS = 1000 * 60 * 2;
 const MAP_ZOOM = 18;
 const MAP_ID = "alert-popover-map";
 
-// const testResponse = {
-//   dispatch: {
-//     _creationTime: 1751761732452.4138,
-//     _id: "jh737m6t8kb025rewgs2vq3nqn7k7mm1",
-//     address: "2121 MEADOWLARK RD",
-//     address2: null,
-//     city: "MANHATTAN",
-//     dispatchCreatedAt: 1751761710000,
-//     dispatchId: 38176469,
-//     incidentTypeCode: "ALARM FIRE",
-//     latitude: 39.208423,
-//     longitude: -96.577489,
-//     message: null,
-//     narrative: `2025-07-05 19:31:03: **RP DARLEEN PH / 785-537-4610 STATES SLOAN HOUSE FIRE ALARM GOING OFF. DOES NOT SEE OR SMELL ANY SMOKE.
-// 2025-07-05 19:31:01: **OUTSIDE RM P-105
-// 2025-07-05 19:30:41: **RP DARLEEN STATES SLOAN HOUSE FIRE ALARM GOING OFF. DOES NOT SEE OR SMELL ANY SMOKE.
-// 2025-07-05 19:30:03: - The phone number of the business/resident/owner is: MIKE DAVIS PH/ 785 313 0561
-//  - N/A - business/resident/owner name has already been obtained.
-//  - There is no reference number for this alarm.
-// 2025-07-05 19:29:25: Dispatch Code: 52B06 (Unknown situation (investigation/call box))
-// Suffix: G (General/Fire)
-// Unit Response: Bravo
-//  - The caller is an alarm monitoring company.
-//  - The type of structure involved is: MEADOWLARK
-//  - It is a general/fire alarm.
-//  - The area or zone/room activated is: ZONE 81
-// 2025-07-05 19:28:43: Chief Complaint: Alarm monitoring company
-
-// Contact: OPER/ 131
-// Phone: (877)532-1500
-// TIME:
-// CODE:
-// DATE:
-// INCIDENT: , 250001642
-// ZONE:`,
-//     stateCode: "KS",
-//     statusCode: "open",
-//     type: "ALARM FIRE",
-//     unitCodes: ["E1", "Q2"],
-//     xrefId: "1820043",
-//   },
-// };
+const sampleAlerts: WeatherAlert[] = [
+  {
+    senderName: "National Weather Service",
+    event: "Tornado Warning",
+    start: Date.now(),
+    end: Date.now() + 2 * 60 * 60 * 1000,
+    description:
+      "A tornado warning has been issued for the immediate area. Take shelter immediately in a sturdy building.",
+    tags: ["Severe", "Immediate Action"],
+  },
+  {
+    senderName: "NWS Storm Prediction Center",
+    event: "Severe Thunderstorm Watch",
+    start: Date.now() - 30 * 60 * 1000,
+    end: Date.now() + 4 * 60 * 60 * 1000,
+    description:
+      "Conditions are favorable for severe thunderstorms with large hail and damaging winds.",
+    tags: ["Watch", "Hail", "High Winds"],
+  },
+  {
+    senderName: "Local Emergency Management",
+    event: "Fire Ban in Effect",
+    start: Date.now() - 24 * 60 * 60 * 1000,
+    end: Date.now() + 7 * 24 * 60 * 60 * 1000,
+    description:
+      "Due to dry conditions and high fire danger, all outdoor burning is prohibited.",
+    tags: ["Fire Safety", "Outdoor Burning"],
+  },
+];
 
 export function AlertPopover() {
+  // const { weatherAlerts } = useWeather();
+  const weatherAlerts = sampleAlerts;
   const mapSectionRef = useRef<HTMLDivElement>(null);
-  const { data, isPending } = useQuery(api.dispatches.getRecentDispatch, {
-    since: SINCE_MS,
-  });
 
-  // const data = testResponse;
-  // const isPending = false;
-  const shouldRenderNull = isPending || !data?.dispatch;
+  const { dispatch } = useAlertPopover();
 
-  if (shouldRenderNull) {
+  if (!dispatch) {
     return null;
   }
 
   return (
-    <div className="flex h-screen w-screen flex-col bg-red-500">
-      <nav className="bg-blue-600 p-4 text-white">
-        <div className="text-lg font-semibold">Navigation</div>
-      </nav>
-
-      <div className="flex flex-1 flex-col-reverse md:flex-row">
-        <section className="flex min-h-[40vh] min-w-[40%] items-center justify-center bg-green-500 text-white md:h-full">
-          <div className="text-center">
-            <h2 className="mb-2 text-xl font-bold">Section 1</h2>
-            <p>40% width on desktop, bottom on mobile</p>
-          </div>
-        </section>
+    <div className="flex h-screen w-screen flex-col overflow-hidden">
+      <div className="flex h-full w-full flex-1 flex-col-reverse overflow-hidden md:flex-row">
+        <AlertPopoverSidebar />
 
         <GoogleMap
           id={MAP_ID}
           ref={mapSectionRef}
           center={{
-            lat: data.dispatch.latitude,
-            lng: data.dispatch.longitude,
+            lat: dispatch.latitude,
+            lng: dispatch.longitude,
           }}
           mapType="satellite"
           zoom={MAP_ZOOM}
-          className="flex flex-1 items-center justify-center bg-purple-500 text-white md:w-[60%]"
+          className="relative flex h-[40vh] items-center justify-center md:h-[calc(100vh-128px)] md:w-[60%] md:flex-1"
           mapClassName="w-full h-full"
         >
+          <IncidentMarker
+            location={{
+              lat: dispatch.latitude,
+              lng: dispatch.longitude,
+            }}
+            type={dispatch.type}
+          />
           <HydrantsRenderer mapId={MAP_ID} />
+          <div className="absolute right-0 bottom-0 hidden h-[300px] w-[300px] md:block">
+            <StreetView dispatch={dispatch} />
+          </div>
+          {weatherAlerts.length > 0 && (
+            <article className="absolute bottom-0 left-0 flex flex-row gap-1 p-1 md:flex-col">
+              {weatherAlerts.map((alert, index) => (
+                <WeatherAlert
+                  key={index}
+                  alert={alert}
+                  className="inline-block p-2"
+                >
+                  <div className="flex items-center space-x-1">
+                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-white"></span>
+                    <WeatherAlertTitle className="text-sm font-medium" />
+                  </div>
+                </WeatherAlert>
+              ))}
+            </article>
+          )}
         </GoogleMap>
       </div>
     </div>

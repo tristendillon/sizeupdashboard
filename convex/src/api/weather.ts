@@ -7,7 +7,7 @@ import {
   WeatherHours,
   WeatherDetail,
 } from './schema'
-import { QueryCtx, query } from './_generated/server'
+import { type QueryCtx, query } from './_generated/server'
 
 export const createWeatherDetails = mutation({
   args: {
@@ -133,6 +133,13 @@ const GetWeatherByDate = async (ctx: QueryCtx, date: number) => {
     return dayObj >= startOfDay && dayObj <= endOfDay
   })
   const day = realWeatherDays[0]
+  if (!day) {
+    return {
+      days: [],
+      hours: [],
+      current: null,
+    }
+  }
   const details = await GetWeatherDetails(ctx, day.weather)
   const joinedDay = {
     ...day,

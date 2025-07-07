@@ -1,11 +1,11 @@
 import { customMutation } from 'convex-helpers/server/customFunctions'
 import {
   mutation as convexMutation,
-  MutationCtx,
+  type MutationCtx,
 } from '../api/_generated/server'
 import { customCtx } from 'convex-helpers/server/customFunctions'
-import { Doc, Id, TableNames } from '../api/_generated/dataModel'
-import { WithoutSystemFields } from 'convex/server'
+import type { Doc, Id, TableNames } from '../api/_generated/dataModel'
+import type { WithoutSystemFields } from 'convex/server'
 
 type UpsertData<T extends TableNames> = WithoutSystemFields<Doc<T>> & {
   _id?: Id<T>

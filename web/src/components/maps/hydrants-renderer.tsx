@@ -1,7 +1,7 @@
-import { useQuery } from "@/lib/use-query";
+import { useQuery } from "@/hooks/use-query";
 import { api } from "@sizeupdashboard/convex/api/_generated/api";
 import React from "react";
-import { Marker, useMap } from "@vis.gl/react-google-maps";
+import { Marker } from "@vis.gl/react-google-maps";
 import { useBounds } from "@/hooks/use-bounds";
 import type { LatLngBounds } from "@/lib/types";
 

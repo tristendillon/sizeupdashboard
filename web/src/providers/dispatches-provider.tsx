@@ -15,7 +15,7 @@ interface DispatchesContextType {
   dispatches: Dispatch[];
   status: PaginationStatus;
   loadMore: (numItems: number) => void;
-  getLocationsSimilarTo: (location: LatLng, distnace: number) => Dispatch[];
+  getDispatchesInRadius: (location: LatLng, distnace: number) => Dispatch[];
 }
 
 const dispatchesContext = createContext<DispatchesContextType | null>(null);
@@ -43,7 +43,7 @@ export function DispatchesProvider({ children }: DispatchesProviderProps) {
     [loadMore],
   );
 
-  const getLocationsSimilarTo = useCallback(
+  const getDispatchesInRadius = useCallback(
     (location: LatLng, distnace: number) => {
       return results.filter((l) => {
         const dL = {
@@ -63,7 +63,7 @@ export function DispatchesProvider({ children }: DispatchesProviderProps) {
         dispatches: results,
         status,
         loadMore: loadMoreDispatches,
-        getLocationsSimilarTo,
+        getDispatchesInRadius,
       }}
     >
       {children}

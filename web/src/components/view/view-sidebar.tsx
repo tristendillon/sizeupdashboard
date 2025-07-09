@@ -18,12 +18,9 @@ type Dispatch = z.infer<typeof DispatchesSchema>;
 export function ViewSidebar() {
   const { dispatch } = useAlertPopover();
   return (
-    <section className="bg-secondary flex h-full max-h-[60vh] w-full flex-col gap-4 overflow-y-auto p-4 md:max-h-[100vh] md:max-w-[40%]">
-      {dispatch ? (
-        <AlertPopoverSidebarContent dispatch={dispatch} />
-      ) : (
-        <NormalSidebarContent />
-      )}
+    <section className="bg-secondary relative flex h-full max-h-[60vh] w-full flex-col gap-4 overflow-y-auto p-4 md:max-h-[100vh] md:max-w-[40%]">
+      {dispatch && <AlertPopoverSidebarContent dispatch={dispatch} />}
+      <NormalSidebarContent />
     </section>
   );
 }
@@ -34,7 +31,7 @@ interface AlertPopoverSidebarProps {
 
 function AlertPopoverSidebarContent({ dispatch }: AlertPopoverSidebarProps) {
   return (
-    <React.Fragment>
+    <div className="bg-secondary absolute inset-0 z-50 space-y-4 p-4">
       <div className="space-y-2">
         <h2 className="text-3xl font-bold tracking-tighter text-red-500 uppercase md:text-6xl">
           {dispatch.type}
@@ -65,7 +62,7 @@ function AlertPopoverSidebarContent({ dispatch }: AlertPopoverSidebarProps) {
           ))}
         </div>
       </div>
-    </React.Fragment>
+    </div>
   );
 }
 

@@ -3,6 +3,7 @@ import { getAlertIconPath, getAlertIconType } from "@/utils/icons";
 import { AdvancedMarker } from "@vis.gl/react-google-maps";
 import { cn } from "@/utils/ui";
 import Image from "next/image";
+import { useDispatches } from "@/providers/dispatches-provider";
 import { useState } from "react";
 import {
   Popover,
@@ -10,30 +11,19 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { useAlertPopover } from "@/providers/alert-popover-provider";
-import { useDispatches } from "@/providers/dispatches-provider";
 
-interface ClusterMarkerProps {
-  location: {
-    lat: number;
-    lng: number;
-  };
-  type: string;
-  dispatches: Dispatch[];
-  children?: React.ReactNode;
+interface NoiseMarkerProps {
+  dispatch: Dispatch;
   className?: string;
 }
 
-interface DispatchCardProps {
+interface NoiseCardProps {
   dispatch: Dispatch;
   className?: string;
   closePopover: () => void;
 }
 
-function DispatchCard({
-  dispatch,
-  className,
-  closePopover,
-}: DispatchCardProps) {
+function NoiseCard({ dispatch, className, closePopover }: NoiseCardProps) {
   const { activateDispatch } = useAlertPopover();
 
   const handleClick = () => {
@@ -68,25 +58,28 @@ function DispatchCard({
   );
 }
 
-export default function ClusterMarker({
-  location,
-  type,
-  dispatches,
-  children,
-  className,
-}: ClusterMarkerProps) {
-  const [isOpen, setIsOpen] = useState(false);
+export default function NoiseMarker({ dispatch, className }: NoiseMarkerProps) {
   const { getDispatchesInRadius } = useDispatches();
+  const [isOpen, setIsOpen] = useState(false);
   const [similarDispatches, setSimilarDispatches] = useState<Dispatch[]>([]);
-  const icon = getAlertIconPath(type);
 
-  const handleMarkerClick = () => {
-    setIsOpen(!isOpen);
+  const icon = getAlertIconPath(dispatch.type);
+  const location = {
+    lat: dispatch.latitude,
+    lng: dispatch.longitude,
+  };
+
+  const handleMarkerClick = async () => {
+    if (isOpen) {
+      setIsOpen(false);
+      return;
+    }
+    setIsOpen(true);
+
     // Get similar dispatches and exclude the current dispatch
-    const simDispatches = getDispatchesInRadius(location, 10);
-    const ids = dispatches.map((d) => d.dispatchId);
-    const uniqueDispatches = simDispatches.filter(
-      (d) => !ids.includes(d.dispatchId),
+    const dispatches = getDispatchesInRadius(location, 10);
+    const uniqueDispatches = dispatches.filter(
+      (d) => d.dispatchId !== dispatch.dispatchId,
     );
     setSimilarDispatches(uniqueDispatches);
   };
@@ -95,43 +88,40 @@ export default function ClusterMarker({
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
         <AdvancedMarker
-          zIndex={10000}
+          zIndex={100}
           onClick={handleMarkerClick}
           className={cn("relative cursor-pointer", className)}
           position={location}
         >
-          <Image src={icon} alt={type} width={40} height={40} />
-          {children}
+          <Image src={icon} alt={dispatch.type} width={40} height={40} />
         </AdvancedMarker>
       </PopoverTrigger>
 
       <PopoverContent className="w-80 p-4">
         <div className="space-y-4">
+          {/* Header */}
           <div className="flex items-center space-x-2">
-            <Image src={icon} alt={type} width={24} height={24} />
+            <Image src={icon} alt={dispatch.type} width={24} height={24} />
             <h3 className="text-lg font-semibold capitalize">
-              {getAlertIconType(type)} Cluster
+              {getAlertIconType(dispatch.type)} Incident
             </h3>
           </div>
 
+          {/* Main dispatch info */}
           <div className="text-muted-foreground text-sm">
-            <p>Contains {dispatches.length} incidents</p>
+            <p>Dispatch ID: {dispatch.dispatchId}</p>
           </div>
 
+          {/* Current dispatch card */}
           <div className="space-y-2">
-            <h4 className="text-sm font-medium">
-              Incidents in Cluster ({dispatches.length}):
-            </h4>
-            <div className="max-h-48 space-y-2 overflow-y-auto pr-2">
-              {dispatches.map((dispatch, index) => (
-                <DispatchCard
-                  key={dispatch.dispatchId || index}
-                  dispatch={dispatch}
-                  closePopover={() => setIsOpen(false)}
-                />
-              ))}
-            </div>
+            <h4 className="text-sm font-medium">Current Incident:</h4>
+            <NoiseCard
+              dispatch={dispatch}
+              closePopover={() => setIsOpen(false)}
+            />
           </div>
+
+          {/* Similar incidents */}
           {similarDispatches.length > 0 && (
             <div className="space-y-2">
               <h4 className="text-sm font-medium">
@@ -139,7 +129,7 @@ export default function ClusterMarker({
               </h4>
               <div className="max-h-48 space-y-2 overflow-y-auto pr-2">
                 {similarDispatches.map((similarDispatch, index) => (
-                  <DispatchCard
+                  <NoiseCard
                     key={similarDispatch.dispatchId || index}
                     dispatch={similarDispatch}
                     closePopover={() => setIsOpen(false)}

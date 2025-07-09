@@ -1,9 +1,9 @@
 import { NORMAL_MAP_ID } from "../view/view-map";
 import { useDispatches } from "@/providers/dispatches-provider";
 import { getAlertIconType } from "@/utils/icons";
-
 import React from "react";
 import ClusterMarker from "./cluster-marker";
+import NoiseMarker from "./noise-marker";
 import { Badge } from "../ui/badge";
 import { useZoom } from "@/hooks/use-zoom";
 import { clusterDispatches } from "@/utils/marker-clusters";
@@ -31,12 +31,13 @@ export function IncidentMarkersRenderer() {
 
   return (
     <React.Fragment>
+      {/* Render clusters */}
       {allClusters.map((cluster, index) => (
         <ClusterMarker
           key={`cluster-${index}`}
-          dispatch={cluster.dispatches[0]!}
+          location={cluster.centroid}
           type={cluster.dispatches[0]!.type}
-          clusterDispatches={cluster.dispatches}
+          dispatches={cluster.dispatches}
         >
           <Badge
             variant="default"
@@ -47,11 +48,11 @@ export function IncidentMarkersRenderer() {
         </ClusterMarker>
       ))}
 
+      {/* Render individual dispatches */}
       {noise.map((dispatch, index) => (
-        <ClusterMarker
-          key={`noise-${index}`}
+        <NoiseMarker
+          key={`dispatch-${dispatch.dispatchId || index}`}
           dispatch={dispatch}
-          type={dispatch.type}
         />
       ))}
     </React.Fragment>

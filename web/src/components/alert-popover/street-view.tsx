@@ -82,12 +82,12 @@ const findNearbyPanorama = async (target: google.maps.LatLng) => {
         ],
       });
       return result;
-    } catch (error) {
+    } catch {
       radius += 10;
-      console.error("Error finding panorama:", error);
     }
   }
 
+  console.error("No panorama found");
   return null;
 };
 

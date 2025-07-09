@@ -1,6 +1,7 @@
 "use client";
 
-import { useActiveDispatch } from "@/hooks/use-active-dispatch";
+import { useQuery } from "@/hooks/use-query";
+import { api } from "@sizeupdashboard/convex/api/_generated/api";
 import type { DispatchesSchema } from "@sizeupdashboard/convex/api/schema";
 import { createContext, useCallback, useContext, useState } from "react";
 import type { z } from "zod";
@@ -19,24 +20,25 @@ export const AlertPopoverContext =
 interface AlertPopoverProviderProps {
   children: React.ReactNode;
 }
-
+const SINCE_MS = 1000 * 60 * 2;
 export function AlertPopoverProvider({ children }: AlertPopoverProviderProps) {
-  const [dispatch, setDispatch] = useState<Dispatch | null>(null);
-
-  useActiveDispatch((dispatch) => {
-    setDispatch(dispatch);
+  const [activeDispatch, setActiveDispatch] = useState<Dispatch | null>(null);
+  const { data } = useQuery(api.dispatches.getRecentDispatch, {
+    since: SINCE_MS,
   });
 
   const dismissDispatch = useCallback(() => {
-    setDispatch(null);
-  }, [setDispatch]);
+    setActiveDispatch(null);
+  }, [setActiveDispatch]);
 
   const activateDispatch = useCallback(
     (dispatch: Dispatch) => {
-      setDispatch(dispatch);
+      setActiveDispatch(dispatch);
     },
-    [setDispatch],
+    [setActiveDispatch],
   );
+
+  const dispatch = data?.dispatch ?? activeDispatch;
 
   return (
     <AlertPopoverContext.Provider

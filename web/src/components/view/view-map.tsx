@@ -1,5 +1,6 @@
 "use client";
 
+import { MapPin } from "lucide-react";
 import { useAlertPopover } from "@/providers/alert-popover-provider";
 import { GoogleMap } from "../maps/google-map";
 import { HydrantsRenderer } from "../alert-popover/hydrants-renderer";
@@ -13,11 +14,8 @@ import { useWeather } from "@/providers/weather-provider";
 import StreetView from "../alert-popover/street-view";
 import { WeatherAlert, WeatherAlertTitle } from "../ui/weather-alert-overlay";
 import { useDispatches } from "@/providers/dispatches-provider";
-import {
-  getCenterOfLatLngs,
-  getSmartZoomIgnoringOutliers,
-} from "@/utils/lat-lng";
-import { useEffect, useRef, useState } from "react";
+import { getCenterOfLatLngs } from "@/utils/lat-lng";
+import { useRef } from "react";
 import { IncidentMarkersRenderer } from "../maps/dispatch-marker-renderer";
 
 type Dispatch = z.infer<typeof DispatchesSchema>;
@@ -50,26 +48,64 @@ export function ViewMap() {
       )}
     </>
   );
-  if (!dispatch) {
-    return (
+  return (
+    <div className="relative flex h-[40vh] items-center justify-center md:h-[calc(100vh-128px)] md:w-[60%] md:flex-1">
       <NormalMap
-        className="relative flex h-[40vh] items-center justify-center md:h-[calc(100vh-128px)] md:w-[60%] md:flex-1"
+        className="relative flex h-full w-full items-center justify-center"
         mapClassName="w-full h-full"
       >
         {mapChildren}
       </NormalMap>
-    );
-  }
-  return (
-    <PopoverMap
-      dispatch={dispatch}
-      className="relative flex h-[40vh] items-center justify-center md:h-[calc(100vh-128px)] md:w-[60%] md:flex-1"
-      mapClassName="w-full h-full"
-    >
-      {mapChildren}
-    </PopoverMap>
+      {dispatch && (
+        <PopoverMap
+          dispatch={dispatch}
+          className="absolute inset-0 z-50 flex h-full w-full items-center justify-center"
+          mapClassName="w-full h-full"
+        >
+          {mapChildren}
+        </PopoverMap>
+      )}
+    </div>
   );
 }
+
+const MapLoadingState = () => {
+  return (
+    <div className="bg-muted/50 flex h-full w-full items-center justify-center">
+      <div className="p-8 text-center">
+        {/* Animated map icon */}
+        <div className="mb-6">
+          <MapPin className="text-primary mx-auto h-16 w-16 animate-pulse" />
+        </div>
+
+        {/* Loading message */}
+        <h3 className="text-foreground mb-2 text-lg font-medium">
+          Loading map...
+        </h3>
+
+        <p className="text-muted-foreground mb-6 text-sm">
+          Please wait while we load your map data
+        </p>
+
+        {/* Loading dots animation */}
+        <div className="flex justify-center space-x-1">
+          <div
+            className="bg-primary h-2 w-2 animate-bounce rounded-full"
+            style={{ animationDelay: "0ms" }}
+          />
+          <div
+            className="bg-primary h-2 w-2 animate-bounce rounded-full"
+            style={{ animationDelay: "150ms" }}
+          />
+          <div
+            className="bg-primary h-2 w-2 animate-bounce rounded-full"
+            style={{ animationDelay: "300ms" }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
 
 interface NormalMapProps {
   className?: string;
@@ -84,28 +120,14 @@ export function NormalMap({
 }: NormalMapProps) {
   const { dispatches, status } = useDispatches();
   const mapRef = useRef<HTMLDivElement | null>(null);
-  const [zoom, setZoom] = useState(10);
 
   const latLngs = dispatches.map((d) => ({
     lat: d.latitude,
     lng: d.longitude,
   }));
   const center = getCenterOfLatLngs(latLngs);
-  useEffect(() => {
-    if (mapRef.current) {
-      const rect = mapRef.current.getBoundingClientRect();
-      const zoom = getSmartZoomIgnoringOutliers(
-        latLngs,
-        rect.width,
-        rect.height,
-      );
-      setZoom(zoom);
-    }
-  }, [latLngs]);
   if (status === "LoadingFirstPage") {
-    return (
-      <div className="flex h-full w-full items-center justify-center"></div>
-    );
+    return <MapLoadingState />;
   }
   return (
     <GoogleMap
@@ -113,7 +135,7 @@ export function NormalMap({
       id={NORMAL_MAP_ID}
       center={center}
       mapType="satellite"
-      zoom={zoom}
+      zoom={14}
       className={className}
       mapClassName={mapClassName}
     >

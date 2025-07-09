@@ -11,6 +11,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { useAlertPopover } from "@/providers/alert-popover-provider";
+import useDebounce from "@/hooks/use-debounce";
 
 interface NoiseMarkerProps {
   dispatch: Dispatch;
@@ -60,7 +61,8 @@ function NoiseCard({ dispatch, className, closePopover }: NoiseCardProps) {
 
 export default function NoiseMarker({ dispatch, className }: NoiseMarkerProps) {
   const { getDispatchesInRadius } = useDispatches();
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, _setIsOpen] = useState(false);
+  const setIsOpen = useDebounce(_setIsOpen, 100);
   const [similarDispatches, setSimilarDispatches] = useState<Dispatch[]>([]);
 
   const icon = getAlertIconPath(dispatch.type);

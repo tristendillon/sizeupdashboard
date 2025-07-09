@@ -37,7 +37,7 @@ const Hydrants = (bounds: LatLngBounds) => {
   );
 
   if (isPending) {
-    return <div>Loading...</div>;
+    return null;
   }
 
   if (error) {

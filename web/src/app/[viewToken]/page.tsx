@@ -3,8 +3,12 @@ import { ViewMap } from "@/components/view/view-map";
 import { ViewSidebar } from "@/components/view/view-sidebar";
 import { AlertPopoverProvider } from "@/providers/alert-popover-provider";
 import { DispatchesProvider } from "@/providers/dispatches-provider";
+import { ViewTokenProvider } from "@/providers/view-token-provider";
 import { WeatherProvider } from "@/providers/weather-provider";
 import { z } from "zod";
+
+import { preloadQuery } from "convex/nextjs";
+import { api } from "@sizeupdashboard/convex/api/_generated/api";
 
 interface ViewTokenPageProps {
   params: Promise<{
@@ -22,20 +26,25 @@ export default async function ViewTokenPage({ params }: ViewTokenPageProps) {
   if (error) {
     return <div>Invalid view token</div>;
   }
+  const token = await preloadQuery(api.viewToken.getViewToken, {
+    token: data.viewToken,
+  });
 
   return (
-    <WeatherProvider>
-      <DispatchesProvider>
-        <AlertPopoverProvider>
-          <div className="flex h-screen w-screen flex-col overflow-hidden">
-            <Header />
-            <div className="flex h-full w-full flex-1 flex-col-reverse overflow-hidden md:flex-row">
-              <ViewSidebar />
-              <ViewMap />
+    <ViewTokenProvider preloadedToken={token}>
+      <WeatherProvider>
+        <DispatchesProvider>
+          <AlertPopoverProvider>
+            <div className="flex h-screen w-screen flex-col overflow-hidden">
+              <Header />
+              <div className="flex h-full w-full flex-1 flex-col-reverse overflow-hidden md:flex-row">
+                <ViewSidebar />
+                <ViewMap />
+              </div>
             </div>
-          </div>
-        </AlertPopoverProvider>
-      </DispatchesProvider>
-    </WeatherProvider>
+          </AlertPopoverProvider>
+        </DispatchesProvider>
+      </WeatherProvider>
+    </ViewTokenProvider>
   );
 }

@@ -226,7 +226,9 @@ export default defineSchema(
     currentWeather: CurrentWeather.table,
     hydrants: Hydrants.table.index('by_hydrantId', ['hydrantId']),
 
-    viewTokens: ViewTokens.table.index('by_name', ['name']),
+    viewTokens: ViewTokens.table
+      .index('by_token', ['token'])
+      .index('by_name', ['name']),
     redactionLevels: RedactionLevels.table.index('by_name', ['name']),
     dispatchTypes: DispatchTypes.table.index('by_code', ['code']),
     priorityLevels: PriorityLevels.table.index('by_name', ['name']),

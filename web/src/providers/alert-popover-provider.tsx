@@ -11,6 +11,7 @@ import {
   useState,
 } from "react";
 import type { z } from "zod";
+import { useViewToken } from "./view-token-provider";
 
 type Dispatch = z.infer<typeof DispatchesSchema>;
 
@@ -29,8 +30,10 @@ interface AlertPopoverProviderProps {
 const SINCE_MS = 1000 * 60 * 2;
 export function AlertPopoverProvider({ children }: AlertPopoverProviderProps) {
   const [activeDispatch, setActiveDispatch] = useState<Dispatch | null>(null);
+  const { tokenId } = useViewToken();
   const { data } = useQuery(api.dispatches.getRecentDispatch, {
     since: SINCE_MS,
+    viewToken: tokenId,
   });
 
   useEffect(() => {

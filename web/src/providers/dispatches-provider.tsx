@@ -8,6 +8,7 @@ import { usePaginatedQuery } from "convex-helpers/react/cache/hooks";
 import type { PaginationStatus } from "convex/react";
 import type { LatLng } from "@/lib/types";
 import { getLatLngDistances } from "@/utils/lat-lng";
+import { useViewToken } from "./view-token-provider";
 
 type Dispatch = z.infer<typeof DispatchesSchema>;
 
@@ -28,9 +29,12 @@ export const DEFAULT_NUM_DISPATCHES = 10;
 export const DEFAULT_NUM_DISPATCH_LOCATIONS = 100;
 
 export function DispatchesProvider({ children }: DispatchesProviderProps) {
+  const { tokenId } = useViewToken();
   const { results, loadMore, status } = usePaginatedQuery(
     api.dispatches.getDispatches,
-    {},
+    {
+      viewToken: tokenId,
+    },
     {
       initialNumItems: DEFAULT_NUM_DISPATCHES,
     },

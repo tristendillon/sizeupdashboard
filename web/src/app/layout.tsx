@@ -6,7 +6,6 @@ import { Geist } from "next/font/google";
 import { TRPCReactProvider } from "@/trpc/react";
 import { ConvexClientProvider } from "@/providers/convex-client-proivder";
 import { ConvexQueryCacheProvider } from "convex-helpers/react/cache/provider";
-import { TooltipProvider } from "@/components/ui/tooltip";
 
 export const metadata: Metadata = {
   title: "MFD Alerts",
@@ -30,9 +29,7 @@ export default function RootLayout({
       <body className="h-full w-full">
         <TRPCReactProvider>
           <ConvexClientProvider>
-            <ConvexQueryCacheProvider>
-              <TooltipProvider>{children}</TooltipProvider>
-            </ConvexQueryCacheProvider>
+            <ConvexQueryCacheProvider>{children}</ConvexQueryCacheProvider>
           </ConvexClientProvider>
         </TRPCReactProvider>
       </body>

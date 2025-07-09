@@ -13,17 +13,12 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "../ui/skeleton";
 import { relativeTs } from "@/utils/timestamp";
 import { useAlertPopover } from "@/providers/alert-popover-provider";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 type Dispatch = z.infer<typeof DispatchesSchema>;
 
 export function ViewSidebar() {
   const { dispatch } = useAlertPopover();
   return (
-    <section className="bg-secondary relative flex h-full max-h-[60vh] w-full flex-col gap-4 overflow-y-auto p-4 md:max-h-[100vh] md:max-w-[40%]">
+    <section className="bg-secondary overflow-y-none relative flex h-full max-h-[60vh] w-full flex-col md:max-h-[100vh] md:max-w-[40%]">
       {dispatch && <AlertPopoverSidebarContent dispatch={dispatch} />}
       <NormalSidebarContent />
     </section>
@@ -109,7 +104,7 @@ export function NormalSidebarContent() {
   }, [status, loadMore, loadCount]);
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 overflow-y-auto p-4">
       {status === "LoadingFirstPage" &&
         Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
 
@@ -157,55 +152,48 @@ function DispatchCard({ dispatch, activateDispatch }: DispatchCardProps) {
   const [expanded, setExpanded] = useState(false);
 
   return (
-    <Tooltip delayDuration={200} followMouse>
-      <TooltipTrigger asChild>
-        <Card className="relative bg-zinc-900 p-0 text-zinc-200">
-          <a
-            className="pointer-events-auto absolute inset-0 cursor-pointer"
-            onClick={() => activateDispatch(dispatch)}
-          />
-          <CardContent className="pointer-events-none relative z-10 p-3 px-5">
-            <div className="mb-1 flex items-center justify-between">
-              <div className="font-semibold">{dispatch.type}</div>
-              <div className="text-xs text-zinc-400">
-                {relativeTs(dispatch.dispatchCreatedAt)}
-              </div>
+    <Card className="relative bg-zinc-900 p-0 text-zinc-200">
+      <a
+        className="pointer-events-auto absolute inset-0 cursor-pointer"
+        onClick={() => activateDispatch(dispatch)}
+      />
+      <CardContent className="pointer-events-none relative z-10 p-3 px-5">
+        <div className="mb-1 flex items-center justify-between">
+          <div className="font-semibold">{dispatch.type}</div>
+          <div className="text-xs text-zinc-400">
+            {relativeTs(dispatch.dispatchCreatedAt)}
+          </div>
+        </div>
+        <pre
+          className={`mb-1 whitespace-pre-wrap ${expanded ? "" : "line-clamp-3"}`}
+        >
+          {dispatch.narrative ?? "No details available"}
+        </pre>
+        <div className="flex items-center justify-between">
+          <div>
+            {dispatch.narrative && dispatch.narrative.length > 80 && (
+              <button
+                className="pointer-events-auto z-10 text-xs text-blue-400 hover:underline"
+                onClick={() => setExpanded(!expanded)}
+              >
+                {expanded ? "Show less" : "Show more"}
+              </button>
+            )}
+            <div className="mb-2 text-xs text-zinc-500">
+              {dispatch.address ?? "[REDACTED]"}
             </div>
-            <pre
-              className={`mb-1 whitespace-pre-wrap ${expanded ? "" : "line-clamp-3"}`}
-            >
-              {dispatch.narrative ?? "No details available"}
-            </pre>
-            <div className="flex items-center justify-between">
-              <div>
-                {dispatch.narrative && dispatch.narrative.length > 80 && (
-                  <button
-                    className="pointer-events-auto z-10 text-xs text-blue-400 hover:underline"
-                    onClick={() => setExpanded(!expanded)}
-                  >
-                    {expanded ? "Show less" : "Show more"}
-                  </button>
-                )}
-                <div className="mb-2 text-xs text-zinc-500">
-                  {dispatch.address ?? "[REDACTED]"}
-                </div>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {dispatch.unitCodes
-                  .filter((unit) => isNaN(Number(unit)))
-                  .map((unit) => (
-                    <Badge key={unit} variant="secondary">
-                      {unit}
-                    </Badge>
-                  ))}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </TooltipTrigger>
-      <TooltipContent>
-        <p>View dispatch</p>
-      </TooltipContent>
-    </Tooltip>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {dispatch.unitCodes
+              .filter((unit) => isNaN(Number(unit)))
+              .map((unit) => (
+                <Badge key={unit} variant="secondary">
+                  {unit}
+                </Badge>
+              ))}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/popover";
 import { useAlertPopover } from "@/providers/alert-popover-provider";
 import { useDispatches } from "@/providers/dispatches-provider";
+import useDebounce from "@/hooks/use-debounce";
 
 interface ClusterMarkerProps {
   location: {
@@ -75,13 +76,14 @@ export default function ClusterMarker({
   children,
   className,
 }: ClusterMarkerProps) {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, _setIsOpen] = useState(false);
+  const setIsOpen = useDebounce(_setIsOpen, 100);
   const { getDispatchesInRadius } = useDispatches();
   const [similarDispatches, setSimilarDispatches] = useState<Dispatch[]>([]);
   const icon = getAlertIconPath(type);
 
   const handleMarkerClick = () => {
-    setIsOpen(!isOpen);
+    setIsOpen((prev) => !prev);
     // Get similar dispatches and exclude the current dispatch
     const simDispatches = getDispatchesInRadius(location, 10);
     const ids = dispatches.map((d) => d.dispatchId);
@@ -92,7 +94,13 @@ export default function ClusterMarker({
   };
 
   return (
-    <Popover open={isOpen} onOpenChange={setIsOpen}>
+    <Popover
+      open={isOpen}
+      onOpenChange={(open) => {
+        console.log("OPEN CHANGE", open);
+        setIsOpen(open);
+      }}
+    >
       <PopoverTrigger asChild>
         <AdvancedMarker
           zIndex={10000}

@@ -535,7 +535,7 @@ export class WeatherRoutineRouter extends RoutineRouter {
   protected parseWeatherData(data: OpenMapWeather): ConvexWeatherData {
     const convexData: ConvexWeatherData = {
       hours: data.hourly.map((hour) => ({
-        dt: hour.dt,
+        dt: hour.dt * 1000,
         temp: hour.temp,
         feelsLike: hour.feels_like,
         pressure: hour.pressure,
@@ -551,7 +551,7 @@ export class WeatherRoutineRouter extends RoutineRouter {
         visibility: hour.visibility,
       })),
       days: data.daily.map((day) => ({
-        dt: day.dt,
+        dt: day.dt * 1000,
         sunrise: day.sunrise,
         sunset: day.sunset,
         moonrise: day.moonrise,
@@ -585,7 +585,7 @@ export class WeatherRoutineRouter extends RoutineRouter {
         rain: day.rain,
       })),
       current: {
-        dt: data.current.dt,
+        dt: data.current.dt * 1000,
         sunrise: data.current.sunrise,
         sunset: data.current.sunset,
         temp: data.current.temp,
@@ -604,8 +604,8 @@ export class WeatherRoutineRouter extends RoutineRouter {
       alerts: data.alerts?.map((alert) => ({
         senderName: alert.sender_name,
         event: alert.event,
-        start: alert.start,
-        end: alert.end,
+        start: alert.start * 1000,
+        end: alert.end * 1000,
         description: alert.description,
         tags: alert.tags,
       })),

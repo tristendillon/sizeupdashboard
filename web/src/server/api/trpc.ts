@@ -9,7 +9,8 @@
 import { initTRPC } from "@trpc/server";
 import superjson from "superjson";
 import { ZodError } from "zod";
-
+import { client } from "@sizeupdashboard/convex/lib/convex-client";
+import { env } from "@/env";
 /**
  * 1. CONTEXT
  *
@@ -25,6 +26,7 @@ import { ZodError } from "zod";
 export const createTRPCContext = async (opts: { headers: Headers }) => {
   return {
     ...opts,
+    db: client(env.NEXT_PUBLIC_CONVEX_URL),
   };
 };
 

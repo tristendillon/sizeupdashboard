@@ -34,10 +34,6 @@ interface WeatherProviderProps {
 export const WeatherProvider: React.FC<WeatherProviderProps> = ({
   children,
 }) => {
-  // const forecast = useQuery(api.weather.getWeatherForecast, {
-  //   days: 3,
-  //   date: Date.now() / 1000,
-  // });
   const today = useMemo(() => new Date(), []);
   const {
     data: forecast,
@@ -45,7 +41,7 @@ export const WeatherProvider: React.FC<WeatherProviderProps> = ({
     error: forecastError,
   } = useQuery(api.weather.getWeatherForecast, {
     days: 3,
-    date: today.getTime() / 1000,
+    date: today.getTime(),
   });
   const {
     data: weatherDetails,

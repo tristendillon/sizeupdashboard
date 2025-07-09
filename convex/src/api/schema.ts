@@ -21,6 +21,7 @@ export const Dispatches = Table('dispatches', {
   incidentTypeCode: v.optional(v.union(v.string(), v.null())),
   statusCode: v.optional(v.union(v.string(), v.null())),
   xrefId: v.optional(v.union(v.string(), v.null())),
+  dispatchType: v.optional(v.id('dispatchTypes')),
   dispatchCreatedAt: v.number(),
 })
 export const DispatchesSchema = convexToZod(Dispatches.table.validator)
@@ -148,6 +149,67 @@ export const Hydrants = Table('hydrants', {
 export const HydrantsSchema = convexToZod(Hydrants.table.validator)
 export type PostHydrant = WithoutSystemFields<Doc<'hydrants'>>
 
+export const ViewTokens = Table('viewTokens', {
+  name: v.string(),
+  lastPing: v.number(),
+  token: v.string(),
+})
+
+export const ViewTokensSchema = convexToZod(ViewTokens.table.validator)
+export type PostViewToken = WithoutSystemFields<Doc<'viewTokens'>>
+
+export const groupEnum = v.union(
+  v.literal('aircraft'),
+  v.literal('fire'),
+  v.literal('hazmat'),
+  v.literal('mva'),
+  v.literal('marine'),
+  v.literal('law'),
+  v.literal('rescue'),
+  v.literal('medical'),
+  v.literal('other')
+)
+
+export const DispatchTypes = Table('dispatchTypes', {
+  // This is like an exact matching forced lookup for the descriptor, so we can store "ALARM-FIRE" and then have a system _id for it
+  code: v.string(),
+  group: groupEnum,
+  name: v.optional(v.string()),
+})
+
+export const DispatchTypesSchema = convexToZod(DispatchTypes.table.validator)
+export type PostDispatchType = WithoutSystemFields<Doc<'dispatchTypes'>>
+
+export const PriorityLevels = Table('priorityLevels', {
+  name: v.string(),
+  // This is the priority of the type
+  priority: v.number(),
+})
+
+export const PriorityLevelsSchema = convexToZod(PriorityLevels.table.validator)
+export type PostPriorityLevel = WithoutSystemFields<Doc<'priorityLevels'>>
+
+export const RedactionLevels = Table('redactionLevels', {
+  name: v.string(),
+  priority: v.id('priorityLevels'),
+  // This will look like "^MED" or "^FIRE" to match the any MED or any FIRE descriptor
+  // field matches against the dispatchType code
+  dispatchTypeRegex: v.string(),
+  // This will search for keywords in the descriptor of the cad alert
+  keywords: v.array(v.string()),
+  // This will do direct matching for redaction level.
+  dispatchTypes: v.array(v.id('dispatchTypes')),
+
+  // The fields that are redacted from the alert when accessed by the public
+  // if public facing dashboards exists
+  redactionFields: v.array(v.string()),
+})
+
+export const RedactionLevelsSchema = convexToZod(
+  RedactionLevels.table.validator
+)
+export type PostRedactionLevel = WithoutSystemFields<Doc<'redactionLevels'>>
+
 export default defineSchema(
   {
     dispatches: Dispatches.table
@@ -163,6 +225,11 @@ export default defineSchema(
     weatherDetails: WeatherDetail.table.index('by_detailId', ['detailId']),
     currentWeather: CurrentWeather.table,
     hydrants: Hydrants.table.index('by_hydrantId', ['hydrantId']),
+
+    viewTokens: ViewTokens.table.index('by_name', ['name']),
+    redactionLevels: RedactionLevels.table.index('by_name', ['name']),
+    dispatchTypes: DispatchTypes.table.index('by_code', ['code']),
+    priorityLevels: PriorityLevels.table.index('by_name', ['name']),
   },
   // If you ever get an error about schema mismatch
   // between your data and your schema, and you cannot

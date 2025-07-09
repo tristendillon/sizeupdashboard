@@ -23,8 +23,8 @@ export function IncidentMarkersRenderer() {
     (d) => getAlertIconType(d.type) === "medical",
   );
 
-  const fireClusters = clusterDispatches(zoom, fireDispatches);
-  const medicalClusters = clusterDispatches(zoom, medicalDispatches);
+  const fireClusters = clusterDispatches(zoom, fireDispatches, "grid");
+  const medicalClusters = clusterDispatches(zoom, medicalDispatches, "grid");
 
   const allClusters = [...fireClusters.clusters, ...medicalClusters.clusters];
   const noise = [...fireClusters.noise, ...medicalClusters.noise];

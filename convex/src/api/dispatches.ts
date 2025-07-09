@@ -1,11 +1,11 @@
 // convex/recipes.ts
 import { partial } from 'convex-helpers/validators'
 import { mutation } from '../lib/mutation'
-import { QueryCtx, query } from './_generated/server'
+import { type QueryCtx, query } from './_generated/server'
 import { Dispatches } from './schema'
-import { GenericMutationCtx, paginationOptsValidator } from 'convex/server'
+import { paginationOptsValidator } from 'convex/server'
 import { v } from 'convex/values'
-import { Doc } from './_generated/dataModel'
+import { type Doc } from './_generated/dataModel'
 
 export const paginatedClearDispatches = mutation({
   args: {

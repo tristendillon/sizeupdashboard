@@ -3,7 +3,13 @@
 import { useQuery } from "@/hooks/use-query";
 import { api } from "@sizeupdashboard/convex/api/_generated/api";
 import type { DispatchesSchema } from "@sizeupdashboard/convex/api/schema";
-import { createContext, useCallback, useContext, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 import type { z } from "zod";
 
 type Dispatch = z.infer<typeof DispatchesSchema>;
@@ -27,6 +33,12 @@ export function AlertPopoverProvider({ children }: AlertPopoverProviderProps) {
     since: SINCE_MS,
   });
 
+  useEffect(() => {
+    if (data?.dispatch) {
+      setActiveDispatch(data.dispatch);
+    }
+  }, [data?.dispatch]);
+
   const dismissDispatch = useCallback(() => {
     setActiveDispatch(null);
   }, [setActiveDispatch]);
@@ -38,11 +50,9 @@ export function AlertPopoverProvider({ children }: AlertPopoverProviderProps) {
     [setActiveDispatch],
   );
 
-  const dispatch = data?.dispatch ?? activeDispatch;
-
   return (
     <AlertPopoverContext.Provider
-      value={{ dispatch, dismissDispatch, activateDispatch }}
+      value={{ dispatch: activeDispatch, dismissDispatch, activateDispatch }}
     >
       {children}
     </AlertPopoverContext.Provider>

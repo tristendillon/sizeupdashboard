@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { getAlertIconPath, getLatLngDistances } from "@/lib/utils";
+import { getAlertIconPath } from "@/utils/icons";
+import { getLatLngDistances } from "@/utils/lat-lng";
 import { env } from "@/env";
 import type { DispatchesSchema } from "@sizeupdashboard/convex/api/schema";
 import type { z } from "zod";

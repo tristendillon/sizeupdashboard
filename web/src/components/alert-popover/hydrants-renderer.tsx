@@ -4,7 +4,7 @@ import React from "react";
 import { Marker } from "@vis.gl/react-google-maps";
 import { useBounds } from "@/hooks/use-bounds";
 import type { LatLngBounds } from "@/lib/types";
-import { getFlowRateColor } from "@/lib/utils";
+import { getFlowRateColor } from "@/utils/icons";
 
 interface HydrantsRendererProps {
   mapId: string;

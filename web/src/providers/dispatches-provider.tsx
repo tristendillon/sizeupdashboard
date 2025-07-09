@@ -7,22 +7,15 @@ import type { z } from "zod";
 import { usePaginatedQuery } from "convex-helpers/react/cache/hooks";
 import type { PaginationStatus } from "convex/react";
 import type { LatLng } from "@/lib/types";
+import { getLatLngDistances } from "@/utils/lat-lng";
 
 type Dispatch = z.infer<typeof DispatchesSchema>;
-
-type DistpatchDataMeta = {
-  roughDispatchLocations: {
-    type: string;
-    location: LatLng;
-  }[];
-  status: PaginationStatus;
-};
 
 interface DispatchesContextType {
   dispatches: Dispatch[];
   status: PaginationStatus;
-  loadMore: (numItems?: number) => void;
-  dispatchMeta: DistpatchDataMeta;
+  loadMore: (numItems: number) => void;
+  getLocationsSimilarTo: (location: LatLng, distnace: number) => Dispatch[];
 }
 
 const dispatchesContext = createContext<DispatchesContextType | null>(null);
@@ -42,35 +35,26 @@ export function DispatchesProvider({ children }: DispatchesProviderProps) {
       initialNumItems: DEFAULT_NUM_DISPATCHES,
     },
   );
-  const {
-    results: dispatchLocations,
-    status: dispatchLocationsStatus,
-    loadMore: loadMoreDispatchLocations,
-  } = usePaginatedQuery(
-    api.dispatches.getDispatchLocations,
-    {},
-    {
-      initialNumItems: DEFAULT_NUM_DISPATCH_LOCATIONS,
+
+  const loadMoreDispatches = useCallback(
+    (numItems: number) => {
+      loadMore(numItems);
     },
+    [loadMore],
   );
 
-  // We load more dispatch locations if we're have loaded more plain dispatches than the locations. The locations are
-  // important because it will allow us to show a general location for ALL dispatches. Where we can make a "heatmap" of
-  // the dispatches.
-  const handleLoadMoreDispatches = useCallback(
-    (numItems = DEFAULT_NUM_DISPATCHES) => {
-      if (results.length + numItems > dispatchLocations.length) {
-        loadMoreDispatchLocations(DEFAULT_NUM_DISPATCH_LOCATIONS);
-      } else {
-        loadMore(numItems);
-      }
+  const getLocationsSimilarTo = useCallback(
+    (location: LatLng, distnace: number) => {
+      return results.filter((l) => {
+        const dL = {
+          lat: l.latitude,
+          lng: l.longitude,
+        };
+        const distance = getLatLngDistances(location, dL);
+        return distance < distnace;
+      });
     },
-    [
-      loadMore,
-      results.length,
-      dispatchLocations.length,
-      loadMoreDispatchLocations,
-    ],
+    [results],
   );
 
   return (
@@ -78,11 +62,8 @@ export function DispatchesProvider({ children }: DispatchesProviderProps) {
       value={{
         dispatches: results,
         status,
-        loadMore: handleLoadMoreDispatches,
-        dispatchMeta: {
-          roughDispatchLocations: dispatchLocations,
-          status: dispatchLocationsStatus,
-        },
+        loadMore: loadMoreDispatches,
+        getLocationsSimilarTo,
       }}
     >
       {children}

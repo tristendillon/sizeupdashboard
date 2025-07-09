@@ -9,10 +9,15 @@ export function useBounds(mapId: string) {
   useEffect(() => {
     if (!map) return;
 
-    const mapBounds = map.getBounds();
-    if (mapBounds) {
-      setBounds(mapBounds.toJSON());
-    }
+    const updateBounds = () => {
+      const mapBounds = map.getBounds();
+      if (mapBounds) {
+        setBounds(mapBounds.toJSON());
+      }
+    };
+
+    updateBounds();
+    map.addListener("bounds_changed", updateBounds);
   }, [map]);
 
   return bounds;

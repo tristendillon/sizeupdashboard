@@ -11,6 +11,7 @@ interface GoogleMapProps extends React.HTMLAttributes<HTMLDivElement> {
   zoom?: number;
   mapClassName?: string;
   mapType?: MapType;
+  disableMovement?: boolean;
 }
 
 export function GoogleMap({
@@ -22,6 +23,7 @@ export function GoogleMap({
   mapClassName,
   mapType = "roadmap",
   ref,
+  disableMovement = false,
   ...props
 }: GoogleMapProps) {
   const apiKey = env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
@@ -34,21 +36,22 @@ export function GoogleMap({
     <div ref={ref} className={className} {...props}>
       <APIProvider apiKey={apiKey}>
         <Map
+          mapId={env.NEXT_PUBLIC_MAP_ID}
           id={id}
           className={mapClassName}
           defaultCenter={center}
           defaultZoom={zoom}
           mapTypeId={mapType}
           style={{ width: "100%", height: "400px" }}
-          gestureHandling="greedy"
+          gestureHandling={disableMovement ? "none" : "greedy"}
           disableDefaultUI={true}
           mapTypeControl={false}
           tilt={0}
           heading={0}
-          zoomControl={false}
-          scrollwheel={false}
-          disableDoubleClickZoom={true}
-          keyboardShortcuts={false}
+          zoomControl={!disableMovement}
+          scrollwheel={!disableMovement}
+          disableDoubleClickZoom={disableMovement}
+          keyboardShortcuts={!disableMovement}
         >
           {children}
         </Map>

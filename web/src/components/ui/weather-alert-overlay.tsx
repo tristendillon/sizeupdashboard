@@ -1,7 +1,7 @@
 import type { ActiveWeatherAlertsSchema } from "@sizeupdashboard/convex/api/schema";
 import { type z } from "zod";
 import React from "react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/utils/ui";
 
 // Define alert severity levels and their corresponding colors
 const getAlertSeverity = (

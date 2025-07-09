@@ -12,7 +12,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "../ui/skeleton";
-import { relativeTs } from "@/lib/timestamp";
+import { relativeTs } from "@/utils/timestamp";
 type Dispatch = z.infer<typeof DispatchesSchema>;
 
 export function ViewSidebar() {

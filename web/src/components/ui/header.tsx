@@ -1,11 +1,11 @@
 import Image from "next/image";
 import { Clock } from "./clock";
-import { DismissButton } from "@/components/alert-popover/dismiss-button";
+import { DismissButton } from "./dismiss-button";
 
 export function Header() {
   return (
     <nav className="bg-card flex h-32 w-screen items-center">
-      <div className="hidden min-w-28 items-center gap-4 p-4 sm:flex md:w-full md:max-w-[39.8%]">
+      <div className="hidden min-w-28 items-center gap-4 p-4 sm:flex md:w-full md:max-w-[40%]">
         <Image
           src="/logos/logo_256.png"
           alt="MFD Alerts"

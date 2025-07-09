@@ -1,7 +1,7 @@
 "use client";
 
 import { useAlertPopover } from "@/providers/alert-popover-provider";
-import { Button } from "../ui/button";
+import { Button } from "./button";
 
 export function DismissButton() {
   const { dismissDispatch, dispatch } = useAlertPopover();

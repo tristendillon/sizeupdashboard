@@ -1,6 +1,8 @@
-import { AlertPopover } from "@/components/alert-popover";
 import { Header } from "@/components/ui/header";
+import { ViewMap } from "@/components/view/view-map";
+import { ViewSidebar } from "@/components/view/view-sidebar";
 import { AlertPopoverProvider } from "@/providers/alert-popover-provider";
+import { DispatchesProvider } from "@/providers/dispatches-provider";
 import { WeatherProvider } from "@/providers/weather-provider";
 import { z } from "zod";
 
@@ -23,12 +25,17 @@ export default async function ViewTokenPage({ params }: ViewTokenPageProps) {
 
   return (
     <WeatherProvider>
-      <AlertPopoverProvider>
-        <main className="h-screen w-screen overflow-hidden">
-          <Header />
-          <AlertPopover />
-        </main>
-      </AlertPopoverProvider>
+      <DispatchesProvider>
+        <AlertPopoverProvider>
+          <div className="flex h-screen w-screen flex-col overflow-hidden">
+            <Header />
+            <div className="flex h-full w-full flex-1 flex-col-reverse overflow-hidden md:flex-row">
+              <ViewSidebar />
+              <ViewMap />
+            </div>
+          </div>
+        </AlertPopoverProvider>
+      </DispatchesProvider>
     </WeatherProvider>
   );
 }

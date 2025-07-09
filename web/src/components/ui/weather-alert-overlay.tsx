@@ -112,8 +112,8 @@ const formatDateTime = (timestamp: number): string => {
 };
 
 // Context for sharing alert data
-type WeatherAlert = z.infer<typeof ActiveWeatherAlertsSchema>;
-const AlertContext = React.createContext<WeatherAlert | null>(null);
+type WeatherAlertType = z.infer<typeof ActiveWeatherAlertsSchema>;
+const AlertContext = React.createContext<WeatherAlertType | null>(null);
 
 const useAlert = () => {
   const context = React.useContext(AlertContext);
@@ -126,7 +126,7 @@ const useAlert = () => {
 // Main Alert component
 const WeatherAlert = React.forwardRef<
   HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement> & { alert: WeatherAlert }
+  React.HTMLAttributes<HTMLDivElement> & { alert: WeatherAlertType }
 >(({ alert, className, ...props }, ref) => {
   const { colorClass, textColor } = getAlertSeverity(alert.event);
 

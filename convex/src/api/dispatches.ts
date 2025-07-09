@@ -54,6 +54,31 @@ export const getDispatches = query({
   },
 })
 
+export const getDispatchLocations = query({
+  args: { paginationOpts: paginationOptsValidator },
+
+  handler: async (ctx, { paginationOpts }) => {
+    const dispatches = await ctx.db
+      .query('dispatches')
+      .withIndex('by_dispatchCreatedAt')
+      .order('desc')
+      .paginate(paginationOpts)
+
+    const roughDispatchLocations = dispatches.page.map((dispatch) => {
+      return {
+        location: {
+          lat: dispatch.latitude,
+          lng: dispatch.longitude,
+        },
+        type: dispatch.type,
+      }
+    })
+    return {
+      ...dispatches,
+      page: roughDispatchLocations,
+    }
+  },
+})
 export const updateDispatch = mutation({
   args: {
     id: v.id('dispatches'),

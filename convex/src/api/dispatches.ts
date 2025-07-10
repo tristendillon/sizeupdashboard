@@ -48,7 +48,7 @@ export const createDispatchs = mutation({
 })
 
 export const createDispatch = mutation({
-  args: Dispatches.withoutSystemFields,
+  args: DispatchesTable.withoutSystemFields,
   handler: async (ctx, args) => {
     // Upsert the dispatch by the dispatchId (firstdue's id)
     return await ctx.db.upsertByCustomId('dispatches', args, 'dispatchId')

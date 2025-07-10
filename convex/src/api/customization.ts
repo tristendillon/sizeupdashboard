@@ -1,10 +1,10 @@
 import { mutation } from '../lib/mutation'
-import { DispatchTypes } from './schema'
+import { DispatchTypesTable } from './schema'
 import { v } from 'convex/values'
 
 export const createDispatchType = mutation({
   args: {
-    dispatchTypes: v.array(v.object(DispatchTypes.withoutSystemFields)),
+    dispatchTypes: v.array(v.object(DispatchTypesTable.withoutSystemFields)),
   },
   handler: async (ctx, { dispatchTypes }) => {
     const createdDispatchTypes = []

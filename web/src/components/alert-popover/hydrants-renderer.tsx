@@ -13,7 +13,6 @@ interface HydrantsRendererProps {
 export function HydrantsRenderer({ mapId }: HydrantsRendererProps) {
   const mapBounds = useBounds(mapId);
 
-  console.log(mapBounds);
   if (!mapBounds) {
     return null;
   }

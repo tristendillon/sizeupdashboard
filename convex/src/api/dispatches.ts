@@ -74,7 +74,7 @@ async function getRedactionLevelForDispatch(
   )
   const type = dispatch.type.toLowerCase()
 
-  const redactionLevel = sortedRedactionLevels.find((level) => {
+  const redactionLevels = sortedRedactionLevels.filter((level) => {
     if (dispatchType && level.dispatchTypes.includes(dispatchType._id)) {
       return true
     }
@@ -88,16 +88,17 @@ async function getRedactionLevelForDispatch(
     })
     return false
   })
-  return redactionLevel
+  return redactionLevels
 }
 
 async function redactDispatch(
   dispatch: Doc<'dispatches'>,
   ctx: QueryCtx,
-  redactionLevel: RedactionLevelWithPriority
+  redactionLevels: RedactionLevelWithPriority[]
 ) {
-  const fieldsToRedact =
-    redactionLevel.redactionFields as (keyof Doc<'dispatches'>)[]
+  const fieldsToRedact = redactionLevels.flatMap(
+    (level) => level.redactionFields as (keyof Doc<'dispatches'>)[]
+  )
   const redactedDispatch = { ...dispatch }
 
   // Apply redaction to specified fields
@@ -157,15 +158,15 @@ async function redactDispatches(
   )
   return await Promise.all(
     dispatches.map(async (dispatch) => {
-      const redactionLevel = await getRedactionLevelForDispatch(
+      const redactionLevels = await getRedactionLevelForDispatch(
         dispatch,
         ctx,
         redactionLevelsWithPriority
       )
-      if (!redactionLevel) {
+      if (!redactionLevels.length) {
         return dispatch
       }
-      return redactDispatch(dispatch, ctx, redactionLevel)
+      return redactDispatch(dispatch, ctx, redactionLevels)
     })
   )
 }

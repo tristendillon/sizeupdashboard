@@ -33,7 +33,7 @@ export function DispatchesProvider({ children }: DispatchesProviderProps) {
   const { results, loadMore, status } = usePaginatedQuery(
     api.dispatches.getDispatches,
     {
-      viewToken: tokenId,
+      viewToken: tokenId ?? undefined,
     },
     {
       initialNumItems: DEFAULT_NUM_DISPATCHES,

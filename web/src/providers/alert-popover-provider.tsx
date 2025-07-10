@@ -33,7 +33,7 @@ export function AlertPopoverProvider({ children }: AlertPopoverProviderProps) {
   const { tokenId } = useViewToken();
   const { data } = useQuery(api.dispatches.getRecentDispatch, {
     since: SINCE_MS,
-    viewToken: tokenId,
+    viewToken: tokenId ?? undefined,
   });
 
   useEffect(() => {

@@ -4,17 +4,33 @@ import { createContext, useContext } from "react";
 import type { Id } from "@sizeupdashboard/convex/api/_generated/dataModel";
 import { usePreloadedQuery, type Preloaded } from "convex/react";
 import type { api } from "@sizeupdashboard/convex/api/_generated/api";
+import Link from "next/link";
 
 type ViewToken = {
-  tokenId: Id<"viewTokens">;
+  tokenId?: Id<"viewTokens">;
 };
 
 export const ViewTokenContext = createContext<ViewToken | null>(null);
+
+interface PublicViewTokenProviderProps {
+  children: React.ReactNode;
+}
+
+export const PublicViewTokenProvider = ({
+  children,
+}: PublicViewTokenProviderProps) => {
+  return (
+    <ViewTokenContext.Provider value={{ tokenId: undefined }}>
+      {children}
+    </ViewTokenContext.Provider>
+  );
+};
 
 interface ViewTokenProviderProps {
   children: React.ReactNode;
   preloadedToken: Preloaded<typeof api.viewToken.getViewToken>;
 }
+
 
 export const ViewTokenProvider = ({
   children,
@@ -23,7 +39,12 @@ export const ViewTokenProvider = ({
   const viewToken = usePreloadedQuery(preloadedToken);
 
   if (!viewToken) {
-    return <div>Invalid view token</div>;
+    return (
+      <div>
+        View token is invalid
+        <Link href="/">Go to home</Link>
+      </div>
+    );
   }
 
   return (

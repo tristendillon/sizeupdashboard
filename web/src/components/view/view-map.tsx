@@ -121,10 +121,7 @@ export function NormalMap({
   const { dispatches, status } = useDispatches();
   const mapRef = useRef<HTMLDivElement | null>(null);
 
-  const latLngs = dispatches.map((d) => ({
-    lat: d.latitude,
-    lng: d.longitude,
-  }));
+  const latLngs = dispatches.map((d) => d.location);
   const center = getCenterOfLatLngs(latLngs);
   if (status === "LoadingFirstPage") {
     return <MapLoadingState />;
@@ -161,23 +158,14 @@ export function PopoverMap({
   return (
     <GoogleMap
       id={POPOVER_MAP_ID}
-      center={{
-        lat: dispatch.latitude,
-        lng: dispatch.longitude,
-      }}
+      center={dispatch.location}
       mapType="satellite"
       zoom={POPOVER_MAP_ZOOM}
       className={className}
       mapClassName={mapClassName}
       disableMovement={true}
     >
-      <IncidentMarker
-        location={{
-          lat: dispatch.latitude,
-          lng: dispatch.longitude,
-        }}
-        type={dispatch.type}
-      />
+      <IncidentMarker location={dispatch.location} type={dispatch.type} />
       <HydrantsRenderer mapId={POPOVER_MAP_ID} />
       <div className="absolute right-0 bottom-0 hidden h-[300px] w-[300px] md:block">
         <StreetView dispatch={dispatch} />

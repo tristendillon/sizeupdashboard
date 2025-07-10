@@ -71,13 +71,11 @@ class MapClustering {
       if (!otherPoint) continue;
 
       const currentPointLatLng = {
-        lat: currentPoint.latitude,
-        lng: currentPoint.longitude,
+        lat: currentPoint.location.lat,
+        lng: currentPoint.location.lng,
       };
-      const otherPointLatLng = {
-        lat: otherPoint.latitude,
-        lng: otherPoint.longitude,
-      };
+      const otherPointLatLng = otherPoint.location;
+
       const distance = getLatLngDistances(currentPointLatLng, otherPointLatLng);
       if (distance <= epsilon) {
         neighbors.push(i);
@@ -167,7 +165,7 @@ class MapClustering {
       return this.dispatches.map((dispatch, index) => ({
         id: index,
         dispatches: [dispatch],
-        centroid: { lat: dispatch.latitude, lng: dispatch.longitude },
+        centroid: dispatch.location,
         bounds: this.calculateBounds([dispatch]),
       }));
     }
@@ -178,7 +176,7 @@ class MapClustering {
     for (let i = 0; i < targetClusters; i++) {
       const dispatch = shuffled[i];
       if (!dispatch) continue;
-      centroids.push({ lat: dispatch.latitude, lng: dispatch.longitude });
+      centroids.push(dispatch.location);
     }
 
     const maxIterations = 100;
@@ -196,10 +194,7 @@ class MapClustering {
           const centroid = centroids[i];
           if (!centroid) continue;
 
-          const distance = getLatLngDistances(
-            { lat: dispatch.latitude, lng: dispatch.longitude },
-            centroid,
-          );
+          const distance = getLatLngDistances(dispatch.location, centroid);
           if (distance < minDistance) {
             minDistance = distance;
             nearestCentroid = i;
@@ -256,8 +251,8 @@ class MapClustering {
           if (!dispatch) continue;
           const distance = getLatLngDistances(
             {
-              lat: dispatch.latitude,
-              lng: dispatch.longitude,
+              lat: dispatch.location.lat,
+              lng: dispatch.location.lng,
             },
             centroid,
           );
@@ -297,12 +292,12 @@ class MapClustering {
     // Group dispatches by grid cell
     for (const dispatch of this.dispatches) {
       const gridX = Math.floor(
-        (dispatch.latitude * METERS_PER_DEGREE_LAT) / gridSize,
+        (dispatch.location.lat * METERS_PER_DEGREE_LAT) / gridSize,
       );
       const gridY = Math.floor(
-        (dispatch.longitude *
+        (dispatch.location.lng *
           METERS_PER_DEGREE_LAT *
-          Math.cos((dispatch.latitude * Math.PI) / 180)) /
+          Math.cos((dispatch.location.lat * Math.PI) / 180)) /
           gridSize,
       );
       const gridKey = `${gridX},${gridY}`;
@@ -333,11 +328,11 @@ class MapClustering {
   // Calculate centroid of cluster markers
   private calculateCentroid(dispatches: Dispatch[]): LatLng {
     const totalLat = dispatches.reduce(
-      (sum, dispatch) => sum + dispatch.latitude,
+      (sum, dispatch) => sum + dispatch.location.lat,
       0,
     );
     const totalLng = dispatches.reduce(
-      (sum, dispatch) => sum + dispatch.longitude,
+      (sum, dispatch) => sum + dispatch.location.lng,
       0,
     );
 
@@ -358,16 +353,16 @@ class MapClustering {
       return { north: 0, south: 0, east: 0, west: 0 };
     }
 
-    let north = dispatches[0]!.latitude;
-    let south = dispatches[0]!.latitude;
-    let east = dispatches[0]!.longitude;
-    let west = dispatches[0]!.longitude;
+    let north = dispatches[0]!.location.lat;
+    let south = dispatches[0]!.location.lat;
+    let east = dispatches[0]!.location.lng;
+    let west = dispatches[0]!.location.lng;
 
     dispatches.forEach((dispatch) => {
-      north = Math.max(north, dispatch.latitude);
-      south = Math.min(south, dispatch.latitude);
-      east = Math.max(east, dispatch.longitude);
-      west = Math.min(west, dispatch.longitude);
+      north = Math.max(north, dispatch.location.lat);
+      south = Math.min(south, dispatch.location.lat);
+      east = Math.max(east, dispatch.location.lng);
+      west = Math.min(west, dispatch.location.lng);
     });
 
     return { north, south, east, west };
@@ -380,8 +375,8 @@ class MapClustering {
       cluster.dispatches.forEach((dispatch) => {
         const originalIndex = this.dispatches.findIndex(
           (d) =>
-            d.latitude === dispatch.latitude &&
-            d.longitude === dispatch.longitude &&
+            d.location.lat === dispatch.location.lat &&
+            d.location.lng === dispatch.location.lng &&
             d.type === dispatch.type,
         );
         if (originalIndex !== -1) {

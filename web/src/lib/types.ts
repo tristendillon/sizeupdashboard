@@ -10,4 +10,6 @@ export type Cluster = {
   points: { location: LatLng; type: string }[];
 };
 
-export type Dispatch = z.infer<typeof DispatchesSchema>;
+export type Dispatch = z.infer<typeof DispatchesSchema> & {
+  location: LatLng;
+};

@@ -3,7 +3,7 @@ import { ViewMap } from "@/components/view/view-map";
 import { ViewSidebar } from "@/components/view/view-sidebar";
 import { AlertPopoverProvider } from "@/providers/alert-popover-provider";
 import { DispatchesProvider } from "@/providers/dispatches-provider";
-import { ViewTokenProvider } from "@/providers/view-token-provider";
+import { ViewTokenProvider } from "@/providers/view-providers";
 import { WeatherProvider } from "@/providers/weather-provider";
 import { z } from "zod";
 

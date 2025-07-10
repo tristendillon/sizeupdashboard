@@ -451,16 +451,16 @@ export class DispatchRoutineRouter extends RoutineRouter {
 
     // Compare latitude -> latitude
     compareAndSetDiff(
-      'latitude',
+      'location.latitude',
       Number(data.latitude),
-      this.latestDispatchData.latitude
+      this.latestDispatchData.location.lat
     )
 
     // Compare longitude -> longitude
     compareAndSetDiff(
-      'longitude',
+      'location.longitude',
       Number(data.longitude),
-      this.latestDispatchData.longitude
+      this.latestDispatchData.location.lng
     )
 
     // Note: aid_fdid_numbers and unitCodes represent different data structures
@@ -554,8 +554,10 @@ export class DispatchRoutineRouter extends RoutineRouter {
       address2: dispatch.address2,
       city: dispatch.city,
       stateCode: dispatch.state_code,
-      latitude: Number(dispatch.latitude),
-      longitude: Number(dispatch.longitude),
+      location: {
+        lat: Number(dispatch.latitude),
+        lng: Number(dispatch.longitude),
+      },
       unitCodes: dispatch.unit_codes,
       incidentTypeCode: dispatch.incident_type_code,
       statusCode: dispatch.status_code,

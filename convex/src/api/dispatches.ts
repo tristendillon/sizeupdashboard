@@ -6,6 +6,7 @@ import { Dispatches } from './schema'
 import { paginationOptsValidator } from 'convex/server'
 import { v } from 'convex/values'
 import { type Doc } from './_generated/dataModel'
+import { api } from './_generated/api'
 
 export const paginatedClearDispatches = mutation({
   args: {
@@ -134,11 +135,13 @@ async function redactDispatch(
   // Add random offset between -100m and +100m to lat/long
   const metersToDegreesLat = 1 / 111111 // ~1 meter in degrees latitude
   const metersToDegreesLng =
-    1 / (111111 * Math.cos((redactedDispatch.latitude * Math.PI) / 180))
+    1 / (111111 * Math.cos((redactedDispatch.location.lat * Math.PI) / 180))
   const randomOffsetLat = (Math.random() * 200 - 100) * metersToDegreesLat
   const randomOffsetLng = (Math.random() * 200 - 100) * metersToDegreesLng
-  redactedDispatch.latitude += randomOffsetLat
-  redactedDispatch.longitude += randomOffsetLng
+  if (fieldsToRedact.includes('location')) {
+    redactedDispatch.location.lat += randomOffsetLat
+    redactedDispatch.location.lng += randomOffsetLng
+  }
 
   return redactedDispatch
 }
@@ -172,13 +175,27 @@ export const getDispatches = query({
   args: {
     paginationOpts: paginationOptsValidator,
     viewToken: v.optional(v.id('viewTokens')),
+    convexSessionToken: v.optional(v.string()),
   },
-  handler: async (ctx, { paginationOpts, viewToken }) => {
+  handler: async (ctx, { paginationOpts, viewToken, convexSessionToken }) => {
     const dispatches = await ctx.db
       .query('dispatches')
       .withIndex('by_dispatchCreatedAt')
       .order('desc')
       .paginate(paginationOpts)
+
+    if (convexSessionToken) {
+      const isAuthenticated = await ctx.runQuery(
+        api.auth.getAuthenticatedSession,
+        {
+          convexSessionToken,
+        }
+      )
+      if (isAuthenticated) {
+        return dispatches
+      }
+    }
+
     const view = viewToken ? await ctx.db.get(viewToken) : null
     if (view) {
       return dispatches
@@ -213,37 +230,5 @@ export const updateDispatch = mutation({
   },
   handler: async (ctx, { id, diff }) => {
     return await ctx.db.patch(id, diff)
-  },
-})
-
-export const getRecentDispatch = query({
-  args: {
-    since: v.number(),
-    viewToken: v.optional(v.id('viewTokens')),
-  },
-  handler: async (ctx, { since, viewToken }) => {
-    const sinceDate = new Date(Date.now() - since)
-    const dispatch = await ctx.db
-      .query('dispatches')
-      .withIndex('by_dispatchCreatedAt', (q) =>
-        q.gte('dispatchCreatedAt', sinceDate.getTime())
-      )
-      .order('desc')
-      .first()
-    if (!dispatch) {
-      return {
-        dispatch: null,
-      }
-    }
-    const view = viewToken ? await ctx.db.get(viewToken) : null
-    if (view) {
-      return {
-        dispatch,
-      }
-    }
-    const redactedDispatch = await redactDispatches([dispatch], ctx)
-    return {
-      dispatch: redactedDispatch[0],
-    }
   },
 })

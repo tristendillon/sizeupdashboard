@@ -1,16 +1,12 @@
 "use client";
 
 import { api } from "@sizeupdashboard/convex/api/_generated/api";
-import type { DispatchesSchema } from "@sizeupdashboard/convex/api/schema";
 import { createContext, useCallback, useContext } from "react";
-import type { z } from "zod";
 import { usePaginatedQuery } from "convex-helpers/react/cache/hooks";
 import type { PaginationStatus } from "convex/react";
-import type { LatLng } from "@/lib/types";
+import type { Dispatch, LatLng } from "@/lib/types";
 import { getLatLngDistances } from "@/utils/lat-lng";
-import { useViewToken } from "./view-token-provider";
-
-type Dispatch = z.infer<typeof DispatchesSchema>;
+import { useViewToken } from "./view-providers";
 
 interface DispatchesContextType {
   dispatches: Dispatch[];
@@ -29,11 +25,12 @@ export const DEFAULT_NUM_DISPATCHES = 10;
 export const DEFAULT_NUM_DISPATCH_LOCATIONS = 100;
 
 export function DispatchesProvider({ children }: DispatchesProviderProps) {
-  const { tokenId } = useViewToken();
+  const { tokenId, convexSessionId } = useViewToken();
   const { results, loadMore, status } = usePaginatedQuery(
     api.dispatches.getDispatches,
     {
       viewToken: tokenId ?? undefined,
+      convexSessionToken: convexSessionId ?? undefined,
     },
     {
       initialNumItems: DEFAULT_NUM_DISPATCHES,
@@ -50,11 +47,7 @@ export function DispatchesProvider({ children }: DispatchesProviderProps) {
   const getDispatchesInRadius = useCallback(
     (location: LatLng, distnace: number) => {
       return results.filter((l) => {
-        const dL = {
-          lat: l.latitude,
-          lng: l.longitude,
-        };
-        const distance = getLatLngDistances(location, dL);
+        const distance = getLatLngDistances(location, l.location as LatLng);
         return distance < distnace;
       });
     },

@@ -32,6 +32,8 @@ function NoiseCard({ dispatch, className, closePopover }: NoiseCardProps) {
     activateDispatch(dispatch);
   };
 
+  console.log("DISPATCH", dispatch);
+
   return (
     <div
       className={cn(
@@ -66,10 +68,7 @@ export default function NoiseMarker({ dispatch, className }: NoiseMarkerProps) {
   const [similarDispatches, setSimilarDispatches] = useState<Dispatch[]>([]);
 
   const icon = getAlertIconPath(dispatch.type);
-  const location = {
-    lat: dispatch.latitude,
-    lng: dispatch.longitude,
-  };
+  const location = dispatch.location;
 
   const handleMarkerClick = async () => {
     if (isOpen) {

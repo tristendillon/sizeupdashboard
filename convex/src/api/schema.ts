@@ -4,7 +4,23 @@ import { v } from 'convex/values'
 import { Table } from 'convex-helpers/server'
 import type { Doc } from './_generated/dataModel'
 import type { WithoutSystemFields } from 'convex/server'
-import { z } from 'zod'
+
+export const UserSessions = Table('userSessions', {
+  userId: v.id('users'),
+  expiresAt: v.number(),
+  token: v.string(),
+})
+
+export const RefreshTokens = Table('refreshTokens', {
+  token: v.string(),
+  expiresAt: v.number(),
+  userId: v.id('users'),
+})
+
+export const Users = Table('users', {
+  email: v.string(),
+  name: v.string(),
+})
 
 export const Dispatches = Table('dispatches', {
   dispatchId: v.number(),
@@ -15,8 +31,10 @@ export const Dispatches = Table('dispatches', {
   address2: v.optional(v.union(v.string(), v.null())),
   city: v.optional(v.union(v.string(), v.null())),
   stateCode: v.optional(v.union(v.string(), v.null())),
-  latitude: v.number(),
-  longitude: v.number(),
+  location: v.object({
+    lat: v.number(),
+    lng: v.number(),
+  }),
   unitCodes: v.array(v.string()),
   incidentTypeCode: v.optional(v.union(v.string(), v.null())),
   statusCode: v.optional(v.union(v.string(), v.null())),
@@ -232,6 +250,14 @@ export default defineSchema(
     redactionLevels: RedactionLevels.table.index('by_name', ['name']),
     dispatchTypes: DispatchTypes.table.index('by_code', ['code']),
     priorityLevels: PriorityLevels.table.index('by_name', ['name']),
+
+    userSessions: UserSessions.table
+      .index('by_expiresAt', ['expiresAt'])
+      .index('by_token', ['token']),
+    refreshTokens: RefreshTokens.table
+      .index('by_expiresAt', ['expiresAt'])
+      .index('by_token', ['token']),
+    users: Users.table.index('by_email', ['email']),
   },
   // If you ever get an error about schema mismatch
   // between your data and your schema, and you cannot

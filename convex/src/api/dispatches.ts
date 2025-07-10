@@ -27,25 +27,19 @@ export const paginatedClearDispatches = mutation({
   },
 })
 
+export const getDispatchTypes = query({
+  args: {},
+  handler: async (ctx) => {
+    return await ctx.db.query('dispatchTypes').collect()
+  },
+})
+
 export const createDispatchs = mutation({
   args: {
     dispatches: v.array(v.object(Dispatches.withoutSystemFields)),
   },
   handler: async (ctx, { dispatches }) => {
-    const dispatchTypes = await ctx.db.query('dispatchTypes').collect()
-
-    const insert = []
-    for (const dispatch of dispatches) {
-      const dispatchType = dispatchTypes.find(
-        (type) => type.code.toLowerCase() === dispatch.type?.toLowerCase()
-      )
-      console.log(dispatch.type)
-      insert.push({
-        ...dispatch,
-        dispatchType: dispatchType?._id,
-      })
-    }
-    return await ctx.db.insertMany('dispatches', insert)
+    return await ctx.db.insertMany('dispatches', dispatches)
   },
 })
 
@@ -108,12 +102,6 @@ async function redactDispatch(
       case 'address':
         redactedDispatch.address = 'REDACTED'
         break
-      case 'latitude':
-        redactedDispatch.latitude = -1
-        break
-      case 'longitude':
-        redactedDispatch.longitude = -1
-        break
       case 'unitCodes':
         redactedDispatch.unitCodes = []
         break
@@ -142,6 +130,15 @@ async function redactDispatch(
         break
     }
   })
+
+  // Add random offset between -100m and +100m to lat/long
+  const metersToDegreesLat = 1 / 111111 // ~1 meter in degrees latitude
+  const metersToDegreesLng =
+    1 / (111111 * Math.cos((redactedDispatch.latitude * Math.PI) / 180))
+  const randomOffsetLat = (Math.random() * 200 - 100) * metersToDegreesLat
+  const randomOffsetLng = (Math.random() * 200 - 100) * metersToDegreesLng
+  redactedDispatch.latitude += randomOffsetLat
+  redactedDispatch.longitude += randomOffsetLng
 
   return redactedDispatch
 }

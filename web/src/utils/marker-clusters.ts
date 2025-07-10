@@ -1,6 +1,7 @@
 // Improved DBSCAN clustering with multiple strategies
 
 import type { Dispatch, LatLng, LatLngBounds } from "@/lib/types";
+import { getLatLngDistances } from "./lat-lng";
 
 interface Cluster {
   id: number;
@@ -22,8 +23,9 @@ class MapClustering {
 
   // More conservative clustering distances
   private getClusteringDistance(zoom: number): number {
+    const defaultDistance = 13000;
     const zoomDistanceMap: Record<number, number> = {
-      10: 13000,
+      10: defaultDistance,
       11: 10000,
       12: 7000,
       13: 2500,
@@ -36,14 +38,12 @@ class MapClustering {
       20: 15.625,
       21: 7.8125,
     };
-    console.log("ZOOM");
-    console.log(zoom);
 
     const lowerZoom = Math.floor(zoom);
     const upperZoom = Math.ceil(zoom);
 
-    const lowerDistance = zoomDistanceMap[lowerZoom] ?? 3000;
-    const upperDistance = zoomDistanceMap[upperZoom] ?? 3000;
+    const lowerDistance = zoomDistanceMap[lowerZoom] ?? defaultDistance;
+    const upperDistance = zoomDistanceMap[upperZoom] ?? defaultDistance;
 
     if (lowerZoom === upperZoom) {
       return lowerDistance;
@@ -54,26 +54,6 @@ class MapClustering {
   }
 
   // Calculate distance between two lat/lng points using Haversine formula
-  private calculateDistance(
-    point1: google.maps.LatLngLiteral,
-    point2: google.maps.LatLngLiteral,
-  ): number {
-    const R = 6371000; // Earth's radius in meters
-    const lat1Rad = (point1.lat * Math.PI) / 180;
-    const lat2Rad = (point2.lat * Math.PI) / 180;
-    const deltaLat = ((point2.lat - point1.lat) * Math.PI) / 180;
-    const deltaLng = ((point2.lng - point1.lng) * Math.PI) / 180;
-
-    const a =
-      Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
-      Math.cos(lat1Rad) *
-        Math.cos(lat2Rad) *
-        Math.sin(deltaLng / 2) *
-        Math.sin(deltaLng / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-    return R * c;
-  }
 
   // Find all neighbors within epsilon distance
   private findNeighbors(pointIndex: number, epsilon: number): number[] {
@@ -98,10 +78,7 @@ class MapClustering {
         lat: otherPoint.latitude,
         lng: otherPoint.longitude,
       };
-      const distance = this.calculateDistance(
-        currentPointLatLng,
-        otherPointLatLng,
-      );
+      const distance = getLatLngDistances(currentPointLatLng, otherPointLatLng);
       if (distance <= epsilon) {
         neighbors.push(i);
       }
@@ -219,7 +196,7 @@ class MapClustering {
           const centroid = centroids[i];
           if (!centroid) continue;
 
-          const distance = this.calculateDistance(
+          const distance = getLatLngDistances(
             { lat: dispatch.latitude, lng: dispatch.longitude },
             centroid,
           );
@@ -277,7 +254,7 @@ class MapClustering {
           if (!centroid) continue;
           const dispatch = this.dispatches[index];
           if (!dispatch) continue;
-          const distance = this.calculateDistance(
+          const distance = getLatLngDistances(
             {
               lat: dispatch.latitude,
               lng: dispatch.longitude,

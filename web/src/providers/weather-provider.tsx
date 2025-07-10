@@ -31,6 +31,36 @@ interface WeatherProviderProps {
   children: ReactNode;
 }
 
+// const sampleAlerts = [
+//   {
+//     senderName: "National Weather Service",
+//     event: "Tornado Warning",
+//     start: Date.now(),
+//     end: Date.now() + 2 * 60 * 60 * 1000,
+//     description:
+//       "A tornado warning has been issued for the immediate area. Take shelter immediately in a sturdy building.",
+//     tags: ["Severe", "Immediate Action"],
+//   },
+//   {
+//     senderName: "NWS Storm Prediction Center",
+//     event: "Severe Thunderstorm Watch",
+//     start: Date.now() - 30 * 60 * 1000,
+//     end: Date.now() + 4 * 60 * 60 * 1000,
+//     description:
+//       "Conditions are favorable for severe thunderstorms with large hail and damaging winds.",
+//     tags: ["Watch", "Hail", "High Winds"],
+//   },
+//   {
+//     senderName: "Local Emergency Management",
+//     event: "Fire Ban in Effect",
+//     start: Date.now() - 24 * 60 * 60 * 1000,
+//     end: Date.now() + 7 * 24 * 60 * 60 * 1000,
+//     description:
+//       "Due to dry conditions and high fire danger, all outdoor burning is prohibited.",
+//     tags: ["Fire Safety", "Outdoor Burning"],
+//   },
+// ];
+
 export const WeatherProvider: React.FC<WeatherProviderProps> = ({
   children,
 }) => {
@@ -53,6 +83,7 @@ export const WeatherProvider: React.FC<WeatherProviderProps> = ({
     weatherDays: forecast?.days ?? [],
     currentWeather: forecast?.current ?? null,
     weatherAlerts: forecast?.alerts ?? [],
+    // weatherAlerts: sampleAlerts,
     isLoading: forecastPending || weatherDetailsPending,
     weatherDetails: weatherDetails ?? [],
     error: forecastError ?? weatherDetailsError ?? null,

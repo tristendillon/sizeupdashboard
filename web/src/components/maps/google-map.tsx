@@ -48,7 +48,7 @@ export function GoogleMap({
           mapTypeControl={false}
           tilt={0}
           heading={0}
-          zoomControl={!disableMovement}
+          zoomControl={false}
           scrollwheel={!disableMovement}
           disableDoubleClickZoom={disableMovement}
           keyboardShortcuts={!disableMovement}

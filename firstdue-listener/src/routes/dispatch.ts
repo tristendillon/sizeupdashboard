@@ -111,6 +111,7 @@ interface DispatchStats {
 export class DispatchRoutineRouter extends RoutineRouter {
   protected readonly interval: number = DISPATCH_INTERVAL
   private latestDispatchData: Doc<'dispatches'>
+  private dispatchTypes: Doc<'dispatchTypes'>[]
   private lastDispatchTime: number = 0
   private lastDispatchTimeInvalid: boolean = false
   public stats: DispatchStats = this.defaultStats()
@@ -122,6 +123,7 @@ export class DispatchRoutineRouter extends RoutineRouter {
       onStart: async () => {
         await this.validateConfiguration()
         await options.onStart?.()
+        this.dispatchTypes = await this.getDispatchTypes()
       },
     })
   }
@@ -477,6 +479,20 @@ export class DispatchRoutineRouter extends RoutineRouter {
     }
   }
 
+  private async getDispatchTypes(): Promise<Doc<'dispatchTypes'>[]> {
+    this.ctx.logger.info('Getting dispatch types')
+    const timer = this.ctx.logger.perf.start({
+      id: 'getDispatchTypes',
+      printf: (duration: number) => `Retrieved dispatch types in ${duration}ms`,
+    })
+    const dispatchTypes = await this.ctx.client.query(
+      api.dispatches.getDispatchTypes,
+      {}
+    )
+    timer.end()
+    return dispatchTypes
+  }
+
   private async updateNfirsData(): Promise<void> {
     if (!this.latestDispatchData || !this.latestDispatchData.xrefId) {
       return
@@ -585,39 +601,32 @@ export class DispatchRoutineRouter extends RoutineRouter {
 
       this.ctx.logger.info(`Cleared approximately ${clearedCount} dispatches`)
       this.lastDispatchTimeInvalid = true
-
+      this.dispatchTypes = await this.getDispatchTypes()
       // Fetch all dispatches with pagination
-      const allDispatches = await this.fetchAllDispatchesWithPagination()
+      const totalFetched =
+        await this.fetchAndInsertAllDispatchesWithPagination()
 
-      if (allDispatches.length === 0) {
+      if (totalFetched === 0) {
         this.ctx.logger.info('No dispatches found during full sync')
         this.stats.lastSyncTime = formatDateTime(new Date())
         return { totalSynced: 0, clearedCount }
       }
 
-      // Parse and insert dispatches
-      const parsedData = allDispatches.map((dispatch) =>
-        this.parseFirstDueDispatch(dispatch)
-      )
-      await this.insertDispatches(parsedData)
-
-      this.stats.totalFetched += allDispatches.length
+      this.stats.totalFetched += totalFetched
       this.stats.lastSyncTime = formatDateTime(new Date())
       this.ctx.logger.info(
-        `Full sync completed: ${allDispatches.length} dispatches synced`
+        `Full sync completed: ${totalFetched} dispatches synced`
       )
 
-      return { totalSynced: allDispatches.length, clearedCount }
+      return { totalSynced: totalFetched, clearedCount }
     } finally {
       syncTimer.end()
     }
   }
 
-  private async fetchAllDispatchesWithPagination(): Promise<
-    FirstDueDispatch[]
-  > {
-    const allDispatches: FirstDueDispatch[] = []
+  private async fetchAndInsertAllDispatchesWithPagination(): Promise<number> {
     let currentPage = 1
+    let totalFetched = 0
 
     const fetchPage = async (
       page: number
@@ -650,6 +659,8 @@ export class DispatchRoutineRouter extends RoutineRouter {
           } dispatches, hasNext: ${!!pagination.next}`
         )
 
+        totalFetched += data.length
+
         return {
           dispatches: data,
           hasNext: !!pagination.next,
@@ -663,7 +674,10 @@ export class DispatchRoutineRouter extends RoutineRouter {
     let hasNext = true
     while (hasNext) {
       const { dispatches, hasNext: nextExists } = await fetchPage(currentPage)
-      allDispatches.push(...dispatches)
+      const parsedData = dispatches.map((dispatch) =>
+        this.parseFirstDueDispatch(dispatch)
+      )
+      await this.insertDispatches(parsedData)
       hasNext = nextExists
       currentPage++
 
@@ -673,7 +687,7 @@ export class DispatchRoutineRouter extends RoutineRouter {
       }
     }
 
-    return allDispatches
+    return totalFetched
   }
 
   private parseLinkHeader(linkHeader: string | null): PaginationLinks {
@@ -805,9 +819,16 @@ export class DispatchRoutineRouter extends RoutineRouter {
     })
 
     try {
+      const dispatchTypeMap = new Map(
+        this.dispatchTypes.map((type) => [type.code.toLowerCase(), type._id])
+      )
+      const dispatchesWithTypes = dispatches.map((dispatch) => ({
+        ...dispatch,
+        dispatchType: dispatchTypeMap.get(dispatch.type?.toLowerCase()),
+      }))
       const result = await this.ctx.client.mutation(
         api.dispatches.createDispatchs,
-        { dispatches }
+        { dispatches: dispatchesWithTypes }
       )
 
       this.stats.totalInserted += result.length

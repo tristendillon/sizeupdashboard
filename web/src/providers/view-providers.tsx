@@ -1,11 +1,10 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext } from "react";
 import type { Id } from "@sizeupdashboard/convex/api/_generated/dataModel";
-import { usePreloadedQuery, type Preloaded, useAction } from "convex/react";
-import { api } from "@sizeupdashboard/convex/api/_generated/api";
+import { usePreloadedQuery, type Preloaded } from "convex/react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import type { api } from "@sizeupdashboard/convex/api/_generated/api";
 
 type ViewToken = {
   tokenId?: Id<"viewTokens">;

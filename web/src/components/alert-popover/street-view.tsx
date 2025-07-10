@@ -7,6 +7,7 @@ import { env } from "@/env";
 import type { DispatchesSchema } from "@sizeupdashboard/convex/api/schema";
 import type { z } from "zod";
 import { useMap } from "@vis.gl/react-google-maps";
+import type { LatLng } from "@/lib/types";
 
 const containerStyle = {
   width: "100%",
@@ -34,10 +35,7 @@ type GeocodeResponse = {
  * Attempts to geocode the provided address, with fallback to alert coordinates
  */
 const fetchGeocode = async (fullAddress: string, dispatch: Dispatch) => {
-  const alertCoords = new google.maps.LatLng(
-    dispatch.latitude,
-    dispatch.longitude,
-  );
+  const alertCoords = dispatch.location as LatLng;
   const encoded = encodeURIComponent(fullAddress);
 
   try {
@@ -52,11 +50,8 @@ const fetchGeocode = async (fullAddress: string, dispatch: Dispatch) => {
       }
       const { lat, lng } = data.results[0].geometry.location;
       const resultCoords = new google.maps.LatLng(lat, lng);
-      const distance = getLatLngDistances(
-        alertCoords.toJSON(),
-        resultCoords.toJSON(),
-      );
-      return distance <= 100 ? resultCoords : alertCoords;
+      const distance = getLatLngDistances(alertCoords, resultCoords.toJSON());
+      return distance <= 100 ? resultCoords.toJSON() : alertCoords;
     }
   } catch (error) {
     console.error("Error in geocoding:", error);
@@ -65,7 +60,7 @@ const fetchGeocode = async (fullAddress: string, dispatch: Dispatch) => {
   return alertCoords;
 };
 
-const findNearbyPanorama = async (target: google.maps.LatLng) => {
+const findNearbyPanorama = async (target: LatLng) => {
   const streetViewService = new google.maps.StreetViewService();
   let radius = 15;
   const maxRadius = 100;
@@ -101,10 +96,7 @@ const StreetView: React.FC<StreetViewProps> = ({ dispatch }) => {
       if (!streetViewRef.current) return;
 
       const fullAddress = `${dispatch.address}, ${dispatch.city}, ${dispatch.stateCode}`;
-      const target = new google.maps.LatLng(
-        dispatch.latitude,
-        dispatch.longitude,
-      );
+      const target = dispatch.location as LatLng;
 
       try {
         const facingCoords = await fetchGeocode(fullAddress, dispatch);

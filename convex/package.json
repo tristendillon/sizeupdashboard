@@ -20,6 +20,7 @@
     "lint": "tsc -p ./ && eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
   },
   "dependencies": {
+    "bcryptjs": "^3.0.2",
     "convex": "^1.23.0",
     "convex-helpers": "^0.1.94",
     "zod": "^3.25.67"

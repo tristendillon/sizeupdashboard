@@ -5,6 +5,12 @@ import { Table } from 'convex-helpers/server'
 import type { Doc } from './_generated/dataModel'
 import type { WithoutSystemFields } from 'convex/server'
 
+export const UserIdentities = Table('userIdentities', {
+  userId: v.id('users'),
+  email: v.string(),
+  hashedPassword: v.string(),
+})
+
 export const UserSessions = Table('userSessions', {
   userId: v.id('users'),
   expiresAt: v.number(),
@@ -253,11 +259,14 @@ export default defineSchema(
 
     userSessions: UserSessions.table
       .index('by_expiresAt', ['expiresAt'])
+      .index('by_userId', ['userId'])
       .index('by_token', ['token']),
     refreshTokens: RefreshTokens.table
       .index('by_expiresAt', ['expiresAt'])
+      .index('by_userId', ['userId'])
       .index('by_token', ['token']),
     users: Users.table.index('by_email', ['email']),
+    userIdentities: UserIdentities.table.index('by_email', ['email']),
   },
   // If you ever get an error about schema mismatch
   // between your data and your schema, and you cannot

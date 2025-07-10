@@ -1,12 +1,13 @@
 import { v } from 'convex/values'
 import {
-  mutation,
   internalQuery,
   internalMutation,
   action,
   query,
 } from './_generated/server'
 import { internal } from './_generated/api'
+import { type Doc } from './_generated/dataModel'
+import bcrypt from 'bcryptjs'
 
 export const getSessionFromToken = internalQuery({
   args: {
@@ -81,6 +82,19 @@ export const getRefreshToken = internalQuery({
   },
 })
 
+export const getRefreshTokenByUserId = internalQuery({
+  args: {
+    userId: v.id('users'),
+  },
+  handler: async (ctx, args) => {
+    const refreshToken = await ctx.db
+      .query('refreshTokens')
+      .withIndex('by_userId', (q) => q.eq('userId', args.userId))
+      .first()
+    return refreshToken
+  },
+})
+
 export const deleteRefreshToken = internalMutation({
   args: {
     refreshTokenId: v.id('refreshTokens'),
@@ -101,6 +115,21 @@ export const createSessionAndRefresh = internalMutation({
   handler: async (ctx, args) => {
     const newSessionToken = crypto.randomUUID()
     const newRefreshToken = crypto.randomUUID()
+
+    const existingSession = await ctx.db
+      .query('userSessions')
+      .withIndex('by_userId', (q) => q.eq('userId', args.userId))
+      .first()
+    if (existingSession) {
+      await ctx.db.delete(existingSession._id)
+    }
+    const existingRefreshToken = await ctx.db
+      .query('refreshTokens')
+      .withIndex('by_userId', (q) => q.eq('userId', args.userId))
+      .first()
+    if (existingRefreshToken) {
+      await ctx.db.delete(existingRefreshToken._id)
+    }
 
     await ctx.db.insert('userSessions', {
       userId: args.userId,
@@ -156,5 +185,78 @@ export const refreshSession = action({
     )
 
     return newTokens
+  },
+})
+
+type LoginResponse = {
+  success: boolean
+  error?: string
+  user?: Doc<'users'> & {
+    sessionToken: string
+    refreshToken: string
+  }
+}
+
+export const login = action({
+  args: {
+    email: v.string(),
+    password: v.string(),
+  },
+  handler: async (ctx, { email, password }): Promise<LoginResponse> => {
+    const user = await ctx.runQuery(internal.users.getUserByEmail, {
+      email,
+    })
+    if (!user) {
+      return { success: false, error: 'User not found' }
+    }
+    const identity = await ctx.runQuery(internal.users.getUserIdentityByEmail, {
+      email,
+    })
+    if (!identity) {
+      return { success: false, error: 'User Identity not found' }
+    }
+    const isPasswordValid = await bcrypt.compare(
+      password,
+      identity.hashedPassword
+    )
+    if (!isPasswordValid) {
+      return { success: false, error: 'Invalid password' }
+    }
+    const { sessionToken, refreshToken } = await ctx.runMutation(
+      internal.auth.createSessionAndRefresh,
+      {
+        userId: user._id,
+      }
+    )
+    return { success: true, user: { ...user, sessionToken, refreshToken } }
+  },
+})
+
+export const logout = action({
+  args: {
+    sessionId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const session = await ctx.runQuery(internal.auth.getSessionFromToken, {
+      convexSessionToken: args.sessionId,
+    })
+    if (!session) {
+      return { success: false, error: 'Session not found' }
+    }
+    const refreshToken = await ctx.runQuery(
+      internal.auth.getRefreshTokenByUserId,
+      {
+        userId: session.userId,
+      }
+    )
+    if (refreshToken) {
+      await ctx.runMutation(internal.auth.deleteRefreshToken, {
+        refreshTokenId: refreshToken._id,
+      })
+    }
+    await ctx.runMutation(internal.auth.deleteSession, {
+      sessionId: session._id,
+    })
+    return { success: true }
   },
 })

@@ -35,11 +35,9 @@ export const getAuthenticatedSession = query({
     convexSessionToken: v.string(),
   },
   handler: async (ctx, args) => {
-    console.log('getAuthenticatedSession', args.convexSessionToken)
     const session = await ctx.runQuery(internal.auth.getSessionFromToken, {
       convexSessionToken: args.convexSessionToken,
     })
-    console.log('session', session)
     if (session === null) {
       return false
     }

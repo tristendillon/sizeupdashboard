@@ -2,6 +2,7 @@ import Image from "next/image";
 import { Clock } from "./clock";
 import { DismissButton } from "./dismiss-button";
 import { TurnoutTimer } from "./turnout-timer";
+import { LogoutButton } from "./logout-button";
 
 export function Header() {
   return (
@@ -25,6 +26,7 @@ export function Header() {
         {/* <WeatherDays /> */}
         <TurnoutTimer />
         <DismissButton />
+        <LogoutButton />
       </div>
     </nav>
   );

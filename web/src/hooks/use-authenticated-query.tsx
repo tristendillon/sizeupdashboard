@@ -1,36 +1,7 @@
-import { useQuery, useAction } from "convex/react";
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "convex/react";
 import { type FunctionReference, type FunctionArgs } from "convex/server";
-import { api } from "@sizeupdashboard/convex/api/_generated/api";
-
-// Cookie utility functions
-const getCookie = (name: string): string | null => {
-  if (typeof document === "undefined") return null;
-
-  const nameEQ = name + "=";
-  const ca = document.cookie.split(";");
-
-  for (const c of ca) {
-    let cookie = c.trimStart();
-    while (cookie.startsWith(" ")) cookie = cookie.substring(1, cookie.length);
-    if (cookie.startsWith(nameEQ))
-      return decodeURIComponent(cookie.substring(nameEQ.length, cookie.length));
-  }
-  return null;
-};
-
-const setCookie = (name: string, value: string, days = 14) => {
-  if (typeof document === "undefined") return;
-
-  const expires = new Date();
-  expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
-  document.cookie = `${name}=${encodeURIComponent(value)};expires=${expires.toUTCString()};path=/;secure;samesite=lax`;
-};
-
-const deleteCookie = (name: string) => {
-  if (typeof document === "undefined") return;
-  document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
-};
+import { getCookie } from "@/utils/cookies";
+import { useAuth } from "./use-auth";
 
 interface UseAuthenticatedQueryOptions {
   onAuthenticationError?: () => void;
@@ -45,78 +16,12 @@ export function useAuthenticatedQuery<Query extends FunctionReference<"query">>(
   args: FunctionArgs<Query>,
   options: UseAuthenticatedQueryOptions = {},
 ) {
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [authError, setAuthError] = useState<string | null>(null);
-
-  const refreshAction = useAction(api.auth.refreshSession);
-
   const sessionToken = getCookie("session-token");
-  const refreshToken = getCookie("refresh-token");
 
-  const isAuthenticated = useQuery(
-    api.auth.getAuthenticatedSession,
-    sessionToken
-      ? {
-          convexSessionToken: sessionToken,
-        }
-      : "skip",
-  );
-
-  // Function to refresh tokens
-  const refreshTokens = useCallback(async () => {
-    if (!refreshToken || isRefreshing) return false;
-
-    setIsRefreshing(true);
-    setAuthError(null);
-
-    try {
-      const newTokens = (await refreshAction({ refreshToken })) as {
-        sessionToken: string;
-        refreshToken: string;
-      };
-
-      // Update cookies with new tokens
-      setCookie("session-token", newTokens.sessionToken);
-      setCookie("refresh-token", newTokens.refreshToken);
-
-      options.onTokenRefresh?.(newTokens);
-
-      return true;
-    } catch (error) {
-      console.error("Token refresh failed:", error);
-      setAuthError("Authentication failed");
-
-      // Clear invalid tokens
-      deleteCookie("session-token");
-      deleteCookie("refresh-token");
-
-      options.onAuthenticationError?.();
-
-      return false;
-    } finally {
-      setIsRefreshing(false);
-    }
-  }, [refreshToken, refreshAction, isRefreshing, options]);
-
-  // Auto-refresh when authentication fails but we have a refresh token
-  useEffect(() => {
-    if (
-      (isAuthenticated === false || sessionToken === null) &&
-      refreshToken &&
-      !isRefreshing
-    ) {
-      void refreshTokens();
-    }
-  }, [
-    isAuthenticated,
-    refreshToken,
-    refreshTokens,
-    isRefreshing,
-    sessionToken,
-  ]);
+  const { isAuthed, isLoading: isAuthLoading, authError } = useAuth(options);
 
   // Main query - only run if authenticated and we have session token
-  const shouldRunQuery = isAuthenticated === true && sessionToken;
+  const shouldRunQuery = isAuthed === true && sessionToken;
 
   const queryArgs = shouldRunQuery
     ? ({
@@ -131,15 +36,13 @@ export function useAuthenticatedQuery<Query extends FunctionReference<"query">>(
 
   // Determine loading state
   const isLoading =
-    isAuthenticated === undefined || // Still checking auth
-    isRefreshing || // Currently refreshing
-    (isAuthenticated === true && mainQuery === undefined); // Authenticated but query loading
+    isAuthLoading || // Still checking auth
+    (isAuthed === true && mainQuery === undefined); // Authenticated but query loading
 
   return {
     data: mainQuery,
     isLoading,
-    isAuthenticated: isAuthenticated === true,
-    isRefreshing,
+    isAuthenticated: isAuthed,
     error: authError,
     // Helper to check if we need authentication
   };

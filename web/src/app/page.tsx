@@ -1,5 +1,3 @@
-import { cookies } from "next/headers";
-
 import { Header } from "@/components/ui/header";
 import { ViewMap } from "@/components/view/view-map";
 import { ViewSidebar } from "@/components/view/view-sidebar";

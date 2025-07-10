@@ -4,7 +4,7 @@ import { mutation } from '../lib/mutation'
 import { type QueryCtx, query } from './_generated/server'
 import {
   type DispatchWithType,
-  Dispatches,
+  DispatchesTable,
   type RedactionLevel,
 } from './schema'
 import { paginationOptsValidator } from 'convex/server'
@@ -40,7 +40,7 @@ export const getDispatchTypes = query({
 
 export const createDispatchs = mutation({
   args: {
-    dispatches: v.array(v.object(Dispatches.withoutSystemFields)),
+    dispatches: v.array(v.object(DispatchesTable.withoutSystemFields)),
   },
   handler: async (ctx, { dispatches }) => {
     return await ctx.db.insertMany('dispatches', dispatches)
@@ -245,7 +245,7 @@ export const getLastDispatchData = query({
 export const updateDispatch = mutation({
   args: {
     id: v.id('dispatches'),
-    diff: v.object(partial(Dispatches.withoutSystemFields)),
+    diff: v.object(partial(DispatchesTable.withoutSystemFields)),
   },
   handler: async (ctx, { id, diff }) => {
     return await ctx.db.patch(id, diff)

@@ -29,7 +29,7 @@ export const Users = Table('users', {
   name: v.string(),
 })
 
-export const DispatchesSchema = z.object({
+export const Dispatches = z.object({
   dispatchId: z.number(),
   narrative: z.string().optional(),
   type: z.string(),
@@ -48,13 +48,18 @@ export const DispatchesSchema = z.object({
   xrefId: z.string().optional(),
   dispatchType: zid('dispatchTypes').optional(),
   dispatchCreatedAt: z.number(),
+})
+export const DispatchesValidator = zodToConvex(Dispatches)
+export const DispatchesSchema = Dispatches.extend({
   _id: zid('dispatches'),
   _creationTime: z.number(),
 })
-export const DispatchesValidator = zodToConvex(DispatchesSchema)
-export const Dispatches = Table('dispatches', DispatchesValidator.fields)
+export const DispatchesTable = Table('dispatches', DispatchesValidator.fields)
 export type PostDispatch = WithoutSystemFields<Doc<'dispatches'>>
-export type Dispatch = z.infer<typeof DispatchesSchema>
+export type Dispatch = z.infer<typeof DispatchesSchema> & {
+  _id: Id<'dispatches'>
+  _creationTime: number
+}
 
 export const DispatchGroupEnumSchema = z.enum([
   'aircraft',
@@ -70,10 +75,13 @@ export const DispatchGroupEnumSchema = z.enum([
 
 export type DispatchGroupEnum = z.infer<typeof DispatchGroupEnumSchema>
 
-export const DispatchTypesSchema = z.object({
+export const DispatchTypes = z.object({
   code: z.string(),
   group: DispatchGroupEnumSchema,
   name: z.string().optional(),
+})
+
+export const DispatchTypesSchema = DispatchTypes.extend({
   _id: zid('dispatchTypes'),
   _creationTime: z.number(),
 })
@@ -82,17 +90,14 @@ export const DispatchesWithTypeSchema = DispatchesSchema.extend({
   dispatchType: DispatchTypesSchema.optional(),
 })
 
-export const DispatchTypesValidator = zodToConvex(DispatchTypesSchema)
-export const DispatchTypes = Table(
+export const DispatchTypesValidator = zodToConvex(DispatchTypes)
+export const DispatchTypesTable = Table(
   'dispatchTypes',
   DispatchTypesValidator.fields
 )
 export type DispatchWithType = z.infer<typeof DispatchesWithTypeSchema>
 
-export type DispatchType = z.infer<typeof DispatchTypesSchema> & {
-  _id: Id<'dispatchTypes'>
-  _creationTime: number
-}
+export type DispatchType = z.infer<typeof DispatchTypesSchema>
 
 export const ActiveWeatherAlerts = Table('activeWeatherAlerts', {
   senderName: v.string(),
@@ -242,7 +247,7 @@ export const RedactionLevels = Table(
 
 export default defineSchema(
   {
-    dispatches: Dispatches.table
+    dispatches: DispatchesTable.table
       .index('by_dispatchId', ['dispatchId'])
       .index('by_dispatchCreatedAt', ['dispatchCreatedAt'])
       .index('by_xrefId', ['xrefId']),
@@ -260,7 +265,7 @@ export default defineSchema(
       .index('by_token', ['token'])
       .index('by_name', ['name']),
     redactionLevels: RedactionLevels.table.index('by_name', ['name']),
-    dispatchTypes: DispatchTypes.table.index('by_code', ['code']),
+    dispatchTypes: DispatchTypesTable.table.index('by_code', ['code']),
 
     userSessions: UserSessions.table
       .index('by_expiresAt', ['expiresAt'])

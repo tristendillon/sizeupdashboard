@@ -1,11 +1,12 @@
 // Improved DBSCAN clustering with multiple strategies
 
-import type { Dispatch, LatLng, LatLngBounds } from "@/lib/types";
+import type { DispatchWithType } from "@sizeupdashboard/convex/api/schema";
+import type { LatLng, LatLngBounds } from "@/lib/types";
 import { getLatLngDistances } from "./lat-lng";
 
 interface Cluster {
   id: number;
-  dispatches: Dispatch[];
+  dispatches: DispatchWithType[];
   centroid: LatLng;
   bounds: LatLngBounds;
 }
@@ -13,11 +14,11 @@ interface Cluster {
 const METERS_PER_DEGREE_LAT = 111320;
 
 class MapClustering {
-  private dispatches: Dispatch[] = [];
+  private dispatches: DispatchWithType[] = [];
   private visited = new Set<number>();
   private clusters: Cluster[] = [];
 
-  constructor(dispatches: Dispatch[]) {
+  constructor(dispatches: DispatchWithType[]) {
     this.dispatches = dispatches;
   }
 
@@ -109,7 +110,7 @@ class MapClustering {
       const currentDispatch = this.dispatches[i];
       if (!currentDispatch) continue;
 
-      const clusterDispatches: Dispatch[] = [currentDispatch];
+      const clusterDispatches: DispatchWithType[] = [currentDispatch];
       clusterAssignment[i] = clusterId;
       const neighborQueue = [...neighbors];
 
@@ -287,7 +288,7 @@ class MapClustering {
     if (this.dispatches.length === 0) return this.clusters;
 
     const gridSize = this.getClusteringDistance(zoom);
-    const gridMap = new Map<string, Dispatch[]>();
+    const gridMap = new Map<string, DispatchWithType[]>();
 
     // Group dispatches by grid cell
     for (const dispatch of this.dispatches) {
@@ -310,7 +311,8 @@ class MapClustering {
 
     // Convert grid cells to clusters
     let clusterId = 0;
-    for (const [gridKey, dispatches] of gridMap) {
+    for (const grid of gridMap) {
+      const dispatches = grid[1];
       if (dispatches.length >= 2) {
         // Only create clusters with multiple dispatches
         this.clusters.push({
@@ -326,7 +328,7 @@ class MapClustering {
   }
 
   // Calculate centroid of cluster markers
-  private calculateCentroid(dispatches: Dispatch[]): LatLng {
+  private calculateCentroid(dispatches: DispatchWithType[]): LatLng {
     const totalLat = dispatches.reduce(
       (sum, dispatch) => sum + dispatch.location.lat,
       0,
@@ -343,7 +345,7 @@ class MapClustering {
   }
 
   // Calculate bounds for cluster
-  private calculateBounds(dispatches: Dispatch[]): {
+  private calculateBounds(dispatches: DispatchWithType[]): {
     north: number;
     south: number;
     east: number;
@@ -369,7 +371,7 @@ class MapClustering {
   }
 
   // Get noise points (markers not in any cluster)
-  public getNoisePoints(): Dispatch[] {
+  public getNoisePoints(): DispatchWithType[] {
     const clusteredIndices = new Set<number>();
     this.clusters.forEach((cluster) => {
       cluster.dispatches.forEach((dispatch) => {
@@ -394,7 +396,7 @@ class MapClustering {
 // Usage functions with different clustering strategies
 function clusterDispatches(
   zoom: number,
-  markers: Dispatch[],
+  markers: DispatchWithType[],
   strategy: "dbscan" | "kmeans" | "grid" = "dbscan",
   options: {
     minPoints?: number;
@@ -403,7 +405,7 @@ function clusterDispatches(
   } = {},
 ): {
   clusters: Cluster[];
-  noise: Dispatch[];
+  noise: DispatchWithType[];
 } {
   const clustering = new MapClustering(markers);
   let clusters: Cluster[];

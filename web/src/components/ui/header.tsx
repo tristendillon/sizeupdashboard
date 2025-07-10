@@ -7,7 +7,7 @@ import { LogoutButton } from "./logout-button";
 export function Header() {
   return (
     <nav className="bg-card flex h-32 w-screen items-center">
-      <div className="hidden min-w-28 items-center gap-4 p-4 sm:flex md:w-full md:max-w-[40%]">
+      <div className="hidden min-w-28 items-center gap-4 p-4 sm:flex md:w-full md:max-w-[30%]">
         <Image
           src="/logos/logo_256.png"
           alt="MFD Alerts"

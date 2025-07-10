@@ -12,4 +12,5 @@ export type Cluster = {
 
 export type Dispatch = z.infer<typeof DispatchesSchema> & {
   location: LatLng;
+  _creationTime: number;
 };

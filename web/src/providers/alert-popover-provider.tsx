@@ -1,6 +1,5 @@
 "use client";
 
-import type { DispatchesSchema } from "@sizeupdashboard/convex/api/schema";
 import {
   createContext,
   useCallback,
@@ -9,16 +8,14 @@ import {
   useRef,
   useState,
 } from "react";
-import type { z } from "zod";
 import { useDispatches } from "./dispatches-provider";
-
-type Dispatch = z.infer<typeof DispatchesSchema>;
+import type { DispatchWithType } from "@sizeupdashboard/convex/api/schema";
 
 type AlertPopoverContextType = {
-  dispatch: Dispatch | null;
+  dispatch: DispatchWithType | null;
   timeLeft: number;
   dismissDispatch: () => void;
-  activateDispatch: (dispatch: Dispatch) => void;
+  activateDispatch: (dispatch: DispatchWithType) => void;
 };
 
 export const AlertPopoverContext =
@@ -33,7 +30,9 @@ const TIMER_INTERVAL_MS = 100; // Update every 100ms
 
 export function AlertPopoverProvider({ children }: AlertPopoverProviderProps) {
   const { dispatches } = useDispatches();
-  const [activeDispatch, setActiveDispatch] = useState<Dispatch | null>(null);
+  const [activeDispatch, setActiveDispatch] = useState<DispatchWithType | null>(
+    null,
+  );
   const [timeLeft, setTimeLeft] = useState<number>(0);
 
   const autoCloseTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -63,7 +62,7 @@ export function AlertPopoverProvider({ children }: AlertPopoverProviderProps) {
   }, [activeDispatch, clearAllTimers]);
 
   const activateDispatch = useCallback(
-    (dispatch: Dispatch, autoActivated = false) => {
+    (dispatch: DispatchWithType, autoActivated = false) => {
       // Clear any existing timers
       clearAllTimers();
 
@@ -75,7 +74,8 @@ export function AlertPopoverProvider({ children }: AlertPopoverProviderProps) {
       setActiveDispatch(dispatch);
 
       // Calculate time left based on dispatch creation time
-      const elapsed = Date.now() - dispatch.dispatchCreatedAt;
+      const elapsed = Date.now() - dispatch._creationTime;
+      console.log("elapsed", elapsed);
       const remainingTime = Math.max(0, DISPLAY_DURATION_MS - elapsed);
 
       setTimeLeft(remainingTime);
@@ -138,7 +138,9 @@ export function AlertPopoverProvider({ children }: AlertPopoverProviderProps) {
 
     if (!latestDispatch) return;
 
-    const timeSinceDispatch = Date.now() - latestDispatch.dispatchCreatedAt;
+    console.log("latestDispatch", latestDispatch);
+    const timeSinceDispatch = Date.now() - latestDispatch._creationTime;
+    console.log("timeSinceDispatch", timeSinceDispatch);
     const isWithinTimeFrame = timeSinceDispatch <= DISPLAY_DURATION_MS;
     const hasBeenDismissed = dismissedDispatchIdsRef.current.has(
       latestDispatch.dispatchId,

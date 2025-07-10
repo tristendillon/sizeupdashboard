@@ -3,10 +3,11 @@ import { getAlertIconPath } from "@/utils/icons";
 import { AdvancedMarker } from "@vis.gl/react-google-maps";
 import { cn } from "@/utils/ui";
 import Image from "next/image";
+import type { DispatchType } from "@sizeupdashboard/convex/api/schema";
 
 interface IncidentMarkerProps {
   location: LatLng;
-  type: string;
+  dispatchType?: DispatchType;
   children?: React.ReactNode;
   className?: string;
   onClick?: () => void;
@@ -14,12 +15,12 @@ interface IncidentMarkerProps {
 
 export default function IncidentMarker({
   location,
-  type,
+  dispatchType,
   children,
   className,
   onClick,
 }: IncidentMarkerProps) {
-  const icon = getAlertIconPath(type);
+  const icon = getAlertIconPath(dispatchType ?? "other");
 
   return (
     <AdvancedMarker
@@ -27,7 +28,12 @@ export default function IncidentMarker({
       className={cn("relative", className)}
       position={location}
     >
-      <Image src={icon} alt={type} width={40} height={40} />
+      <Image
+        src={icon}
+        alt={dispatchType?.group ?? "other"}
+        width={40}
+        height={40}
+      />
       {children}
     </AdvancedMarker>
   );

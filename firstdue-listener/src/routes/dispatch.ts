@@ -1,6 +1,10 @@
 import { RoutineRouter, RoutineRouterOptions } from './routineRouter'
 import { api } from '@sizeupdashboard/convex/api/_generated/api'
-import { PostDispatch } from '@sizeupdashboard/convex/api/schema'
+import {
+  Dispatch,
+  DispatchType,
+  PostDispatch,
+} from '@sizeupdashboard/convex/api/schema'
 import { config } from '@/config'
 import { Request, Response } from 'express'
 import {
@@ -70,18 +74,18 @@ interface FirstDueNfirsNotification {
 
 interface FirstDueDispatch {
   id: string
-  type: string
-  message: string
-  address: string
-  address2: string
-  city: string
-  state_code: string
-  latitude: string
-  longitude: string
+  type: string | null
+  message: string | null
+  address: string | null
+  address2: string | null
+  city: string | null
+  state_code: string | null
+  latitude: number | null
+  longitude: number | null
   unit_codes: string[]
-  incident_type_code: string
-  status_code: string
-  xref_id: string
+  incident_type_code: string | null
+  status_code: string | null
+  xref_id: string | null
   created_at: string
 }
 
@@ -110,8 +114,8 @@ interface DispatchStats {
 
 export class DispatchRoutineRouter extends RoutineRouter {
   protected readonly interval: number = DISPATCH_INTERVAL
-  private latestDispatchData: Doc<'dispatches'>
-  private dispatchTypes: Doc<'dispatchTypes'>[]
+  private latestDispatchData: Dispatch
+  private dispatchTypes: DispatchType[]
   private lastDispatchTime: number = 0
   private lastDispatchTimeInvalid: boolean = false
   public stats: DispatchStats = this.defaultStats()
@@ -479,7 +483,7 @@ export class DispatchRoutineRouter extends RoutineRouter {
     }
   }
 
-  private async getDispatchTypes(): Promise<Doc<'dispatchTypes'>[]> {
+  private async getDispatchTypes(): Promise<DispatchType[]> {
     this.ctx.logger.info('Getting dispatch types')
     const timer = this.ctx.logger.perf.start({
       id: 'getDispatchTypes',
@@ -548,20 +552,20 @@ export class DispatchRoutineRouter extends RoutineRouter {
   private parseFirstDueDispatch(dispatch: FirstDueDispatch): PostDispatch {
     return {
       dispatchId: Number(dispatch.id),
-      type: dispatch.type,
-      message: dispatch.message,
-      address: dispatch.address,
-      address2: dispatch.address2,
-      city: dispatch.city,
-      stateCode: dispatch.state_code,
+      type: dispatch.type ?? '',
+      message: dispatch.message ?? undefined,
+      address: dispatch.address ?? '',
+      address2: dispatch.address2 ?? undefined,
+      city: dispatch.city ?? undefined,
+      stateCode: dispatch.state_code ?? undefined,
       location: {
         lat: Number(dispatch.latitude),
         lng: Number(dispatch.longitude),
       },
       unitCodes: dispatch.unit_codes,
-      incidentTypeCode: dispatch.incident_type_code,
-      statusCode: dispatch.status_code,
-      xrefId: dispatch.xref_id,
+      incidentTypeCode: dispatch.incident_type_code ?? undefined,
+      statusCode: dispatch.status_code ?? undefined,
+      xrefId: dispatch.xref_id ?? undefined,
       dispatchCreatedAt: new Date(dispatch.created_at).getTime(),
     }
   }
@@ -800,7 +804,7 @@ export class DispatchRoutineRouter extends RoutineRouter {
       }
 
       this.ctx.logger.info(`Found ${data.length} new dispatches`)
-      const parsedData: PostDispatch[] = data.map((dispatch) =>
+      const parsedData: Dispatch[] = data.map((dispatch) =>
         this.parseFirstDueDispatch(dispatch)
       )
       await this.insertDispatches(parsedData)

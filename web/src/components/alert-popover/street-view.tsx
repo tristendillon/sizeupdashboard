@@ -4,8 +4,7 @@ import { useEffect, useRef } from "react";
 import { getAlertIconPath } from "@/utils/icons";
 import { getLatLngDistances } from "@/utils/lat-lng";
 import { env } from "@/env";
-import type { DispatchesSchema } from "@sizeupdashboard/convex/api/schema";
-import type { z } from "zod";
+import type { DispatchWithType } from "@sizeupdashboard/convex/api/schema";
 import { useMap } from "@vis.gl/react-google-maps";
 import type { LatLng } from "@/lib/types";
 
@@ -13,10 +12,9 @@ const containerStyle = {
   width: "100%",
   height: "300px",
 };
-type Dispatch = z.infer<typeof DispatchesSchema>;
 
 interface StreetViewProps {
-  dispatch: Dispatch;
+  dispatch: DispatchWithType;
 }
 
 type GeocodeResponse = {
@@ -34,7 +32,10 @@ type GeocodeResponse = {
 /**
  * Attempts to geocode the provided address, with fallback to alert coordinates
  */
-const fetchGeocode = async (fullAddress: string, dispatch: Dispatch) => {
+const fetchGeocode = async (
+  fullAddress: string,
+  dispatch: DispatchWithType,
+) => {
   const alertCoords = dispatch.location as LatLng;
   const encoded = encodeURIComponent(fullAddress);
 
@@ -129,7 +130,7 @@ const StreetView: React.FC<StreetViewProps> = ({ dispatch }) => {
           position: target,
           map: panorama,
           icon: {
-            url: getAlertIconPath(dispatch.type),
+            url: getAlertIconPath(dispatch.dispatchType ?? dispatch.type),
             scaledSize: new google.maps.Size(40, 40),
           },
         });

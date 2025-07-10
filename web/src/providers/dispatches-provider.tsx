@@ -3,16 +3,20 @@
 import { api } from "@sizeupdashboard/convex/api/_generated/api";
 import { createContext, useCallback, useContext } from "react";
 import type { PaginationStatus } from "convex/react";
-import type { Dispatch, LatLng } from "@/lib/types";
+import type { LatLng } from "@/lib/types";
 import { getLatLngDistances } from "@/utils/lat-lng";
 import { useViewToken } from "./view-providers";
 import { useAuthenticatedPaginatedQuery } from "@/hooks/use-authenticated-paginated-query";
+import type { DispatchWithType } from "@sizeupdashboard/convex/api/schema";
 
 interface DispatchesContextType {
-  dispatches: Dispatch[];
+  dispatches: DispatchWithType[];
   status: PaginationStatus;
   loadMore: (numItems: number) => void;
-  getDispatchesInRadius: (location: LatLng, distnace: number) => Dispatch[];
+  getDispatchesInRadius: (
+    location: LatLng,
+    distnace: number,
+  ) => DispatchWithType[];
 }
 
 const dispatchesContext = createContext<DispatchesContextType | null>(null);

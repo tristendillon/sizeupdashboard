@@ -7,7 +7,7 @@ import { HydrantsRenderer } from "../alert-popover/hydrants-renderer";
 import { type z } from "zod";
 import type {
   ActiveWeatherAlertsSchema,
-  DispatchesSchema,
+  DispatchWithType,
 } from "@sizeupdashboard/convex/api/schema";
 import IncidentMarker from "../maps/incident-marker";
 import { useWeather } from "@/providers/weather-provider";
@@ -18,7 +18,6 @@ import { getCenterOfLatLngs } from "@/utils/lat-lng";
 import { useRef } from "react";
 import { IncidentMarkersRenderer } from "../maps/dispatch-marker-renderer";
 
-type Dispatch = z.infer<typeof DispatchesSchema>;
 type WeatherAlert = z.infer<typeof ActiveWeatherAlertsSchema>;
 
 export const NORMAL_MAP_ID = "home-map";
@@ -143,7 +142,7 @@ export function NormalMap({
 }
 
 interface PopoverMapProps {
-  dispatch: Dispatch;
+  dispatch: DispatchWithType;
   className?: string;
   mapClassName?: string;
   children: React.ReactNode;
@@ -165,7 +164,10 @@ export function PopoverMap({
       mapClassName={mapClassName}
       disableMovement={true}
     >
-      <IncidentMarker location={dispatch.location} type={dispatch.type} />
+      <IncidentMarker
+        location={dispatch.location}
+        dispatchType={dispatch.dispatchType}
+      />
       <HydrantsRenderer mapId={POPOVER_MAP_ID} />
       <div className="absolute right-0 bottom-0 hidden h-[300px] w-[300px] md:block">
         <StreetView dispatch={dispatch} />

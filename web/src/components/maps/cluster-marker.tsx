@@ -1,5 +1,4 @@
-import type { Dispatch } from "@/lib/types";
-import { getAlertIconPath, getAlertIconType } from "@/utils/icons";
+import { getAlertIconPath } from "@/utils/icons";
 import { AdvancedMarker } from "@vis.gl/react-google-maps";
 import { cn } from "@/utils/ui";
 import Image from "next/image";
@@ -12,20 +11,24 @@ import {
 import { useAlertPopover } from "@/providers/alert-popover-provider";
 import { useDispatches } from "@/providers/dispatches-provider";
 import useDebounce from "@/hooks/use-debounce";
+import type {
+  DispatchGroupEnum,
+  DispatchWithType,
+} from "@sizeupdashboard/convex/api/schema";
 
 interface ClusterMarkerProps {
   location: {
     lat: number;
     lng: number;
   };
-  type: string;
-  dispatches: Dispatch[];
+  group: DispatchGroupEnum;
+  dispatches: DispatchWithType[];
   children?: React.ReactNode;
   className?: string;
 }
 
 interface DispatchCardProps {
-  dispatch: Dispatch;
+  dispatch: DispatchWithType;
   className?: string;
   closePopover: () => void;
 }
@@ -53,8 +56,8 @@ function DispatchCard({
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
           <Image
-            src={getAlertIconPath(dispatch.type)}
-            alt={dispatch.type}
+            src={getAlertIconPath(dispatch.dispatchType ?? dispatch.type)}
+            alt={dispatch.dispatchType?.group ?? dispatch.type}
             width={16}
             height={16}
             className="flex-shrink-0"
@@ -71,7 +74,7 @@ function DispatchCard({
 
 export default function ClusterMarker({
   location,
-  type,
+  group,
   dispatches,
   children,
   className,
@@ -79,8 +82,13 @@ export default function ClusterMarker({
   const [isOpen, _setIsOpen] = useState(false);
   const setIsOpen = useDebounce(_setIsOpen, 100);
   const { getDispatchesInRadius } = useDispatches();
-  const [similarDispatches, setSimilarDispatches] = useState<Dispatch[]>([]);
-  const icon = getAlertIconPath(type);
+  const [similarDispatches, setSimilarDispatches] = useState<
+    DispatchWithType[]
+  >([]);
+  const startDispatch = dispatches[0];
+  const icon = getAlertIconPath(
+    startDispatch?.dispatchType ?? startDispatch?.type ?? "other",
+  );
 
   const handleMarkerClick = () => {
     setIsOpen((prev) => !prev);
@@ -108,7 +116,7 @@ export default function ClusterMarker({
           className={cn("relative cursor-pointer", className)}
           position={location}
         >
-          <Image src={icon} alt={type} width={40} height={40} />
+          <Image src={icon} alt={group} width={40} height={40} />
           {children}
         </AdvancedMarker>
       </PopoverTrigger>
@@ -116,9 +124,9 @@ export default function ClusterMarker({
       <PopoverContent className="w-80 p-4">
         <div className="space-y-4">
           <div className="flex items-center space-x-2">
-            <Image src={icon} alt={type} width={24} height={24} />
+            <Image src={icon} alt={group} width={24} height={24} />
             <h3 className="text-lg font-semibold capitalize">
-              {getAlertIconType(type)} Cluster
+              {group} Cluster
             </h3>
           </div>
 

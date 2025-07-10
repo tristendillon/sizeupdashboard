@@ -1,7 +1,5 @@
 "use client";
 
-import type { z } from "zod";
-import type { DispatchesSchema } from "@sizeupdashboard/convex/api/schema";
 import { Separator } from "@/components/ui/separator";
 import {
   DEFAULT_NUM_DISPATCHES,
@@ -13,12 +11,12 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "../ui/skeleton";
 import { relativeTs } from "@/utils/timestamp";
 import { useAlertPopover } from "@/providers/alert-popover-provider";
-type Dispatch = z.infer<typeof DispatchesSchema>;
+import type { DispatchWithType } from "@sizeupdashboard/convex/api/schema";
 
 export function ViewSidebar() {
   const { dispatch } = useAlertPopover();
   return (
-    <section className="bg-secondary overflow-y-none relative flex h-full max-h-[60vh] w-full flex-col md:max-h-[100vh] md:max-w-[40%]">
+    <section className="bg-secondary overflow-y-none relative flex h-full max-h-[60vh] w-full flex-col md:max-h-[100vh] md:max-w-[30%]">
       {dispatch && <AlertPopoverSidebarContent dispatch={dispatch} />}
       <NormalSidebarContent />
     </section>
@@ -26,7 +24,7 @@ export function ViewSidebar() {
 }
 
 interface AlertPopoverSidebarProps {
-  dispatch: Dispatch;
+  dispatch: DispatchWithType;
 }
 
 function AlertPopoverSidebarContent({ dispatch }: AlertPopoverSidebarProps) {
@@ -144,8 +142,8 @@ function SkeletonCard() {
 }
 
 interface DispatchCardProps {
-  dispatch: Dispatch;
-  activateDispatch: (dispatch: Dispatch) => void;
+  dispatch: DispatchWithType;
+  activateDispatch: (dispatch: DispatchWithType) => void;
 }
 
 function DispatchCard({ dispatch, activateDispatch }: DispatchCardProps) {

@@ -1,3 +1,5 @@
+import type { DispatchType } from "@sizeupdashboard/convex/api/schema";
+
 const fireDescriptors = ["fire", "burn", "smoke", "explosion", "bomb"];
 
 export function getAlertIconType(input: string): "fire" | "medical" {
@@ -8,9 +10,12 @@ export function getAlertIconType(input: string): "fire" | "medical" {
   return "medical";
 }
 
-export function getAlertIconPath(input: string) {
-  const type = getAlertIconType(input);
-  return `/icons/incidents/${type}.png`;
+export function getAlertIconPath(dispatchType: DispatchType | string) {
+  if (typeof dispatchType === "string") {
+    const fallbackType = getAlertIconType(dispatchType);
+    return `/icons/incidents/${fallbackType}.png`;
+  }
+  return `/icons/incidents/${dispatchType.group}.png`;
 }
 
 export const getFlowRateColor = (flow_rate: number) => {

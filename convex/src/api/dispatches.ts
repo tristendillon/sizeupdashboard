@@ -2,10 +2,13 @@
 import { partial } from 'convex-helpers/validators'
 import { mutation } from '../lib/mutation'
 import { type QueryCtx, query } from './_generated/server'
-import { Dispatches } from './schema'
+import {
+  type DispatchWithType,
+  Dispatches,
+  type RedactionLevel,
+} from './schema'
 import { paginationOptsValidator } from 'convex/server'
 import { v } from 'convex/values'
-import { type Doc } from './_generated/dataModel'
 import { api } from './_generated/api'
 
 export const paginatedClearDispatches = mutation({
@@ -52,24 +55,17 @@ export const createDispatch = mutation({
   },
 })
 
-type RedactionLevelWithPriority = Omit<Doc<'redactionLevels'>, 'priority'> & {
-  priority: Doc<'priorityLevels'>
-}
-
 async function getRedactionLevelForDispatch(
-  dispatch: Doc<'dispatches'>,
+  dispatch: DispatchWithType,
   ctx: QueryCtx,
-  redactionLevelsWithPriority: RedactionLevelWithPriority[]
+  allRedactionLevels: RedactionLevel[]
 ) {
   const dispatchType = dispatch.dispatchType
-    ? await ctx.db.get(dispatch.dispatchType)
+    ? await ctx.db.get(dispatch.dispatchType._id)
     : null
-  const sortedRedactionLevels = redactionLevelsWithPriority.sort(
-    (a, b) => a.priority.priority - b.priority.priority
-  )
   const type = dispatch.type.toLowerCase()
 
-  const redactionLevels = sortedRedactionLevels.filter((level) => {
+  const redactionLevels = allRedactionLevels.filter((level) => {
     if (dispatchType && level.dispatchTypes.includes(dispatchType._id)) {
       return true
     }
@@ -87,12 +83,11 @@ async function getRedactionLevelForDispatch(
 }
 
 async function redactDispatch(
-  dispatch: Doc<'dispatches'>,
-  ctx: QueryCtx,
-  redactionLevels: RedactionLevelWithPriority[]
+  dispatch: DispatchWithType,
+  redactionLevels: RedactionLevel[]
 ) {
   const fieldsToRedact = redactionLevels.flatMap(
-    (level) => level.redactionFields as (keyof Doc<'dispatches'>)[]
+    (level) => level.redactionFields as (keyof DispatchWithType)[]
   )
   const redactedDispatch = { ...dispatch }
 
@@ -112,22 +107,22 @@ async function redactDispatch(
         redactedDispatch.narrative = 'REDACTED'
         break
       case 'message':
-        redactedDispatch.message = null
+        redactedDispatch.message = undefined
         break
       case 'address2':
-        redactedDispatch.address2 = null
+        redactedDispatch.address2 = undefined
         break
       case 'city':
-        redactedDispatch.city = null
+        redactedDispatch.city = undefined
         break
       case 'stateCode':
-        redactedDispatch.stateCode = null
+        redactedDispatch.stateCode = undefined
         break
       case 'statusCode':
-        redactedDispatch.statusCode = null
+        redactedDispatch.statusCode = undefined
         break
       case 'xrefId':
-        redactedDispatch.xrefId = null
+        redactedDispatch.xrefId = undefined
         break
     }
   })
@@ -145,28 +140,19 @@ async function redactDispatch(
 
   return redactedDispatch
 }
-async function redactDispatches(
-  dispatches: Doc<'dispatches'>[],
-  ctx: QueryCtx
-) {
-  const redactionLevels = await ctx.db.query('redactionLevels').collect()
-  const redactionLevelsWithPriority = await Promise.all(
-    redactionLevels.map(async (level) => ({
-      ...level,
-      priority: (await ctx.db.get(level.priority))!,
-    }))
-  )
+async function redactDispatches(dispatches: DispatchWithType[], ctx: QueryCtx) {
+  const allRedactionLevels = await ctx.db.query('redactionLevels').collect()
   return await Promise.all(
     dispatches.map(async (dispatch) => {
       const redactionLevels = await getRedactionLevelForDispatch(
         dispatch,
         ctx,
-        redactionLevelsWithPriority
+        allRedactionLevels
       )
       if (!redactionLevels.length) {
         return dispatch
       }
-      return redactDispatch(dispatch, ctx, redactionLevels)
+      return redactDispatch(dispatch, redactionLevels)
     })
   )
 }
@@ -178,12 +164,20 @@ export const getDispatches = query({
     convexSessionToken: v.optional(v.string()),
   },
   handler: async (ctx, { paginationOpts, viewToken, convexSessionToken }) => {
-    const dispatches = await ctx.db
+    const paginationResult = await ctx.db
       .query('dispatches')
       .withIndex('by_dispatchCreatedAt')
       .order('desc')
       .paginate(paginationOpts)
-
+    const dispatchesWithType = await Promise.all(
+      paginationResult.page.map(async (dispatch) => {
+        if (!dispatch.dispatchType) {
+          return { ...dispatch, dispatchType: undefined }
+        }
+        const dispatchType = await ctx.db.get(dispatch.dispatchType)
+        return { ...dispatch, dispatchType: dispatchType ?? undefined }
+      })
+    )
     if (convexSessionToken) {
       const isAuthenticated = await ctx.runQuery(
         api.auth.getAuthenticatedSession,
@@ -192,17 +186,23 @@ export const getDispatches = query({
         }
       )
       if (isAuthenticated) {
-        return dispatches
+        return {
+          ...paginationResult,
+          page: dispatchesWithType,
+        }
       }
     }
 
     const view = viewToken ? await ctx.db.get(viewToken) : null
     if (view) {
-      return dispatches
+      return {
+        ...paginationResult,
+        page: dispatchesWithType,
+      }
     }
-    const newPage = await redactDispatches(dispatches.page, ctx)
+    const newPage = await redactDispatches(dispatchesWithType, ctx)
     return {
-      ...dispatches,
+      ...paginationResult,
       page: newPage,
     }
   },

@@ -208,8 +208,27 @@ export const getDispatches = query({
   },
 })
 
+export const testDispatchQuery = query({
+  args: {
+    convexSessionToken: v.optional(v.string()),
+  },
+  handler: async (ctx, { convexSessionToken }) => {
+    if (convexSessionToken) {
+      const isAuthenticated = await ctx.runQuery(
+        api.auth.getAuthenticatedSession,
+        {
+          convexSessionToken,
+        }
+      )
+      if (isAuthenticated) {
+        return await ctx.db.query('dispatches').take(10)
+      }
+    }
+    return 'not authenticated'
+  },
+})
+
 export const getLastDispatchData = query({
-  args: {},
   handler: async (ctx) => {
     const lastDispatch = await ctx.db
       .query('dispatches')

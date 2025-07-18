@@ -1,4 +1,4 @@
-import { RoutineRouter, RoutineRouterOptions } from './routineRouter'
+import { RoutineRouter, RoutineRouterOptions, RoutineStats } from './routineRouter'
 import { api } from '@sizeupdashboard/convex/api/_generated/api'
 import {
   PostActiveWeatherAlert,
@@ -12,9 +12,9 @@ import { Request, Response } from 'express'
 import {
   FormattedDateTime,
   formatDateTime,
-  formatTimezoneDate,
 } from '@/lib/utils'
 import { Id } from '@sizeupdashboard/convex/api/_generated/dataModel'
+import { createDefaultRetryStats } from '@/lib/fetch-with-retry'
 
 const WEATHER_INTERVAL = 60_000 * 15 // 15 minutes
 const WEATHER_NAME = 'Weather'
@@ -123,8 +123,7 @@ interface ConvexWeatherData {
   alerts?: PostActiveWeatherAlert[]
 }
 
-interface WeatherStats {
-  totalApiCalls: number
+interface WeatherStats extends RoutineStats {
   totalHoursProcessed: number
   totalDaysProcessed: number
   totalAlertsProcessed: number
@@ -133,7 +132,6 @@ interface WeatherStats {
   totalDataPointsDeleted: number
   lastFetchTime?: FormattedDateTime
   lastUpdateTime?: FormattedDateTime
-  errorCount: number
   averageApiResponseTime?: number
   averageProcessingTime?: number
   uniqueWeatherDetailsCount: number
@@ -141,7 +139,7 @@ interface WeatherStats {
 
 export class WeatherRoutineRouter extends RoutineRouter {
   protected readonly interval: number = WEATHER_INTERVAL
-  public stats: WeatherStats = this.defaultStats()
+  public stats = this.defaultStats()
   private oldWeatherIds: string[] = []
   private weatherDetails: Set<number> = new Set()
   private apiResponseTimes: number[] = []
@@ -165,7 +163,7 @@ export class WeatherRoutineRouter extends RoutineRouter {
 
   protected defaultStats(): WeatherStats {
     return {
-      totalApiCalls: 0,
+      apiCallCount: 0,
       totalHoursProcessed: 0,
       totalDaysProcessed: 0,
       totalAlertsProcessed: 0,
@@ -174,6 +172,7 @@ export class WeatherRoutineRouter extends RoutineRouter {
       totalDataPointsDeleted: 0,
       errorCount: 0,
       uniqueWeatherDetailsCount: 0,
+      retryStats: createDefaultRetryStats()
     }
   }
 
@@ -495,8 +494,7 @@ export class WeatherRoutineRouter extends RoutineRouter {
     })
 
     try {
-      this.stats.totalApiCalls++
-      const res = await fetch(url)
+      const res = await this.fetchWithRetry(url)
       const responseTime = fetchTimer.end()
 
       // Track API response time
@@ -524,7 +522,7 @@ export class WeatherRoutineRouter extends RoutineRouter {
     } catch (error) {
       this.stats.errorCount++
       this.ctx.logger.error('Weather API fetch failed', {
-        error,
+        error: (error as Error).message,
         url: safeUrl,
       })
       fetchTimer.end()

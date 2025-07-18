@@ -1,9 +1,10 @@
-import { RoutineRouter, RoutineRouterOptions } from './routineRouter'
+import { RoutineRouter, RoutineRouterOptions, RoutineStats } from './routineRouter'
 import { PostHydrant } from '@sizeupdashboard/convex/api/schema'
 import { config } from '@/config'
 import { api } from '@sizeupdashboard/convex/api/_generated/api'
 import { Request, Response } from 'express'
 import { FormattedDateTime, formatDateTime } from '@/lib/utils'
+import { createDefaultRetryStats } from '@/lib/fetch-with-retry'
 
 export interface FirstDueHydrant {
   facility_code: string
@@ -71,13 +72,11 @@ export interface FirstDueHydrant {
 const HYDRANTS_INTERVAL = 1000 * 60 * 60 * 24 // 24 hours
 const HYDRANTS_NAME = 'Hydrants'
 
-interface HydrantsStats {
-  totalApiCalls: number
+interface HydrantsStats extends RoutineStats{
   totalHydrantsProcessed: number
   totalHydrantsCreated: number
   lastFetchTime?: FormattedDateTime
   lastUpdateTime?: FormattedDateTime
-  errorCount: number
   averageApiResponseTime?: number
   averageProcessingTime?: number
 }
@@ -101,10 +100,11 @@ export class HydrantsRoutineRouter extends RoutineRouter {
 
   protected defaultStats(): HydrantsStats {
     return {
-      totalApiCalls: 0,
+      apiCallCount: 0,
       totalHydrantsProcessed: 0,
       totalHydrantsCreated: 0,
       errorCount: 0,
+      retryStats: createDefaultRetryStats()
     }
   }
 
@@ -182,7 +182,7 @@ export class HydrantsRoutineRouter extends RoutineRouter {
 
       this.ctx.logger.info('Testing FirstDue Hydrants API connection')
 
-      const response = await fetch(`${config.firstdueApiUrl}/get-hydrants`, {
+      const response = await this.fetchWithRetry(`${config.firstdueApiUrl}/get-hydrants`, {
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${config.firstdueApiKey}`,
@@ -270,8 +270,7 @@ export class HydrantsRoutineRouter extends RoutineRouter {
     })
 
     try {
-      this.stats.totalApiCalls++
-      const response = await fetch(
+      const response = await this.fetchWithRetry(
         `${config.firstdueApiUrl}/get-hydrants?hydrant_status_code=${hydrantStatusCode}`,
         {
           headers: {

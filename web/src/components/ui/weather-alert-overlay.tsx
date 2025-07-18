@@ -2,6 +2,7 @@ import type { ActiveWeatherAlertsSchema } from "@sizeupdashboard/convex/api/sche
 import { type z } from "zod";
 import React from "react";
 import { cn } from "@/utils/ui";
+import { timeStampFormatter } from "@/utils/timestamp";
 
 // Define alert severity levels and their corresponding colors
 const getAlertSeverity = (
@@ -102,15 +103,6 @@ const getAlertSeverity = (
   };
 };
 
-const formatDateTime = (timestamp: number): string => {
-  return new Date(timestamp).toLocaleString(undefined, {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-};
-
 // Context for sharing alert data
 type WeatherAlertType = z.infer<typeof ActiveWeatherAlertsSchema>;
 const AlertContext = React.createContext<WeatherAlertType | null>(null);
@@ -135,7 +127,7 @@ const WeatherAlert = React.forwardRef<
       <div
         ref={ref}
         className={cn(
-          "rounded-lg border-l-4 border-l-white/50 p-4 shadow-lg backdrop-blur-sm",
+          "rounded-lg border-l-4 border-l-white/50 p-4 shadow-lg backdrop-blur-[2px]",
           colorClass,
           textColor,
           className,
@@ -151,21 +143,14 @@ WeatherAlert.displayName = "WeatherAlert";
 const WeatherAlertHeader = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => {
-  const alert = useAlert();
-  const { level } = getAlertSeverity(alert.event);
-
+>(({ className, children, ...props }, ref) => {
   return (
     <div
       ref={ref}
-      className={cn("mb-2 flex items-start justify-between", className)}
+      className={cn("mb-2 gap-2 items-center flex w-full justify-between", className)}
       {...props}
     >
-      <div className="flex items-center space-x-2">
-        <span className="inline-block h-3 w-3 animate-pulse rounded-full bg-white"></span>
-        <WeatherAlertTitle />
-      </div>
-      <WeatherAlertBadge>{level}</WeatherAlertBadge>
+      {children}
     </div>
   );
 });
@@ -186,20 +171,44 @@ const WeatherAlertTitle = React.forwardRef<
 });
 WeatherAlertTitle.displayName = "WeatherAlertTitle";
 
+const WeatherAlertSeverity = React.forwardRef<
+  HTMLSpanElement,
+  React.HTMLAttributes<HTMLSpanElement>
+>(({ className, ...props }, ref) => {
+  const alert = useAlert()
+  const severity = getAlertSeverity(alert.event)
+  return ( 
+    <WeatherAlertBadge
+      ref={ref}
+      className={cn(
+        "rounded bg-white/20 px-2 py-1 text-sm font-medium",
+        className,
+      )}
+      {...props}
+    >
+      {severity.level}
+    </WeatherAlertBadge>
+  )
+});
+WeatherAlertSeverity.displayName = "WeatherAlertSeverity";
+
+
 // Alert Badge
 const WeatherAlertBadge = React.forwardRef<
   HTMLSpanElement,
   React.HTMLAttributes<HTMLSpanElement>
->(({ className, ...props }, ref) => (
-  <span
-    ref={ref}
-    className={cn(
-      "rounded bg-white/20 px-2 py-1 text-sm font-medium",
-      className,
-    )}
-    {...props}
-  />
-));
+>(({ className, ...props }, ref) => {
+  return ( 
+    <span
+      ref={ref}
+      className={cn(
+        "rounded bg-white/20 px-2 py-1 text-sm font-medium",
+        className,
+      )}
+      {...props}
+    />
+  )
+});
 WeatherAlertBadge.displayName = "WeatherAlertBadge";
 
 // Alert Description
@@ -221,13 +230,21 @@ const WeatherAlertDescription = React.forwardRef<
 });
 WeatherAlertDescription.displayName = "WeatherAlertDescription";
 
+type WeatherAlertTimeRangeProps = React.HTMLAttributes<HTMLDivElement> & {
+  format: "short-12h" | "short-24h"
+};
+
+
+
 // Alert Time Range
 const WeatherAlertTimeRange = React.forwardRef<
   HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => {
+  WeatherAlertTimeRangeProps
+>(({ className, format, ...props }, ref) => {
   const alert = useAlert();
-
+  const formatShort = timeStampFormatter(format)
+  const start = formatShort(alert.start)
+  const end = formatShort(alert.end)
   return (
     <div
       ref={ref}
@@ -238,10 +255,10 @@ const WeatherAlertTimeRange = React.forwardRef<
       {...props}
     >
       <span>
-        <strong>From:</strong> {formatDateTime(alert.start)}
+        <strong>From:</strong> {start}
       </span>
       <span>
-        <strong>Until:</strong> {formatDateTime(alert.end)}
+        <strong>Until:</strong> {end}
       </span>
     </div>
   );
@@ -280,9 +297,7 @@ WeatherAlertTags.displayName = "WeatherAlertTags";
 const WeatherAlertFooter = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => {
-  const alert = useAlert();
-
+>(({ className, children, ...props }, ref) => {
   return (
     <div
       ref={ref}
@@ -292,12 +307,32 @@ const WeatherAlertFooter = React.forwardRef<
       )}
       {...props}
     >
-      <WeatherAlertTimeRange />
-      <span className="text-xs opacity-75">{alert.senderName}</span>
+      {children}
     </div>
   );
 });
 WeatherAlertFooter.displayName = "WeatherAlertFooter";
+
+const WeatherAlertSender = React.forwardRef<
+  HTMLSpanElement,
+  React.HTMLAttributes<HTMLSpanElement>
+>(({ className, ...props }, ref) => {
+  const alert = useAlert();
+
+  return (
+    <span
+      ref={ref}
+      className={cn(
+        "text-xs opacity-75",
+        className,
+      )}
+      {...props}
+    >
+      {alert.senderName}
+    </span>
+  );
+});
+WeatherAlertSender.displayName = "WeatherAlertSender";
 
 export {
   WeatherAlert,
@@ -308,4 +343,6 @@ export {
   WeatherAlertTimeRange,
   WeatherAlertTags,
   WeatherAlertFooter,
+  WeatherAlertSender,
+  WeatherAlertSeverity
 };

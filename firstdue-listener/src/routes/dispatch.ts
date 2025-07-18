@@ -1,4 +1,4 @@
-import { RoutineRouter, RoutineRouterOptions } from './routineRouter'
+import { RoutineRouter, RoutineRouterOptions, RoutineStats } from './routineRouter'
 import { api } from '@sizeupdashboard/convex/api/_generated/api'
 import {
   Dispatch,
@@ -12,7 +12,10 @@ import {
   formatDateTime,
   formatTimezoneDate,
 } from '@/lib/utils'
-import { Doc } from '@sizeupdashboard/convex/api/_generated/dataModel'
+import {
+  createDefaultRetryStats,
+  DEFAULT_RETRY_CONFIG,
+} from '@/lib/fetch-with-retry'
 
 const DISPATCH_INTERVAL = 5000
 const DISPATCH_NAME = 'Dispatch'
@@ -27,14 +30,8 @@ interface DiffResult {
   diff: Record<string, unknown>
 }
 
-// Retry configuration
-const RETRY_CONFIG = {
-  maxRetries: 5,
-  baseDelayMs: 1000, // Start with 1 second
-  maxDelayMs: 30000, // Cap at 30 seconds
-  backoffMultiplier: 2,
-  jitterMax: 0.1, // Add up to 10% jitter
-}
+// Use the default retry configuration from the utility
+const RETRY_CONFIG = DEFAULT_RETRY_CONFIG
 
 interface FirstDueNfirsNotification {
   id: number
@@ -95,21 +92,13 @@ interface PaginationLinks {
   last: string | null
 }
 
-interface RetryStats {
-  totalRetryAttempts: number
-  successfulRetries: number
-  failedRetries: number
-  longestBackoffMs: number
-}
+// RetryStats is now imported from the utility
 
-interface DispatchStats {
+interface DispatchStats extends RoutineStats {
   totalFetched: number
   totalInserted: number
   lastSyncTime?: FormattedDateTime
   lastFetchTime?: FormattedDateTime
-  apiCallCount: number
-  errorCount: number
-  retryStats: RetryStats
 }
 
 export class DispatchRoutineRouter extends RoutineRouter {
@@ -120,7 +109,7 @@ export class DispatchRoutineRouter extends RoutineRouter {
   private lastDispatchTimeInvalid: boolean = false
   public stats: DispatchStats = this.defaultStats()
   public isSyncing: boolean = false
-
+  
   constructor(options: RoutineRouterOptions = {}) {
     super(DISPATCH_NAME, {
       ...options,
@@ -132,144 +121,17 @@ export class DispatchRoutineRouter extends RoutineRouter {
     })
   }
 
-  protected defaultStats(): DispatchStats {
+  protected defaultStats() {
     return {
       totalFetched: 0,
       totalInserted: 0,
       apiCallCount: 0,
       errorCount: 0,
-      retryStats: {
-        totalRetryAttempts: 0,
-        successfulRetries: 0,
-        failedRetries: 0,
-        longestBackoffMs: 0,
-      },
+      retryStats: createDefaultRetryStats(),
     }
   }
 
-  /**
-   * Exponential backoff with jitter
-   */
-  private calculateBackoffDelay(attempt: number): number {
-    const exponentialDelay =
-      RETRY_CONFIG.baseDelayMs *
-      Math.pow(RETRY_CONFIG.backoffMultiplier, attempt)
-    const cappedDelay = Math.min(exponentialDelay, RETRY_CONFIG.maxDelayMs)
-
-    // Add jitter to prevent thundering herd
-    const jitter = cappedDelay * RETRY_CONFIG.jitterMax * Math.random()
-    const finalDelay = cappedDelay + jitter
-
-    return Math.round(finalDelay)
-  }
-
-  /**
-   * Sleep utility for delays
-   */
-  private sleep(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms))
-  }
-
-  /**
-   * Determine if an error is retryable
-   */
-  private isRetryableError(error: unknown): boolean {
-    if (error instanceof TypeError && error.message === 'fetch failed') {
-      // Check the cause for specific network errors
-      const cause = (error as any).cause
-      if (cause) {
-        // Retry on connection timeouts, connection refused, DNS errors, etc.
-        return (
-          cause.code === 'UND_ERR_CONNECT_TIMEOUT' ||
-          cause.code === 'ECONNREFUSED' ||
-          cause.code === 'ENOTFOUND' ||
-          cause.code === 'ECONNRESET' ||
-          cause.code === 'ETIMEDOUT'
-        )
-      }
-      return true // Generic fetch failed, assume retryable
-    }
-
-    // Also retry on HTTP 5xx errors and 429 (rate limit)
-    if (error instanceof Error && error.message.includes('Failed to fetch')) {
-      return true
-    }
-
-    return false
-  }
-
-  /**
-   * Enhanced fetch with exponential backoff retry logic
-   */
-  private async fetchWithRetry(url: URL, options: RequestInit) {
-    let lastError: unknown
-
-    for (let attempt = 0; attempt <= RETRY_CONFIG.maxRetries; attempt++) {
-      try {
-        this.stats.apiCallCount++
-
-        if (attempt > 0) {
-          this.stats.retryStats.totalRetryAttempts++
-          this.ctx.logger.info(
-            `Retry attempt ${attempt}/${
-              RETRY_CONFIG.maxRetries
-            } for ${url.toString()}`
-          )
-        }
-
-        const response = await fetch(url, options)
-
-        // Check for HTTP errors that should trigger retry
-        if (!response.ok) {
-          const statusCode = response.status
-          if (statusCode >= 500 || statusCode === 429) {
-            throw new Error(`HTTP ${statusCode}: ${response.statusText}`)
-          }
-          // For 4xx errors (except 429), don't retry
-          throw new Error(`HTTP ${statusCode}: ${response.statusText}`)
-        }
-
-        if (attempt > 0) {
-          this.stats.retryStats.successfulRetries++
-          this.ctx.logger.info(`Retry succeeded on attempt ${attempt}`)
-        }
-
-        return response
-      } catch (error) {
-        lastError = error
-
-        // If this is the last attempt or error is not retryable, throw
-        if (
-          attempt === RETRY_CONFIG.maxRetries ||
-          !this.isRetryableError(error)
-        ) {
-          if (attempt > 0) {
-            this.stats.retryStats.failedRetries++
-          }
-          this.stats.errorCount++
-        }
-
-        // Calculate backoff delay
-        const delayMs = this.calculateBackoffDelay(attempt)
-        this.stats.retryStats.longestBackoffMs = Math.max(
-          this.stats.retryStats.longestBackoffMs,
-          delayMs
-        )
-
-        this.ctx.logger.warn(
-          `Fetch failed (attempt ${attempt + 1}/${
-            RETRY_CONFIG.maxRetries + 1
-          }), retrying in ${delayMs}ms`,
-          { error: error instanceof Error ? error.message : String(error) }
-        )
-
-        await this.sleep(delayMs)
-      }
-    }
-
-    // This should never be reached, but just in case
-    throw lastError
-  }
+  // Retry logic is now handled by the reusable fetchWithRetry utility
 
   protected defineRoutes(): void {
     // Manual sync endpoint - syncs all dispatches (clears and refetches)
@@ -648,7 +510,7 @@ export class DispatchRoutineRouter extends RoutineRouter {
       })
 
       try {
-        // Use fetchWithRetry instead of direct fetch
+        // Use bound fetch with retry logic
         const response = await this.fetchWithRetry(url, {
           headers: {
             'Content-Type': 'application/json',
@@ -689,7 +551,7 @@ export class DispatchRoutineRouter extends RoutineRouter {
 
       // Rate limiting - be nice to the API
       if (hasNext) {
-        await this.sleep(1000)
+        await new Promise((resolve) => setTimeout(resolve, 1000))
       }
     }
 
@@ -787,7 +649,7 @@ export class DispatchRoutineRouter extends RoutineRouter {
 
       this.ctx.logger.debug(`API URL: ${url.toString()}`)
 
-      // Use fetchWithRetry instead of direct fetch
+      // Use bound fetch with retry logic
       const response = await this.fetchWithRetry(url, {
         headers: {
           'Content-Type': 'application/json',

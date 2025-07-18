@@ -9,7 +9,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { useAlertPopover } from "@/providers/alert-popover-provider";
+import { useActiveDispatch } from "@/providers/active-dispatch-provider";
 import useDebounce from "@/hooks/use-debounce";
 import type { DispatchWithType } from "@sizeupdashboard/convex/api/schema";
 
@@ -25,7 +25,7 @@ interface NoiseCardProps {
 }
 
 function NoiseCard({ dispatch, className, closePopover }: NoiseCardProps) {
-  const { activateDispatch } = useAlertPopover();
+  const { activateDispatch } = useActiveDispatch();
 
   const handleClick = () => {
     closePopover();

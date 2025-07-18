@@ -128,12 +128,12 @@ async function redactDispatch(
   })
 
   // Add random offset between -100m and +100m to lat/long
-  const metersToDegreesLat = 1 / 111111 // ~1 meter in degrees latitude
-  const metersToDegreesLng =
-    1 / (111111 * Math.cos((redactedDispatch.location.lat * Math.PI) / 180))
-  const randomOffsetLat = (Math.random() * 200 - 100) * metersToDegreesLat
-  const randomOffsetLng = (Math.random() * 200 - 100) * metersToDegreesLng
   if (fieldsToRedact.includes('location')) {
+    const metersToDegreesLat = 1 / 111111 // ~1 meter in degrees latitude
+    const metersToDegreesLng =
+      1 / (111111 * Math.cos((redactedDispatch.location.lat * Math.PI) / 180))
+    const randomOffsetLat = (Math.random() * 350 - 100) * metersToDegreesLat
+    const randomOffsetLng = (Math.random() * 350 - 100) * metersToDegreesLng
     redactedDispatch.location.lat += randomOffsetLat
     redactedDispatch.location.lng += randomOffsetLng
   }

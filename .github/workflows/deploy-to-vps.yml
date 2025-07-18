@@ -34,6 +34,7 @@ jobs:
           printf 'WEATHER_LNG=%s\n' "${{ vars.WEATHER_LNG }}" >> .env
           printf 'WEATHER_UNITS=%s\n' "${{ vars.WEATHER_UNITS }}" >> .env
           printf 'GITHUB_COMMIT_SHA=%s\n' "${{ github.sha }}" >> .env
+          printf 'API_KEY=%s\n' "${{ secrets.API_KEY }}" >> .env
 
       - name: Run container with env file
         run: |

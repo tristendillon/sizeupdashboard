@@ -2,12 +2,12 @@
 
 import {
   DISPLAY_DURATION_MS,
-  useAlertPopover,
-} from "@/providers/alert-popover-provider";
+  useActiveDispatch,
+} from "@/providers/active-dispatch-provider";
 import { cn } from "@/utils/ui";
 
 export function TurnoutTimer() {
-  const { timeLeft } = useAlertPopover();
+  const { timeLeft } = useActiveDispatch();
 
   if (timeLeft === 0) return null;
 

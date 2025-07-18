@@ -5,6 +5,7 @@ import { DispatchRoutineRouter } from './routes/dispatch'
 import { RoutineRouter } from './routes/routineRouter'
 import { WeatherRoutineRouter } from './routes/weather'
 import { HydrantsRoutineRouter } from './routes/hydrants'
+import { authMiddleware } from './lib/auth-middleware'
 
 export function createApp(): {
   app: express.Application
@@ -33,6 +34,7 @@ export function createApp(): {
       colorize: false,
     })
   )
+  app.use(authMiddleware)
 
   routineRoutes.forEach(async (routineRouter) => {
     const routeName = routineRouter.name.toLowerCase()

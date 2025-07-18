@@ -2,11 +2,14 @@ import { RoutineContext } from '@/context'
 import { config } from '@/config'
 import express, { RouterOptions, Request, Response } from 'express'
 import { FormattedDateTime, formatDateTime, formatInterval } from '@/lib/utils'
+import { createBoundFetchWithRetry, RetryConfig, RetryStats } from '@/lib/fetch-with-retry'
+import { authMiddleware } from '@/lib/auth-middleware'
 
 export interface RoutineRouterOptions extends RouterOptions {
   onStart?: () => Promise<void> | void
   onStop?: () => Promise<void> | void
-  enableDefaultRoutes?: boolean // Allow disabling default routes if needed
+  enableDefaultRoutes?: boolean
+  retryConfig?: RetryConfig // Allow disabling default routes if needed
 }
 
 export interface RoutineRouterStatus {
@@ -30,6 +33,12 @@ interface RoutineStopReason {
   message: string
 }
 
+export interface RoutineStats {
+  apiCallCount: number
+  errorCount: number
+  retryStats: RetryStats
+}
+
 export abstract class RoutineRouter {
   private router: express.Router
   private context: RoutineContext
@@ -42,7 +51,9 @@ export abstract class RoutineRouter {
   private lastExecution?: Date
   private startedAt?: Date
   private stopReason?: RoutineStopReason
-  public stats: unknown
+  public stats: RoutineStats
+
+  protected fetchWithRetry: (url: URL | string, options?: RequestInit) => Promise<globalThis.Response>
 
   private executionCount: number = 0
   private executionTimes: number[] = []
@@ -62,6 +73,13 @@ export abstract class RoutineRouter {
 
     // Allow subclasses to define their custom routes
     this.defineRoutes()
+    this.fetchWithRetry = createBoundFetchWithRetry(
+      {
+        logger: this.ctx.logger,
+        stats: this.stats,
+      },
+      options.retryConfig
+    )
   }
 
   /**
@@ -265,7 +283,7 @@ export abstract class RoutineRouter {
     // Default implementation does nothing
     // Subclasses can override this to add custom routes
   }
-  protected abstract defaultStats(): unknown
+  protected abstract defaultStats(): RoutineStats
 
   protected shouldNotStart(): { shouldNotStart: boolean; reason: string } {
     return { shouldNotStart: false, reason: '' }

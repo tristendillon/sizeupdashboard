@@ -5,6 +5,7 @@ dotenv.config({ path: '.env' })
 export type LogLevel = 'error' | 'warn' | 'info' | 'timer' | 'debug' | 'verbose'
 export type Environment = 'development' | 'production' | 'test'
 
+
 export const config = {
   port: parseInt(process.env.PORT || '8080', 10),
   environment: (process.env.NODE_ENV || 'development') as Environment,
@@ -21,4 +22,5 @@ export const config = {
   },
   convexUrl: process.env.CONVEX_URL || '',
   deploymentSha: process.env.GITHUB_COMMIT_SHA || 'local-deployment',
+  appApiKey: process.env.API_KEY || undefined
 }

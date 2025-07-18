@@ -11,24 +11,24 @@ import {
 import { useDispatches } from "./dispatches-provider";
 import type { DispatchWithType } from "@sizeupdashboard/convex/api/schema";
 
-type AlertPopoverContextType = {
+interface ActiveDispatchContextType {
   dispatch: DispatchWithType | null;
   timeLeft: number;
   dismissDispatch: () => void;
   activateDispatch: (dispatch: DispatchWithType) => void;
 };
 
-export const AlertPopoverContext =
-  createContext<AlertPopoverContextType | null>(null);
+export const ActiveDispatchContext =
+  createContext<ActiveDispatchContextType | null>(null);
 
-interface AlertPopoverProviderProps {
+interface ActiveDispatchProviderProps {
   children: React.ReactNode;
 }
 
 export const DISPLAY_DURATION_MS = 1000 * 60 * 2; // 2 minutes
 const TIMER_INTERVAL_MS = 100; // Update every 100ms
 
-export function AlertPopoverProvider({ children }: AlertPopoverProviderProps) {
+export function ActiveDispatchProvider({ children }: ActiveDispatchProviderProps) {
   const { dispatches } = useDispatches();
   const [activeDispatch, setActiveDispatch] = useState<DispatchWithType | null>(
     null,
@@ -109,38 +109,13 @@ export function AlertPopoverProvider({ children }: AlertPopoverProviderProps) {
     [clearAllTimers, dismissDispatch],
   );
 
-  // useEffect(() => {
-  //   const initialDispatch: Dispatch = {
-  //     dispatchId: 12345,
-  //     narrative: "Test emergency dispatch for timer testing",
-  //     type: "EMERGENCY",
-  //     message: "Structure fire reported at residential address",
-  //     address: "123 Main Street",
-  //     address2: "Apt 2B",
-  //     city: "Wichita",
-  //     stateCode: "KS",
-  //     latitude: 37.6872,
-  //     longitude: -97.3301,
-  //     unitCodes: ["ENG1", "TRUCK1", "MEDIC1"],
-  //     incidentTypeCode: "FIRE",
-  //     statusCode: "ACTIVE",
-  //     xrefId: "XR-001",
-  //     dispatchType: undefined,
-  //     dispatchCreatedAt: Date.now() - 5000, // 5 seconds ago
-  //   };
-
-  //   activateDispatch(initialDispatch);
-  // }, []);
-
   // Check for new dispatches and auto-activate if within time frame
   useEffect(() => {
     const latestDispatch = dispatches[0];
 
     if (!latestDispatch) return;
 
-    console.log("latestDispatch", latestDispatch);
     const timeSinceDispatch = Date.now() - latestDispatch._creationTime;
-    console.log("timeSinceDispatch", timeSinceDispatch);
     const isWithinTimeFrame = timeSinceDispatch <= DISPLAY_DURATION_MS;
     const hasBeenDismissed = dismissedDispatchIdsRef.current.has(
       latestDispatch.dispatchId,
@@ -165,7 +140,7 @@ export function AlertPopoverProvider({ children }: AlertPopoverProviderProps) {
   }, [clearAllTimers]);
 
   return (
-    <AlertPopoverContext.Provider
+    <ActiveDispatchContext.Provider
       value={{
         dispatch: activeDispatch,
         timeLeft,
@@ -174,15 +149,15 @@ export function AlertPopoverProvider({ children }: AlertPopoverProviderProps) {
       }}
     >
       {children}
-    </AlertPopoverContext.Provider>
+    </ActiveDispatchContext.Provider>
   );
 }
 
-export function useAlertPopover() {
-  const context = useContext(AlertPopoverContext);
+export function useActiveDispatch() {
+  const context = useContext(ActiveDispatchContext);
   if (!context) {
     throw new Error(
-      "useAlertPopover must be used within an AlertPopoverProvider",
+      "useActiveDispatch must be used within an ActiveDispatchProvider",
     );
   }
   return context;

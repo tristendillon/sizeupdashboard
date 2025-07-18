@@ -8,7 +8,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { useAlertPopover } from "@/providers/alert-popover-provider";
+import { useActiveDispatch } from "@/providers/active-dispatch-provider";
 import { useDispatches } from "@/providers/dispatches-provider";
 import useDebounce from "@/hooks/use-debounce";
 import type {
@@ -38,7 +38,7 @@ function DispatchCard({
   className,
   closePopover,
 }: DispatchCardProps) {
-  const { activateDispatch } = useAlertPopover();
+  const { activateDispatch } = useActiveDispatch();
 
   const handleClick = () => {
     closePopover();

@@ -21,7 +21,7 @@ const POPOVER_MAP_ZOOM = 18;
 export function ViewMap() {
   const { dispatch } = useActiveDispatch();
   return (
-    <div className="relative flex h-[60vh] items-center justify-center md:h-[calc(100vh-128px)] md:w-[60%] md:flex-1">
+    <div className="relative flex h-full items-center justify-center md:flex-1">
       <ConditionalWrapper
         condition={dispatch}
         wrapper={(children, dispatch) => (

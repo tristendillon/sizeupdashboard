@@ -207,10 +207,8 @@ export const getWeatherForecast = query({
       date,
       date + days * 24 * 60 * 60
     )
-    const weatherHours = await GetWeatherHoursByDate(ctx, date)
     const value = {
       days: weatherDays,
-      hours: weatherHours,
       current: currentWeather,
       alerts: alerts,
     }

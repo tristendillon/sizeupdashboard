@@ -14,7 +14,6 @@ import type { DispatchWithType } from "@sizeupdashboard/convex/src/api/schema.ts
 import { timeStampFormatter } from "@/utils/timestamp";
 import { CleanUnits } from "@/utils/units";
 import { Tooltip, TooltipTrigger, TooltipContent } from "./ui/tooltip";
-import { cn } from "@/utils/ui";
 
 const CleanType = (type: string) => {
   return type
@@ -27,12 +26,7 @@ const CleanType = (type: string) => {
 export function ViewSidebar() {
   const { dispatch } = useActiveDispatch();
   return (
-    <section
-      className={cn(
-        "bg-secondary overflow-y-none relative flex h-full max-h-[50vh] w-full flex-col md:max-h-[100vh] md:max-w-[30%]",
-        dispatch && "max-h-[30vh]",
-      )}
-    >
+    <section className="bg-secondary overflow-y-none relative flex h-full w-full flex-col">
       {dispatch && <AlertPopoverSidebarContent dispatch={dispatch} />}
       <NormalSidebarContent />
     </section>
@@ -45,7 +39,7 @@ interface AlertPopoverSidebarProps {
 
 function AlertPopoverSidebarContent({ dispatch }: AlertPopoverSidebarProps) {
   return (
-    <div className="bg-secondary absolute inset-0 z-50 space-y-4 p-4">
+    <div className="bg-secondary absolute inset-0 z-40 space-y-4 p-4">
       <div className="space-y-2">
         <h2 className="text-center text-3xl font-bold tracking-tighter text-red-500 uppercase md:text-6xl">
           {CleanType(dispatch.type)}

@@ -1,11 +1,6 @@
 import { mutation, query } from './_generated/server'
 import { v } from 'convex/values'
-import {
-  FieldTransformations,
-  TransformationRules,
-  type FieldTransformation,
-  type TransformationRule,
-} from './schema'
+import { FieldTransformations, TransformationRules } from './schema'
 
 // Field Transformations CRUD
 
@@ -29,15 +24,15 @@ export const updateFieldTransformation = mutation({
 export const deleteFieldTransformation = mutation({
   args: { id: v.id('fieldTransformations') },
   handler: async (ctx, { id }) => {
-    // Check if any transformation rules are using this transformation
-    const dependentRules = await ctx.db
-      .query('transformationRules')
-      .withIndex('by_transformations', (q) => q.eq('transformations', [id]))
+    // Check if any transformation rules are using this transformation via mapping table
+    const mappings = await ctx.db
+      .query('transformationRuleMappings')
+      .withIndex('by_transformation', (q) => q.eq('transformationId', id))
       .collect()
 
-    if (dependentRules.length > 0) {
+    if (mappings.length > 0) {
       throw new Error(
-        `Cannot delete transformation: used by ${dependentRules.length} rule(s)`
+        `Cannot delete transformation: used by ${mappings.length} rule(s)`
       )
     }
 
@@ -99,7 +94,19 @@ export const createTransformationRule = mutation({
       )
     }
 
-    return await ctx.db.insert('transformationRules', args)
+    const ruleId = await ctx.db.insert('transformationRules', args)
+
+    // Create mapping entries for efficient lookups
+    await Promise.all(
+      transformationIds.map((transformationId) =>
+        ctx.db.insert('transformationRuleMappings', {
+          transformationId,
+          ruleId,
+        })
+      )
+    )
+
+    return ruleId
   },
 })
 
@@ -126,6 +133,27 @@ export const updateTransformationRule = mutation({
           `Referenced transformations not found: ${missingIds.join(', ')}`
         )
       }
+
+      // Update mapping table if transformations changed
+      // First, remove all existing mappings for this rule
+      const existingMappings = await ctx.db
+        .query('transformationRuleMappings')
+        .withIndex('by_rule', (q) => q.eq('ruleId', id))
+        .collect()
+
+      await Promise.all(
+        existingMappings.map((mapping) => ctx.db.delete(mapping._id))
+      )
+
+      // Then create new mappings
+      await Promise.all(
+        transformationIds.map((transformationId) =>
+          ctx.db.insert('transformationRuleMappings', {
+            transformationId,
+            ruleId: id,
+          })
+        )
+      )
     }
 
     return await ctx.db.patch(id, updates)
@@ -135,6 +163,14 @@ export const updateTransformationRule = mutation({
 export const deleteTransformationRule = mutation({
   args: { id: v.id('transformationRules') },
   handler: async (ctx, { id }) => {
+    // Clean up mapping entries
+    const mappings = await ctx.db
+      .query('transformationRuleMappings')
+      .withIndex('by_rule', (q) => q.eq('ruleId', id))
+      .collect()
+
+    await Promise.all(mappings.map((mapping) => ctx.db.delete(mapping._id)))
+
     return await ctx.db.delete(id)
   },
 })
@@ -230,20 +266,85 @@ export const getTransformationRuleWithTransformations = query({
 export const getFieldTransformationUsage = query({
   args: { transformationId: v.id('fieldTransformations') },
   handler: async (ctx, { transformationId }) => {
-    const rules = await ctx.db
-      .query('transformationRules')
-      .withIndex('by_transformations', (q) =>
-        q.eq('transformations', [transformationId])
+    // Use the efficient mapping table lookup
+    const mappings = await ctx.db
+      .query('transformationRuleMappings')
+      .withIndex('by_transformation', (q) =>
+        q.eq('transformationId', transformationId)
       )
       .collect()
 
+    const rules = await Promise.all(
+      mappings.map((mapping) => ctx.db.get(mapping.ruleId))
+    )
+
+    const validRules = rules.filter(Boolean)
+
     return {
       transformationId,
-      usedByRules: rules.map((rule) => ({
-        id: rule._id,
-        name: rule.name,
+      usedByRules: validRules.map((rule) => ({
+        id: rule!._id,
+        name: rule!.name,
       })),
-      usageCount: rules.length,
+      usageCount: validRules.length,
+    }
+  },
+})
+
+// New efficient query to get rules by transformation ID
+export const getRulesByTransformationId = query({
+  args: { transformationId: v.id('fieldTransformations') },
+  handler: async (ctx, { transformationId }) => {
+    const mappings = await ctx.db
+      .query('transformationRuleMappings')
+      .withIndex('by_transformation', (q) =>
+        q.eq('transformationId', transformationId)
+      )
+      .collect()
+
+    const rules = await Promise.all(
+      mappings.map((mapping) => ctx.db.get(mapping.ruleId))
+    )
+
+    return rules.filter(Boolean)
+  },
+})
+
+// Migration utility to populate mapping table from existing data
+export const populateMappingTable = mutation({
+  args: {},
+  handler: async (ctx) => {
+    // Get all transformation rules
+    const rules = await ctx.db.query('transformationRules').collect()
+
+    // Clear existing mappings
+    const existingMappings = await ctx.db
+      .query('transformationRuleMappings')
+      .collect()
+    await Promise.all(
+      existingMappings.map((mapping) => ctx.db.delete(mapping._id))
+    )
+
+    // Create new mappings from transformation rules
+    const mappingsToCreate = []
+    for (const rule of rules) {
+      for (const transformationId of rule.transformations) {
+        mappingsToCreate.push({
+          transformationId,
+          ruleId: rule._id,
+        })
+      }
+    }
+
+    await Promise.all(
+      mappingsToCreate.map((mapping) =>
+        ctx.db.insert('transformationRuleMappings', mapping)
+      )
+    )
+
+    return {
+      rulesProcessed: rules.length,
+      mappingsCreated: mappingsToCreate.length,
     }
   },
 })

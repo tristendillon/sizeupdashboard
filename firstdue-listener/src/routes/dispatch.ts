@@ -699,7 +699,7 @@ export class DispatchRoutineRouter extends RoutineRouter {
         dispatchType: dispatchTypeMap.get(dispatch.type?.toLowerCase()),
       }))
       const result = await this.ctx.client.mutation(
-        api.dispatches.createDispatchs,
+        api.dispatches.createDispatches,
         { dispatches: dispatchesWithTypes }
       )
 

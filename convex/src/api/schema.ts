@@ -266,6 +266,19 @@ export const TransformationRules = Table(
   TransformationRulesValidator.fields
 )
 
+// Transformation Rule Mapping - Denormalized table for efficient lookups
+export const TransformationRuleMappingSchema = z.object({
+  transformationId: zid('fieldTransformations'),
+  ruleId: zid('transformationRules'),
+})
+
+export type TransformationRuleMapping = z.infer<typeof TransformationRuleMappingSchema>
+const TransformationRuleMappingValidator = zodToConvex(TransformationRuleMappingSchema)
+export const TransformationRuleMappings = Table(
+  'transformationRuleMappings',
+  TransformationRuleMappingValidator.fields
+)
+
 // Legacy RedactionLevel schema - kept for backward compatibility during migration
 export const RedactionLevelSchema = z.object({
   name: z.string(),
@@ -308,6 +321,9 @@ export default defineSchema(
     transformationRules: TransformationRules.table
       .index('by_name', ['name'])
       .index('by_transformations', ['transformations']),
+    transformationRuleMappings: TransformationRuleMappings.table
+      .index('by_transformation', ['transformationId'])
+      .index('by_rule', ['ruleId']),
     dispatchTypes: DispatchTypesTable.table.index('by_code', ['code']),
 
     userSessions: UserSessions.table

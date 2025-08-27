@@ -1,12 +1,8 @@
 // convex/recipes.ts
 import { partial } from 'convex-helpers/validators'
 import { mutation } from '../lib/mutation'
-import { type QueryCtx, query } from './_generated/server'
-import {
-  type DispatchWithType,
-  DispatchesTable,
-  type RedactionLevel,
-} from './schema'
+import { query } from './_generated/server'
+import { type DispatchWithType, DispatchesTable } from './schema'
 import { paginationOptsValidator } from 'convex/server'
 import { v } from 'convex/values'
 import { api } from './_generated/api'
@@ -39,7 +35,7 @@ export const getDispatchTypes = query({
   },
 })
 
-export const createDispatchs = mutation({
+export const createDispatches = mutation({
   args: {
     dispatches: v.array(v.object(DispatchesTable.withoutSystemFields)),
   },
@@ -47,122 +43,6 @@ export const createDispatchs = mutation({
     return await ctx.db.insertMany('dispatches', dispatches)
   },
 })
-
-export const createDispatch = mutation({
-  args: DispatchesTable.withoutSystemFields,
-  handler: async (ctx, args) => {
-    // Upsert the dispatch by the dispatchId (firstdue's id)
-    return await ctx.db.upsertByCustomId('dispatches', args, 'dispatchId')
-  },
-})
-
-async function getRedactionLevelForDispatch(
-  dispatch: DispatchWithType,
-  ctx: QueryCtx,
-  allRedactionLevels: RedactionLevel[]
-) {
-  const dispatchType = dispatch.dispatchType
-    ? await ctx.db.get(dispatch.dispatchType._id)
-    : null
-  const type = dispatch.type.toLowerCase()
-
-  const redactionLevels = allRedactionLevels.filter((level) => {
-    if (dispatchType && level.dispatchTypes.includes(dispatchType._id)) {
-      return true
-    }
-    if (level.dispatchTypeRegex && type.match(level.dispatchTypeRegex)) {
-      return true
-    }
-    level.keywords.forEach((keyword) => {
-      if (type.includes(keyword)) {
-        return true
-      }
-    })
-    return false
-  })
-  return redactionLevels
-}
-
-async function redactDispatch(
-  dispatch: DispatchWithType,
-  redactionLevels: RedactionLevel[]
-) {
-  const fieldsToRedact = redactionLevels.flatMap(
-    (level) => level.redactionFields as (keyof DispatchWithType)[]
-  )
-  const redactedDispatch = { ...dispatch }
-
-  // Apply redaction to specified fields
-  fieldsToRedact.forEach((fieldName) => {
-    switch (fieldName) {
-      // Required fields - use "redacted" since they can't be undefined
-      case 'address':
-        redactedDispatch.address = 'REDACTED'
-        break
-      case 'unitCodes':
-        redactedDispatch.unitCodes = []
-        break
-
-      // Optional fields - use undefined or null as appropriate
-      case 'narrative':
-        redactedDispatch.narrative = 'REDACTED'
-        break
-      case 'message':
-        redactedDispatch.message = undefined
-        break
-      case 'address2':
-        redactedDispatch.address2 = undefined
-        break
-      case 'city':
-        redactedDispatch.city = undefined
-        break
-      case 'stateCode':
-        redactedDispatch.stateCode = undefined
-        break
-      case 'statusCode':
-        redactedDispatch.statusCode = undefined
-        break
-      case 'xrefId':
-        redactedDispatch.xrefId = undefined
-        break
-    }
-  })
-
-  // Add random offset between -100m and +100m to lat/long
-  if (fieldsToRedact.includes('location')) {
-    const metersToDegreesLat = 1 / 111111 // ~1 meter in degrees latitude
-    const metersToDegreesLng =
-      1 / (111111 * Math.cos((redactedDispatch.location.lat * Math.PI) / 180))
-    const randomOffsetLat = (Math.random() * 350 - 100) * metersToDegreesLat
-    const randomOffsetLng = (Math.random() * 350 - 100) * metersToDegreesLng
-    redactedDispatch.location.lat += randomOffsetLat
-    redactedDispatch.location.lng += randomOffsetLng
-  }
-
-  return redactedDispatch
-}
-// New transformation system
-async function transformDispatches(dispatches: DispatchWithType[], ctx: QueryCtx) {
-  return await TransformationEngine.transformDispatches(dispatches, ctx)
-}
-
-// Legacy redaction system - kept for backward compatibility
-async function redactDispatches(dispatches: DispatchWithType[], ctx: QueryCtx) {
-  const allRedactionLevels = await ctx.db.query('redactionLevels').collect()
-  return await Promise.all(
-    dispatches.map(async (dispatch) => {
-      const redactionLevels = await getRedactionLevelForDispatch(
-        dispatch,
-        ctx,
-        allRedactionLevels
-      )
-      if (!redactionLevels.length) {
-        return dispatch
-      }
-      return redactDispatch(dispatch, redactionLevels)
-    })
-  )
-}
 
 export const getDispatches = query({
   args: {
@@ -207,45 +87,26 @@ export const getDispatches = query({
         page: dispatchesWithType,
       }
     }
-    
+
     // Use new transformation system first, fallback to legacy if no transformation rules exist
-    const transformationRules = await ctx.db.query('transformationRules').collect()
-    let transformedPage: DispatchWithType[]
-    
+    const transformationRules = await ctx.db
+      .query('transformationRules')
+      .collect()
+    let page: DispatchWithType[] = dispatchesWithType
+
     if (transformationRules.length > 0) {
-      transformedPage = await transformDispatches(dispatchesWithType, ctx)
-    } else {
-      // Fallback to legacy redaction system
-      transformedPage = await redactDispatches(dispatchesWithType, ctx)
+      page = await TransformationEngine.transformDispatches(
+        dispatchesWithType,
+        ctx
+      )
     }
-    
+
     return {
       ...paginationResult,
-      page: transformedPage,
+      page,
     }
   },
 })
-
-export const testDispatchQuery = query({
-  args: {
-    convexSessionToken: v.optional(v.string()),
-  },
-  handler: async (ctx, { convexSessionToken }) => {
-    if (convexSessionToken) {
-      const isAuthenticated = await ctx.runQuery(
-        api.auth.getAuthenticatedSession,
-        {
-          convexSessionToken,
-        }
-      )
-      if (isAuthenticated) {
-        return await ctx.db.query('dispatches').take(10)
-      }
-    }
-    return 'not authenticated'
-  },
-})
-
 export const getLastDispatchData = query({
   handler: async (ctx) => {
     const lastDispatch = await ctx.db

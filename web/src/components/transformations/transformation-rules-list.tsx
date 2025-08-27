@@ -17,10 +17,15 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { TransformationRuleForm } from "@/forms/transformations/create-transformation-rule-form";
 import type { Id } from "@sizeupdashboard/convex/src/api/_generated/dataModel.js";
+import type { TransformationRule } from "@sizeupdashboard/convex/src/api/schema.js";
 
 export function TransformationRulesList() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [editingRule, setEditingRule] = useState<TransformationRule | null>(
+    null,
+  );
   const { data: rules, isLoading } = useAuthenticatedQuery(
     api.transformations.getTransformationRules,
     {},
@@ -156,7 +161,11 @@ export function TransformationRulesList() {
               </div>
 
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" disabled>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setEditingRule(rule)}
+                >
                   Edit
                 </Button>
                 <AlertDialog>
@@ -171,16 +180,19 @@ export function TransformationRulesList() {
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Delete Transformation Rule</AlertDialogTitle>
+                      <AlertDialogTitle>
+                        Delete Transformation Rule
+                      </AlertDialogTitle>
                       <AlertDialogDescription>
-                        Are you sure you want to delete the transformation rule &ldquo;{rule.name}&rdquo;? 
-                        This action cannot be undone and will stop applying the associated 
-                        transformations to matching dispatches.
+                        Are you sure you want to delete the transformation rule
+                        &ldquo;{rule.name}&rdquo;? This action cannot be undone
+                        and will stop applying the associated transformations to
+                        matching dispatches.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                       <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction 
+                      <AlertDialogAction
                         onClick={() => handleDelete(rule._id)}
                         className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                       >
@@ -194,6 +206,14 @@ export function TransformationRulesList() {
           </div>
         ))}
       </div>
+
+      {/* Edit Form */}
+      <TransformationRuleForm
+        mode="edit"
+        rule={editingRule}
+        open={!!editingRule}
+        onClose={() => setEditingRule(null)}
+      />
     </div>
   );
 }

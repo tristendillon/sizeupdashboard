@@ -66,6 +66,13 @@ function getAlertIconPath(dispatchType: DispatchType | string) {
   return `/icons/incidents/${dispatchType.group}.png`
 }
 
+function removeDispatchType(dispatch: DispatchWithType) {
+  const { dispatchType, ...rest } = dispatch
+  return {
+    ...rest,
+  }
+}
+
 export const getDispatches = query({
   args: {
     paginationOpts: paginationOptsValidator,
@@ -88,12 +95,10 @@ export const getDispatches = query({
       })
     )
 
-    let page: DispatchWithType[] = dispatchesWithType.map(
-      ({ dispatchType, ...rest }) => ({
-        ...rest,
-        icon: getAlertIconPath(dispatchType?.group ?? 'other'),
-      })
-    )
+    let page: DispatchWithType[] = dispatchesWithType.map((dispatch) => ({
+      ...dispatch,
+      icon: getAlertIconPath(dispatch.dispatchType?.group ?? 'other'),
+    }))
     if (convexSessionToken) {
       const isAuthenticated = await ctx.runQuery(
         api.auth.getAuthenticatedSession,
@@ -104,7 +109,7 @@ export const getDispatches = query({
       if (isAuthenticated) {
         return {
           ...paginationResult,
-          page,
+          page: page.map(removeDispatchType),
         }
       }
     }
@@ -113,7 +118,7 @@ export const getDispatches = query({
     if (view) {
       return {
         ...paginationResult,
-        page,
+        page: page.map(removeDispatchType),
       }
     }
 
@@ -128,7 +133,7 @@ export const getDispatches = query({
 
     return {
       ...paginationResult,
-      page,
+      page: page.map(removeDispatchType),
     }
   },
 })

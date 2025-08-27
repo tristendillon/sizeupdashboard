@@ -22,8 +22,12 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import type { Id } from "@sizeupdashboard/convex/src/api/_generated/dataModel.js";
+import type { FieldTransformation } from "@sizeupdashboard/convex/src/api/schema.js";
 
-interface CreateFieldTransformationFormProps {
+interface FieldTransformationFormProps {
+  mode: "create" | "edit";
+  transformation: FieldTransformation | null;
   open: boolean;
   onClose: () => void;
 }
@@ -271,20 +275,25 @@ const createTransformationSchema = (
   });
 };
 
-export function CreateFieldTransformationForm({
+export function FieldTransformationForm({
+  mode,
+  transformation,
   open,
   onClose,
-}: CreateFieldTransformationFormProps) {
+}: FieldTransformationFormProps) {
   const createTransformation = useMutation(
     api.transformations.createFieldTransformation,
+  );
+  const updateTransformation = useMutation(
+    api.transformations.updateFieldTransformation,
   );
 
   const form = useForm({
     defaultValues: {
-      name: "",
-      field: "" as FieldName,
-      strategy: "" as TransformationStrategy,
-      params: {
+      name: transformation?.name ?? "",
+      field: transformation?.field ?? ("" as FieldName),
+      strategy: transformation?.strategy ?? ("" as TransformationStrategy),
+      params: transformation?.params ?? {
         value: "",
         minOffset: 0,
         maxOffset: 0,
@@ -298,7 +307,7 @@ export function CreateFieldTransformationForm({
       try {
         if (value.field && value.strategy) {
           const schema = createTransformationSchema(
-            value.field,
+            value.field as FieldName,
             value.strategy,
           );
           schema.parse(value);
@@ -308,12 +317,22 @@ export function CreateFieldTransformationForm({
         return;
       }
 
-      await createTransformation({
-        name: value.name,
-        field: value.field,
-        strategy: value.strategy,
-        params: value.params,
-      });
+      if (mode === "edit" && transformation) {
+        await updateTransformation({
+          id: transformation._id as Id<"fieldTransformations">,
+          name: value.name,
+          field: value.field,
+          strategy: value.strategy,
+          params: value.params,
+        });
+      } else {
+        await createTransformation({
+          name: value.name,
+          field: value.field,
+          strategy: value.strategy,
+          params: value.params,
+        });
+      }
       onClose();
     },
   });
@@ -349,7 +368,8 @@ export function CreateFieldTransformationForm({
           <form.Field
             name="params.value"
             validators={{
-              onChange: ({ value }) => validateStaticValue(value, fieldName),
+              onChange: ({ value }) =>
+                validateStaticValue(value as string, fieldName),
             }}
           >
             {(field) => (
@@ -538,184 +558,192 @@ export function CreateFieldTransformationForm({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Create Field Transformation</DialogTitle>
+          <DialogTitle>
+            {mode === "edit"
+              ? "Edit Field Transformation"
+              : "Create Field Transformation"}
+          </DialogTitle>
         </DialogHeader>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              void form.handleSubmit();
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            void form.handleSubmit();
+          }}
+          className="space-y-6"
+        >
+          <form.Field
+            name="name"
+            validators={{
+              onChange: ({ value }) =>
+                !value ? "Name is required" : undefined,
             }}
-            className="space-y-6"
           >
-            <form.Field
-              name="name"
-              validators={{
-                onChange: ({ value }) =>
-                  !value ? "Name is required" : undefined,
-              }}
-            >
-              {(field) => (
-                <div className="space-y-2">
-                  <Label htmlFor={field.name}>Name</Label>
-                  <Input
-                    id={field.name}
-                    placeholder="e.g., Address Redaction, Location Offset 200m"
-                    value={field.state.value}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    onBlur={field.handleBlur}
-                  />
-                  <FieldInfo field={field} />
-                </div>
-              )}
-            </form.Field>
+            {(field) => (
+              <div className="space-y-2">
+                <Label htmlFor={field.name}>Name</Label>
+                <Input
+                  id={field.name}
+                  placeholder="e.g., Address Redaction, Location Offset 200m"
+                  value={field.state.value}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                  onBlur={field.handleBlur}
+                />
+                <FieldInfo field={field} />
+              </div>
+            )}
+          </form.Field>
 
-            <form.Field
-              name="field"
-              validators={{
-                onChange: ({ value }) =>
-                  !value ? "Field is required" : undefined,
-              }}
-            >
-              {(field) => (
-                <div className="space-y-2">
-                  <Label htmlFor={field.name}>Field</Label>
-                  <Select
-                    onOpenChange={field.handleBlur}
-                    onValueChange={(value) => {
-                      field.handleChange(value as FieldName);
-                      // Reset strategy when field changes
-                      form.setFieldValue(
-                        "strategy",
-                        "" as TransformationStrategy,
-                      );
-                      form.setFieldValue("params", {
-                        value: "",
-                        minOffset: 0,
-                        maxOffset: 0,
-                        length: 8,
-                        charset: "alphanumeric",
-                        template: "",
-                      });
-                    }}
-                    value={field.state.value}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select a field" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {FIELD_OPTIONS.map((option) => (
-                        <SelectItem key={option.field} value={option.field}>
-                          {option.field} ({getFieldType(option.field)})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FieldInfo field={field} />
-                </div>
-              )}
-            </form.Field>
-
-            <form.Subscribe selector={(state) => [state.values.field]}>
-              {([selectedField]) => (
-                <form.Field
-                  name="strategy"
-                  validators={{
-                    onChange: ({ value }) =>
-                      !value ? "Strategy is required" : undefined,
+          <form.Field
+            name="field"
+            validators={{
+              onChange: ({ value }) =>
+                !value ? "Field is required" : undefined,
+            }}
+          >
+            {(field) => (
+              <div className="space-y-2">
+                <Label htmlFor={field.name}>Field</Label>
+                <Select
+                  onOpenChange={field.handleBlur}
+                  onValueChange={(value) => {
+                    field.handleChange(value as FieldName);
+                    // Reset strategy when field changes
+                    form.setFieldValue(
+                      "strategy",
+                      "" as TransformationStrategy,
+                    );
+                    form.setFieldValue("params", {
+                      value: "",
+                      minOffset: 0,
+                      maxOffset: 0,
+                      length: 8,
+                      charset: "alphanumeric",
+                      template: "",
+                    });
                   }}
+                  value={field.state.value}
                 >
-                  {(field) => (
-                    <div className="space-y-2">
-                      <Label htmlFor={field.name}>Strategy</Label>
-                      <Select
-                        onOpenChange={field.handleBlur}
-                        onValueChange={(value) => {
-                          field.handleChange(value as TransformationStrategy);
-                          form.setFieldValue("params", {
-                            value: "",
-                            minOffset: 0,
-                            maxOffset: 0,
-                            length: 8,
-                            charset: "alphanumeric",
-                            template: "",
-                          });
-                        }}
-                        value={field.state.value}
-                        disabled={!selectedField}
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue
-                            placeholder={
-                              selectedField
-                                ? "Select a strategy"
-                                : "Select a field first"
-                            }
-                          />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {selectedField &&
-                            getAvailableStrategies(selectedField).map(
-                              (option) => (
-                                <SelectItem
-                                  key={option.value}
-                                  value={option.value}
-                                >
-                                  {option.label} - {option.description}
-                                </SelectItem>
-                              ),
-                            )}
-                        </SelectContent>
-                      </Select>
-                      <FieldInfo field={field} />
-                      {selectedField && (
-                        <p className="text-muted-foreground text-xs">
-                          Available strategies for {selectedField} (
-                          {getFieldType(selectedField)} type)
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </form.Field>
-              )}
-            </form.Subscribe>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select a field" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {FIELD_OPTIONS.map((option) => (
+                      <SelectItem key={option.field} value={option.field}>
+                        {option.field} ({getFieldType(option.field)})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FieldInfo field={field} />
+              </div>
+            )}
+          </form.Field>
 
-            <form.Subscribe
-              selector={(state) => [state.values.strategy, state.values.field]}
-            >
-              {([strategy, fieldName]) =>
-                strategy && fieldName ? (
-                  <div className="border-t pt-4">
-                    <Label className="mb-4 block text-base font-medium">
-                      Parameters
-                    </Label>
-                    {renderParameterFields(
-                      strategy as TransformationStrategy,
-                      fieldName as FieldName,
+          <form.Subscribe selector={(state) => [state.values.field]}>
+            {([selectedField]) => (
+              <form.Field
+                name="strategy"
+                validators={{
+                  onChange: ({ value }) =>
+                    !value ? "Strategy is required" : undefined,
+                }}
+              >
+                {(field) => (
+                  <div className="space-y-2">
+                    <Label htmlFor={field.name}>Strategy</Label>
+                    <Select
+                      onOpenChange={field.handleBlur}
+                      onValueChange={(value) => {
+                        field.handleChange(value as TransformationStrategy);
+                        form.setFieldValue("params", {
+                          value: "",
+                          minOffset: 0,
+                          maxOffset: 0,
+                          length: 8,
+                          charset: "alphanumeric",
+                          template: "",
+                        });
+                      }}
+                      value={field.state.value}
+                      disabled={!selectedField}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue
+                          placeholder={
+                            selectedField
+                              ? "Select a strategy"
+                              : "Select a field first"
+                          }
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {selectedField &&
+                          getAvailableStrategies(
+                            selectedField as FieldName,
+                          ).map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label} - {option.description}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                    <FieldInfo field={field} />
+                    {selectedField && (
+                      <p className="text-muted-foreground text-xs">
+                        Available strategies for {selectedField} (
+                        {getFieldType(selectedField as FieldName)} type)
+                      </p>
                     )}
                   </div>
-                ) : null
-              }
-            </form.Subscribe>
-
-        <DialogFooter>
-          <Button type="button" variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-          <form.Subscribe
-            selector={(state) => [state.canSubmit, state.isSubmitting]}
-          >
-            {([canSubmit, isSubmitting]) => (
-              <Button type="submit" disabled={!canSubmit}>
-                {isSubmitting ? "Creating..." : "Create Transformation"}
-              </Button>
+                )}
+              </form.Field>
             )}
           </form.Subscribe>
-        </DialogFooter>
+
+          <form.Subscribe
+            selector={(state) => [state.values.strategy, state.values.field]}
+          >
+            {([strategy, fieldName]) =>
+              strategy && fieldName ? (
+                <div className="border-t pt-4">
+                  <Label className="mb-4 block text-base font-medium">
+                    Parameters
+                  </Label>
+                  {renderParameterFields(
+                    strategy as TransformationStrategy,
+                    fieldName as FieldName,
+                  )}
+                </div>
+              ) : null
+            }
+          </form.Subscribe>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <form.Subscribe
+              selector={(state) => [state.canSubmit, state.isSubmitting]}
+            >
+              {([canSubmit, isSubmitting]) => (
+                <Button type="submit" disabled={!canSubmit}>
+                  {isSubmitting
+                    ? mode === "edit"
+                      ? "Updating..."
+                      : "Creating..."
+                    : mode === "edit"
+                      ? "Update Transformation"
+                      : "Create Transformation"}
+                </Button>
+              )}
+            </form.Subscribe>
+          </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
   );
 }
+

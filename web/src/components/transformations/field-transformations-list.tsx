@@ -17,10 +17,14 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { FieldTransformationForm } from "@/forms/transformations/create-field-transformation-form";
 import type { Id } from "@sizeupdashboard/convex/src/api/_generated/dataModel.js";
+import type { FieldTransformation } from "@sizeupdashboard/convex/src/api/schema.js";
 
 export function FieldTransformationsList() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [editingTransformation, setEditingTransformation] =
+    useState<FieldTransformation | null>(null);
   const { data: transformations, isLoading } = useAuthenticatedQuery(
     api.transformations.getFieldTransformations,
     {},
@@ -117,7 +121,14 @@ export function FieldTransformationsList() {
                 </div>
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" disabled>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    console.log("Editing transformation:", transformation);
+                    setEditingTransformation(transformation);
+                  }}
+                >
                   Edit
                 </Button>
                 <AlertDialog>
@@ -127,21 +138,24 @@ export function FieldTransformationsList() {
                       size="sm"
                       disabled={deletingId === transformation._id}
                     >
-                      {deletingId === transformation._id ? "Deleting..." : "Delete"}
+                      {deletingId === transformation._id
+                        ? "Deleting..."
+                        : "Delete"}
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
                       <AlertDialogTitle>Delete Transformation</AlertDialogTitle>
                       <AlertDialogDescription>
-                        Are you sure you want to delete the transformation &ldquo;{transformation.name}&rdquo;? 
-                        This action cannot be undone and will fail if the transformation is currently 
-                        being used by any transformation rules.
+                        Are you sure you want to delete the transformation
+                        &ldquo;{transformation.name}&rdquo;? This action cannot
+                        be undone and will fail if the transformation is
+                        currently being used by any transformation rules.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                       <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction 
+                      <AlertDialogAction
                         onClick={() => handleDelete(transformation._id)}
                         className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                       >
@@ -155,6 +169,14 @@ export function FieldTransformationsList() {
           </div>
         ))}
       </div>
+
+      {/* Edit Form */}
+      <FieldTransformationForm
+        mode="edit"
+        transformation={editingTransformation}
+        open={!!editingTransformation}
+        onClose={() => setEditingTransformation(null)}
+      />
     </div>
   );
 }

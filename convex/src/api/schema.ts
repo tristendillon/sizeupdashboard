@@ -241,7 +241,10 @@ export const FieldTransformationSchema = z.object({
   params: z.record(z.any()), // strategy-specific parameters
 })
 
-export type FieldTransformation = z.infer<typeof FieldTransformationSchema>
+export type FieldTransformation = z.infer<typeof FieldTransformationSchema> & {
+  _id: Id<'fieldTransformations'>
+  _creationTime: number
+}
 const FieldTransformationsValidator = zodToConvex(FieldTransformationSchema)
 export const FieldTransformations = Table(
   'fieldTransformations',
@@ -257,7 +260,10 @@ export const TransformationRuleSchema = z.object({
   transformations: z.array(zid('fieldTransformations')), // references to reusable transformations
 })
 
-export type TransformationRule = z.infer<typeof TransformationRuleSchema>
+export type TransformationRule = z.infer<typeof TransformationRuleSchema> & {
+  _id: Id<'transformationRules'>
+  _creationTime: number
+}
 const TransformationRulesValidator = zodToConvex(TransformationRuleSchema)
 export const TransformationRules = Table(
   'transformationRules',

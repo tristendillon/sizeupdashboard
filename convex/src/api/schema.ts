@@ -230,6 +230,43 @@ export const ViewTokens = Table('viewTokens', {
 export const ViewTokensSchema = convexToZod(ViewTokens.table.validator)
 export type PostViewToken = WithoutSystemFields<Doc<'viewTokens'>>
 
+// Field Transformations - Reusable transformation definitions
+export const FieldTransformationSchema = z.object({
+  name: z.string(),
+  field: z.string(), // e.g., "location.lat", "address", "narrative"
+  strategy: z.enum([
+    'static_value',
+    'random_offset',
+    'random_string',
+    'merge_data',
+  ]),
+  params: z.record(z.any()), // strategy-specific parameters
+})
+
+export type FieldTransformation = z.infer<typeof FieldTransformationSchema>
+const FieldTransformationsValidator = zodToConvex(FieldTransformationSchema)
+export const FieldTransformations = Table(
+  'fieldTransformations',
+  FieldTransformationsValidator.fields
+)
+
+// Transformation Rules - Rules that reference reusable transformations
+export const TransformationRuleSchema = z.object({
+  name: z.string(),
+  dispatchTypeRegex: z.string(),
+  keywords: z.array(z.string()),
+  dispatchTypes: z.array(zid('dispatchTypes')),
+  transformations: z.array(zid('fieldTransformations')), // references to reusable transformations
+})
+
+export type TransformationRule = z.infer<typeof TransformationRuleSchema>
+const TransformationRulesValidator = zodToConvex(TransformationRuleSchema)
+export const TransformationRules = Table(
+  'transformationRules',
+  TransformationRulesValidator.fields
+)
+
+// Legacy RedactionLevel schema - kept for backward compatibility during migration
 export const RedactionLevelSchema = z.object({
   name: z.string(),
   dispatchTypeRegex: z.string(),
@@ -264,7 +301,13 @@ export default defineSchema(
     viewTokens: ViewTokens.table
       .index('by_token', ['token'])
       .index('by_name', ['name']),
-    redactionLevels: RedactionLevels.table.index('by_name', ['name']),
+    fieldTransformations: FieldTransformations.table
+      .index('by_name', ['name'])
+      .index('by_field', ['field'])
+      .index('by_strategy', ['strategy']),
+    transformationRules: TransformationRules.table
+      .index('by_name', ['name'])
+      .index('by_transformations', ['transformations']),
     dispatchTypes: DispatchTypesTable.table.index('by_code', ['code']),
 
     userSessions: UserSessions.table

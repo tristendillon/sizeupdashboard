@@ -10,6 +10,7 @@ import {
 import { paginationOptsValidator } from 'convex/server'
 import { v } from 'convex/values'
 import { api } from './_generated/api'
+import { TransformationEngine } from '../lib/transformations'
 
 export const paginatedClearDispatches = mutation({
   args: {
@@ -140,6 +141,12 @@ async function redactDispatch(
 
   return redactedDispatch
 }
+// New transformation system
+async function transformDispatches(dispatches: DispatchWithType[], ctx: QueryCtx) {
+  return await TransformationEngine.transformDispatches(dispatches, ctx)
+}
+
+// Legacy redaction system - kept for backward compatibility
 async function redactDispatches(dispatches: DispatchWithType[], ctx: QueryCtx) {
   const allRedactionLevels = await ctx.db.query('redactionLevels').collect()
   return await Promise.all(
@@ -200,10 +207,21 @@ export const getDispatches = query({
         page: dispatchesWithType,
       }
     }
-    const newPage = await redactDispatches(dispatchesWithType, ctx)
+    
+    // Use new transformation system first, fallback to legacy if no transformation rules exist
+    const transformationRules = await ctx.db.query('transformationRules').collect()
+    let transformedPage: DispatchWithType[]
+    
+    if (transformationRules.length > 0) {
+      transformedPage = await transformDispatches(dispatchesWithType, ctx)
+    } else {
+      // Fallback to legacy redaction system
+      transformedPage = await redactDispatches(dispatchesWithType, ctx)
+    }
+    
     return {
       ...paginationResult,
-      page: newPage,
+      page: transformedPage,
     }
   },
 })

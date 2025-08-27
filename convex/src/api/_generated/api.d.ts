@@ -17,6 +17,7 @@ import type * as auth from "../auth.js";
 import type * as customization from "../customization.js";
 import type * as dispatches from "../dispatches.js";
 import type * as hydrants from "../hydrants.js";
+import type * as transformations from "../transformations.js";
 import type * as users from "../users.js";
 import type * as viewToken from "../viewToken.js";
 import type * as weather from "../weather.js";
@@ -34,6 +35,7 @@ declare const fullApi: ApiFromModules<{
   customization: typeof customization;
   dispatches: typeof dispatches;
   hydrants: typeof hydrants;
+  transformations: typeof transformations;
   users: typeof users;
   viewToken: typeof viewToken;
   weather: typeof weather;

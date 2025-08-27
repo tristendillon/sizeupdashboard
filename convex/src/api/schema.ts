@@ -33,7 +33,6 @@ export const Dispatches = z.object({
   dispatchId: z.number(),
   narrative: z.string().optional(),
   type: z.string(),
-  message: z.string().optional(),
   address: z.string(),
   address2: z.string().optional(),
   city: z.string().optional(),
@@ -43,8 +42,6 @@ export const Dispatches = z.object({
     lng: z.number(),
   }),
   unitCodes: z.array(z.string()),
-  incidentTypeCode: z.string().optional(),
-  statusCode: z.string().optional(),
   xrefId: z.string().optional(),
   dispatchType: zid('dispatchTypes').optional(),
   dispatchCreatedAt: z.number(),
@@ -88,6 +85,7 @@ export const DispatchTypesSchema = DispatchTypes.extend({
 
 export const DispatchesWithTypeSchema = DispatchesSchema.extend({
   dispatchType: DispatchTypesSchema.optional(),
+  icon: z.string().optional(),
 })
 
 export const DispatchTypesValidator = zodToConvex(DispatchTypes)
@@ -272,8 +270,12 @@ export const TransformationRuleMappingSchema = z.object({
   ruleId: zid('transformationRules'),
 })
 
-export type TransformationRuleMapping = z.infer<typeof TransformationRuleMappingSchema>
-const TransformationRuleMappingValidator = zodToConvex(TransformationRuleMappingSchema)
+export type TransformationRuleMapping = z.infer<
+  typeof TransformationRuleMappingSchema
+>
+const TransformationRuleMappingValidator = zodToConvex(
+  TransformationRuleMappingSchema
+)
 export const TransformationRuleMappings = Table(
   'transformationRuleMappings',
   TransformationRuleMappingValidator.fields

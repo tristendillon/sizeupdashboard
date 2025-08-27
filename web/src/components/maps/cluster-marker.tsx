@@ -1,4 +1,3 @@
-import { getAlertIconPath } from "@/utils/icons";
 import { AdvancedMarker } from "@vis.gl/react-google-maps";
 import { cn } from "@/utils/ui";
 import Image from "next/image";
@@ -56,7 +55,7 @@ function DispatchCard({
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
           <Image
-            src={getAlertIconPath(dispatch.dispatchType ?? dispatch.type)}
+            src={dispatch.icon ?? ""}
             alt={dispatch.dispatchType?.group ?? dispatch.type}
             width={16}
             height={16}
@@ -85,10 +84,6 @@ export default function ClusterMarker({
   const [similarDispatches, setSimilarDispatches] = useState<
     DispatchWithType[]
   >([]);
-  const startDispatch = dispatches[0];
-  const icon = getAlertIconPath(
-    startDispatch?.dispatchType ?? startDispatch?.type ?? "other",
-  );
 
   const handleMarkerClick = () => {
     setIsOpen((prev) => !prev);
@@ -116,7 +111,12 @@ export default function ClusterMarker({
           className={cn("relative cursor-pointer", className)}
           position={location}
         >
-          <Image src={icon} alt={group} width={40} height={40} />
+          <Image
+            src={dispatches[0].icon ?? ""}
+            alt={group}
+            width={40}
+            height={40}
+          />
           {children}
         </AdvancedMarker>
       </PopoverTrigger>
@@ -124,7 +124,12 @@ export default function ClusterMarker({
       <PopoverContent className="w-80 p-4">
         <div className="space-y-4">
           <div className="flex items-center space-x-2">
-            <Image src={icon} alt={group} width={24} height={24} />
+            <Image
+              src={dispatches[0].icon ?? ""}
+              alt={group}
+              width={24}
+              height={24}
+            />
             <h3 className="text-lg font-semibold capitalize">
               {group} Cluster
             </h3>

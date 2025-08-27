@@ -26,10 +26,15 @@ interface DispatchListProps {
   className?: string;
 }
 
-export function DispatchList({ onDispatchClick, className }: DispatchListProps) {
+export function DispatchList({
+  onDispatchClick,
+  className,
+}: DispatchListProps) {
   const { dispatches, loadMore, status } = useDispatches();
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const [loadCount, setLoadCount] = useState(0);
+
+  console.log(dispatches);
 
   useEffect(() => {
     if (status !== "CanLoadMore") return;

@@ -1,4 +1,3 @@
-import { getAlertIconPath } from "@/utils/icons";
 import { AdvancedMarker } from "@vis.gl/react-google-maps";
 import { cn } from "@/utils/ui";
 import Image from "next/image";
@@ -43,7 +42,7 @@ function NoiseCard({ dispatch, className, closePopover }: NoiseCardProps) {
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
           <Image
-            src={getAlertIconPath(dispatch.dispatchType ?? dispatch.type)}
+            src={dispatch.icon ?? ""}
             alt={dispatch.dispatchType?.group ?? dispatch.type}
             width={16}
             height={16}
@@ -66,8 +65,6 @@ export default function NoiseMarker({ dispatch, className }: NoiseMarkerProps) {
   const [similarDispatches, setSimilarDispatches] = useState<
     DispatchWithType[]
   >([]);
-
-  const icon = getAlertIconPath(dispatch.dispatchType ?? dispatch.type);
   const location = dispatch.location;
 
   const handleMarkerClick = async () => {
@@ -94,7 +91,12 @@ export default function NoiseMarker({ dispatch, className }: NoiseMarkerProps) {
           className={cn("relative cursor-pointer", className)}
           position={location}
         >
-          <Image src={icon} alt={dispatch.type} width={40} height={40} />
+          <Image
+            src={dispatch.icon ?? ""}
+            alt={dispatch.type}
+            width={40}
+            height={40}
+          />
         </AdvancedMarker>
       </PopoverTrigger>
 
@@ -102,7 +104,12 @@ export default function NoiseMarker({ dispatch, className }: NoiseMarkerProps) {
         <div className="space-y-4">
           {/* Header */}
           <div className="flex items-center space-x-2">
-            <Image src={icon} alt={dispatch.type} width={24} height={24} />
+            <Image
+              src={dispatch.icon ?? ""}
+              alt={dispatch.type}
+              width={24}
+              height={24}
+            />
             <h3 className="text-lg font-semibold capitalize">
               {dispatch.dispatchType?.group} Incident
             </h3>

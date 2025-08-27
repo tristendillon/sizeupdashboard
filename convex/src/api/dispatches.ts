@@ -2,7 +2,11 @@
 import { partial } from 'convex-helpers/validators'
 import { mutation } from '../lib/mutation'
 import { query } from './_generated/server'
-import { type DispatchWithType, DispatchesTable } from './schema'
+import {
+  type DispatchType,
+  type DispatchWithType,
+  DispatchesTable,
+} from './schema'
 import { paginationOptsValidator } from 'convex/server'
 import { v } from 'convex/values'
 import { api } from './_generated/api'
@@ -44,6 +48,24 @@ export const createDispatches = mutation({
   },
 })
 
+const fireDescriptors = ['fire', 'burn', 'smoke', 'explosion', 'bomb']
+
+function getAlertIconType(input: string): 'fire' | 'medical' {
+  const descriptor = input.toLowerCase()
+  if (fireDescriptors.some((desc) => descriptor.includes(desc))) {
+    return 'fire'
+  }
+  return 'medical'
+}
+
+function getAlertIconPath(dispatchType: DispatchType | string) {
+  if (typeof dispatchType === 'string') {
+    const fallbackType = getAlertIconType(dispatchType)
+    return `/icons/incidents/${fallbackType}.png`
+  }
+  return `/icons/incidents/${dispatchType.group}.png`
+}
+
 export const getDispatches = query({
   args: {
     paginationOpts: paginationOptsValidator,
@@ -65,6 +87,13 @@ export const getDispatches = query({
         return { ...dispatch, dispatchType: dispatchType ?? undefined }
       })
     )
+
+    let page: DispatchWithType[] = dispatchesWithType.map(
+      ({ dispatchType, ...rest }) => ({
+        ...rest,
+        icon: getAlertIconPath(dispatchType?.group ?? 'other'),
+      })
+    )
     if (convexSessionToken) {
       const isAuthenticated = await ctx.runQuery(
         api.auth.getAuthenticatedSession,
@@ -75,7 +104,7 @@ export const getDispatches = query({
       if (isAuthenticated) {
         return {
           ...paginationResult,
-          page: dispatchesWithType,
+          page,
         }
       }
     }
@@ -84,7 +113,7 @@ export const getDispatches = query({
     if (view) {
       return {
         ...paginationResult,
-        page: dispatchesWithType,
+        page,
       }
     }
 
@@ -92,13 +121,9 @@ export const getDispatches = query({
     const transformationRules = await ctx.db
       .query('transformationRules')
       .collect()
-    let page: DispatchWithType[] = dispatchesWithType
 
     if (transformationRules.length > 0) {
-      page = await TransformationEngine.transformDispatches(
-        dispatchesWithType,
-        ctx
-      )
+      page = await TransformationEngine.transformDispatches(page, ctx)
     }
 
     return {

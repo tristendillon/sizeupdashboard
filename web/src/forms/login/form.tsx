@@ -37,7 +37,7 @@ export function LoginForm() {
       if (result.success && result.user) {
         setCookie("session-token", result.user.sessionToken);
         setCookie("refresh-token", result.user.refreshToken);
-        router.push("/dashbord");
+        router.push("/dashboard");
       }
     },
   });

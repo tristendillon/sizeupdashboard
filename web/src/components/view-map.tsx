@@ -158,8 +158,7 @@ export function PopoverMap({
       disableMovement={true}
     >
       <IncidentMarker
-        location={dispatch.location}
-        dispatchType={dispatch.dispatchType}
+        dispatch={dispatch}
       />
       <HydrantsRenderer mapId={POPOVER_MAP_ID} />
       <div className="absolute right-0 bottom-0 hidden h-[300px] w-[300px] md:block">

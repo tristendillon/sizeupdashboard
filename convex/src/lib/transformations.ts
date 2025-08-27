@@ -1,27 +1,32 @@
-import type { DispatchWithType, FieldTransformation, TransformationRule } from '../api/schema'
+import type {
+  DispatchWithType,
+  FieldTransformation,
+  TransformationRule,
+} from '../api/schema'
 import type { QueryCtx } from '../api/_generated/server'
+
+function setNestedValue(obj: any, path: string, value: any): void {
+  const keys = path.split('.')
+  const lastKey = keys.pop()!
+  const target = keys.reduce((current, key) => {
+    if (!(key in current)) current[key] = {}
+    return current[key]
+  }, obj)
+  target[lastKey] = value
+}
+
+function getNestedValue(obj: any, path: string): any {
+  return path.split('.').reduce((current, key) => current?.[key], obj)
+}
 
 // Base transformer class for all transformation strategies
 export abstract class DataTransformer {
   constructor(protected config: FieldTransformation) {}
-  
+
   abstract transform(value: any, dispatch: DispatchWithType): any
-  
+
   // Helper to safely get nested field values
-  protected getNestedValue(obj: any, path: string): any {
-    return path.split('.').reduce((current, key) => current?.[key], obj)
-  }
-  
   // Helper to safely set nested field values
-  protected setNestedValue(obj: any, path: string, value: any): void {
-    const keys = path.split('.')
-    const lastKey = keys.pop()!
-    const target = keys.reduce((current, key) => {
-      if (!(key in current)) current[key] = {}
-      return current[key]
-    }, obj)
-    target[lastKey] = value
-  }
 }
 
 // Static value transformer - sets field to a specific value (redaction)
@@ -35,7 +40,7 @@ export class StaticValueTransformer extends DataTransformer {
 export class RandomOffsetTransformer extends DataTransformer {
   transform(value: any, dispatch: DispatchWithType): any {
     if (typeof value !== 'number') return value
-    
+
     const { minOffset, maxOffset } = this.config.params
     const randomOffset = Math.random() * (maxOffset - minOffset) + minOffset
     return value + randomOffset
@@ -46,7 +51,7 @@ export class RandomOffsetTransformer extends DataTransformer {
 export class RandomStringTransformer extends DataTransformer {
   transform(value: any, dispatch: DispatchWithType): any {
     const { length = 8, charset = 'alphanumeric' } = this.config.params
-    
+
     let chars = ''
     switch (charset) {
       case 'alphanumeric':
@@ -61,8 +66,11 @@ export class RandomStringTransformer extends DataTransformer {
       default:
         chars = charset
     }
-    
-    return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
+
+    return Array.from(
+      { length },
+      () => chars[Math.floor(Math.random() * chars.length)]
+    ).join('')
   }
 }
 
@@ -70,20 +78,23 @@ export class RandomStringTransformer extends DataTransformer {
 export class MergeDataTransformer extends DataTransformer {
   transform(value: any, dispatch: DispatchWithType): any {
     const { sourceFields, template, separator = '-' } = this.config.params
-    
+
     if (template) {
-      // Template-based merging: "{city}-{type}" 
-      return template.replace(/\{(\w+(?:\.\w+)*)\}/g, (match: string, fieldPath: string) => {
-        return this.getNestedValue(dispatch, fieldPath) || match
-      })
+      // Template-based merging: "{city}-{type}"
+      return template.replace(
+        /\{(\w+(?:\.\w+)*)\}/g,
+        (match: string, fieldPath: string) => {
+          return getNestedValue(dispatch, fieldPath) || match
+        }
+      )
     } else if (sourceFields) {
       // Simple concatenation with separator
       return sourceFields
-        .map((field: string) => this.getNestedValue(dispatch, field))
+        .map((field: string) => getNestedValue(dispatch, field))
         .filter(Boolean)
         .join(separator)
     }
-    
+
     return value
   }
 }
@@ -113,7 +124,7 @@ export class TransformationMatcher {
     ctx: QueryCtx,
     allRules: TransformationRule[]
   ): Promise<TransformationRule[]> {
-    const dispatchType = dispatch.dispatchType 
+    const dispatchType = dispatch.dispatchType
       ? await ctx.db.get(dispatch.dispatchType._id)
       : null
     const type = dispatch.type.toLowerCase()
@@ -123,14 +134,17 @@ export class TransformationMatcher {
       if (dispatchType && rule.dispatchTypes.includes(dispatchType._id)) {
         return true
       }
-      
+
       // Check regex match
-      if (rule.dispatchTypeRegex && type.match(new RegExp(rule.dispatchTypeRegex, 'i'))) {
+      if (
+        rule.dispatchTypeRegex &&
+        type.match(new RegExp(rule.dispatchTypeRegex, 'i'))
+      ) {
         return true
       }
-      
+
       // Check keyword match
-      return rule.keywords.some(keyword => 
+      return rule.keywords.some((keyword) =>
         type.includes(keyword.toLowerCase())
       )
     })
@@ -146,21 +160,26 @@ export class TransformationApplier {
   ): Promise<DispatchWithType> {
     // Get all transformation configs
     const transformations = await Promise.all(
-      transformationIds.map(id => ctx.db.get(id as any))
+      transformationIds.map((id) => ctx.db.get(id as any))
     )
-    
+
     // Filter out any null results and create a copy to transform
-    const validTransformations = transformations.filter(Boolean) as FieldTransformation[]
+    const validTransformations = transformations.filter(
+      Boolean
+    ) as FieldTransformation[]
     const transformedDispatch = { ...dispatch }
-    
+
     // Apply each transformation
     for (const transformation of validTransformations) {
       const transformer = TransformerFactory.create(transformation)
-      const currentValue = transformer.getNestedValue(transformedDispatch, transformation.field)
+      const currentValue = getNestedValue(
+        transformedDispatch,
+        transformation.field
+      )
       const newValue = transformer.transform(currentValue, transformedDispatch)
-      transformer.setNestedValue(transformedDispatch, transformation.field, newValue)
+      setNestedValue(transformedDispatch, transformation.field, newValue)
     }
-    
+
     return transformedDispatch
   }
 }
@@ -172,7 +191,7 @@ export class TransformationEngine {
     ctx: QueryCtx
   ): Promise<DispatchWithType[]> {
     const allRules = await ctx.db.query('transformationRules').collect()
-    
+
     return await Promise.all(
       dispatches.map(async (dispatch) => {
         const matchingRules = await TransformationMatcher.getMatchingRules(
@@ -180,14 +199,16 @@ export class TransformationEngine {
           ctx,
           allRules
         )
-        
+
         if (matchingRules.length === 0) {
           return dispatch
         }
-        
+
         // Collect all transformation IDs from matching rules
-        const transformationIds = matchingRules.flatMap(rule => rule.transformations)
-        
+        const transformationIds = matchingRules.flatMap(
+          (rule) => rule.transformations
+        )
+
         // Apply transformations
         return await TransformationApplier.applyTransformations(
           dispatch,

@@ -28,31 +28,35 @@ export function IncidentMarkersRenderer() {
   }
 
   const fireDispatches = dispatches.filter(
-    (d) => d.dispatchType?.group === "fire",
+    (d) => d.icon?.includes("fire"),
   );
   const medicalDispatches = dispatches.filter(
-    (d) => d.dispatchType?.group === "medical",
+    (d) => d.icon?.includes("medical"),
   );
   const mvaDispatches = dispatches.filter(
-    (d) => d.dispatchType?.group === "mva",
+    (d) => d.icon?.includes("mva"),
   );
   const aircraftDispatches = dispatches.filter(
-    (d) => d.dispatchType?.group === "aircraft",
+    (d) => d.icon?.includes("aircraft"),
   );
   const lawDispatches = dispatches.filter(
-    (d) => d.dispatchType?.group === "law",
+    (d) => d.icon?.includes("law"),
   );
   const rescueDispatches = dispatches.filter(
-    (d) => d.dispatchType?.group === "rescue",
+    (d) => d.icon?.includes("rescue"),
   );
   const marineDispatches = dispatches.filter(
-    (d) => d.dispatchType?.group === "marine",
+    (d) => d.icon?.includes("marine"),
   );
   const otherDispatches = dispatches.filter(
     (d) =>
-      d.dispatchType?.group === "other" ||
-      d.dispatchType?.group === "hazmat" ||
-      d.dispatchType?.group === null,
+      !d.icon?.includes("fire") &&
+      !d.icon?.includes("medical") &&
+      !d.icon?.includes("mva") &&
+      !d.icon?.includes("aircraft") &&
+      !d.icon?.includes("law") &&
+      !d.icon?.includes("rescue") &&
+      !d.icon?.includes("marine"),
   );
   const dispatchesByGroup = {
     fire: fireDispatches,

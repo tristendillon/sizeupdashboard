@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { getAlertIconPath } from "@/utils/icons";
 import { getLatLngDistances } from "@/utils/lat-lng";
 import { env } from "@/env";
 import type { DispatchWithType } from "@sizeupdashboard/convex/src/api/schema.ts";
@@ -130,7 +129,7 @@ const StreetView: React.FC<StreetViewProps> = ({ dispatch }) => {
           position: target,
           map: panorama,
           icon: {
-            url: getAlertIconPath(dispatch.dispatchType ?? dispatch.type),
+            url: dispatch.icon ?? "",
             scaledSize: new google.maps.Size(40, 40),
           },
         });

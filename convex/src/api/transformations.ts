@@ -41,8 +41,11 @@ export const deleteFieldTransformation = mutation({
 })
 
 export const getFieldTransformations = query({
-  args: {},
-  handler: async (ctx) => {
+  args: {
+    viewToken: v.optional(v.id('viewTokens')),
+    convexSessionToken: v.optional(v.string()),
+  },
+  handler: async (ctx, { viewToken, convexSessionToken }) => {
     return await ctx.db.query('fieldTransformations').collect()
   },
 })
@@ -55,8 +58,10 @@ export const getFieldTransformationsByStrategy = query({
       v.literal('random_string'),
       v.literal('merge_data')
     ),
+    viewToken: v.optional(v.id('viewTokens')),
+    convexSessionToken: v.optional(v.string()),
   },
-  handler: async (ctx, { strategy }) => {
+  handler: async (ctx, { strategy, viewToken, convexSessionToken }) => {
     return await ctx.db
       .query('fieldTransformations')
       .withIndex('by_strategy', (q) => q.eq('strategy', strategy))
@@ -65,8 +70,12 @@ export const getFieldTransformationsByStrategy = query({
 })
 
 export const getFieldTransformationsByField = query({
-  args: { field: v.string() },
-  handler: async (ctx, { field }) => {
+  args: {
+    field: v.string(),
+    viewToken: v.optional(v.id('viewTokens')),
+    convexSessionToken: v.optional(v.string()),
+  },
+  handler: async (ctx, { field, viewToken, convexSessionToken }) => {
     return await ctx.db
       .query('fieldTransformations')
       .withIndex('by_field', (q) => q.eq('field', field))
@@ -176,8 +185,11 @@ export const deleteTransformationRule = mutation({
 })
 
 export const getTransformationRules = query({
-  args: {},
-  handler: async (ctx) => {
+  args: {
+    viewToken: v.optional(v.id('viewTokens')),
+    convexSessionToken: v.optional(v.string()),
+  },
+  handler: async (ctx, { viewToken, convexSessionToken }) => {
     return await ctx.db.query('transformationRules').collect()
   },
 })
@@ -247,8 +259,12 @@ export const duplicateTransformationRule = mutation({
 // Utility queries
 
 export const getTransformationRuleWithTransformations = query({
-  args: { ruleId: v.id('transformationRules') },
-  handler: async (ctx, { ruleId }) => {
+  args: {
+    ruleId: v.id('transformationRules'),
+    viewToken: v.optional(v.id('viewTokens')),
+    convexSessionToken: v.optional(v.string()),
+  },
+  handler: async (ctx, { ruleId, viewToken, convexSessionToken }) => {
     const rule = await ctx.db.get(ruleId)
     if (!rule) return null
 
@@ -264,8 +280,12 @@ export const getTransformationRuleWithTransformations = query({
 })
 
 export const getFieldTransformationUsage = query({
-  args: { transformationId: v.id('fieldTransformations') },
-  handler: async (ctx, { transformationId }) => {
+  args: {
+    transformationId: v.id('fieldTransformations'),
+    viewToken: v.optional(v.id('viewTokens')),
+    convexSessionToken: v.optional(v.string()),
+  },
+  handler: async (ctx, { transformationId, viewToken, convexSessionToken }) => {
     // Use the efficient mapping table lookup
     const mappings = await ctx.db
       .query('transformationRuleMappings')
@@ -293,8 +313,12 @@ export const getFieldTransformationUsage = query({
 
 // New efficient query to get rules by transformation ID
 export const getRulesByTransformationId = query({
-  args: { transformationId: v.id('fieldTransformations') },
-  handler: async (ctx, { transformationId }) => {
+  args: {
+    transformationId: v.id('fieldTransformations'),
+    viewToken: v.optional(v.id('viewTokens')),
+    convexSessionToken: v.optional(v.string()),
+  },
+  handler: async (ctx, { transformationId, viewToken, convexSessionToken }) => {
     const mappings = await ctx.db
       .query('transformationRuleMappings')
       .withIndex('by_transformation', (q) =>

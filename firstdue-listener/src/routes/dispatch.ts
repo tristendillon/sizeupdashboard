@@ -42,7 +42,6 @@ interface FirstDueNfirsNotification {
   dispatch_number: string
   incident_number: string
   dispatch_type: string
-  dispatch_incident_type_code: string
   alarm_at: string
   dispatch_notified_at: string
   alarms: number
@@ -84,8 +83,6 @@ interface FirstDueDispatch {
   latitude: number | null
   longitude: number | null
   unit_codes: string[]
-  incident_type_code: string | null
-  status_code: string | null
   xref_id: string | null
   created_at: string
 }
@@ -336,13 +333,6 @@ export class DispatchRoutineRouter extends RoutineRouter {
     // Note: aid_fdid_numbers and unitCodes represent different data structures
     // (NFIRS FDID numbers vs database IDs), so we don't compare them directly
 
-    // Compare dispatch_incident_type_code -> incidentTypeCode
-    compareAndSetDiff(
-      'incidentTypeCode',
-      data.dispatch_incident_type_code,
-      this.latestDispatchData.incidentTypeCode
-    )
-
     return {
       hasDiff,
       diff,
@@ -419,7 +409,6 @@ export class DispatchRoutineRouter extends RoutineRouter {
     return {
       dispatchId: Number(dispatch.id),
       type: dispatch.type ?? '',
-      message: dispatch.message ?? undefined,
       address: dispatch.address ?? '',
       address2: dispatch.address2 ?? undefined,
       city: dispatch.city ?? undefined,
@@ -429,8 +418,6 @@ export class DispatchRoutineRouter extends RoutineRouter {
         lng: Number(dispatch.longitude),
       },
       unitCodes: dispatch.unit_codes,
-      incidentTypeCode: dispatch.incident_type_code ?? undefined,
-      statusCode: dispatch.status_code ?? undefined,
       xrefId: dispatch.xref_id ?? undefined,
       dispatchCreatedAt: new Date(dispatch.created_at).getTime(),
     }

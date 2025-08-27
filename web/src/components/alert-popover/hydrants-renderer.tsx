@@ -1,5 +1,5 @@
 import { useQuery } from "@/hooks/use-query";
-import { api } from "@sizeupdashboard/convex/api/_generated/api";
+import { api } from "@sizeupdashboard/convex/src/api/_generated/api.js";
 import React from "react";
 import { Marker } from "@vis.gl/react-google-maps";
 import { useBounds } from "@/hooks/use-bounds";

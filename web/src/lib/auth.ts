@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { ConvexHttpClient } from "convex/browser";
-import { api } from "@sizeupdashboard/convex/api/_generated/api";
+import { api } from "@sizeupdashboard/convex/src/api/_generated/api.js";
 import { env } from "@/env";
 
 const convexClient = new ConvexHttpClient(env.NEXT_PUBLIC_CONVEX_URL);

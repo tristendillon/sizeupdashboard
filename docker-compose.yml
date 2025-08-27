@@ -1,0 +1,6 @@
+services:
+  firstdue-listener:
+    image: kickedsoda/firstdue-listener:latest
+    env_file: ./firstdue-listener/.env.local
+    ports:
+      - 3000:3000

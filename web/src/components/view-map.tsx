@@ -2,20 +2,17 @@
 
 import { MapPin } from "lucide-react";
 import { useActiveDispatch } from "@/providers/active-dispatch-provider";
-import { GoogleMap } from "../maps/google-map";
-import { HydrantsRenderer } from "../alert-popover/hydrants-renderer";
-import type {
-  DispatchWithType,
-} from "@sizeupdashboard/convex/api/schema";
-import IncidentMarker from "../maps/incident-marker";
-import StreetView from "../alert-popover/street-view";
+import { GoogleMap } from "@/components/maps/google-map";
+import { HydrantsRenderer } from "@/components/alert-popover/hydrants-renderer";
+import type { DispatchWithType } from "@sizeupdashboard/convex/src/api/schema.ts";
+import IncidentMarker from "@/components/maps/incident-marker";
+import StreetView from "@/components/alert-popover/street-view";
 import { useDispatches } from "@/providers/dispatches-provider";
 import { getCenterOfLatLngs } from "@/utils/lat-lng";
 import { useRef } from "react";
-import { IncidentMarkersRenderer } from "../maps/dispatch-marker-renderer";
-import { ConditionalWrapper } from "../ui/conditional-wrapper";
-import { RenderWeatherAlerts } from "../ui/render-weather-alerts";
-
+import { IncidentMarkersRenderer } from "@/components/maps/dispatch-marker-renderer";
+import { ConditionalWrapper } from "@/components/ui/conditional-wrapper";
+import { RenderWeatherAlerts } from "@/components/ui/render-weather-alerts";
 
 export const NORMAL_MAP_ID = "home-map";
 export const POPOVER_MAP_ID = "popover-map";
@@ -24,7 +21,7 @@ const POPOVER_MAP_ZOOM = 18;
 export function ViewMap() {
   const { dispatch } = useActiveDispatch();
   return (
-    <div className="relative flex h-[40vh] items-center justify-center md:h-[calc(100vh-128px)] md:w-[60%] md:flex-1">
+    <div className="relative flex h-[60vh] items-center justify-center md:h-[calc(100vh-128px)] md:w-[60%] md:flex-1">
       <ConditionalWrapper
         condition={dispatch}
         wrapper={(children, dispatch) => (
@@ -36,13 +33,17 @@ export function ViewMap() {
             {children}
           </PopoverMap>
         )}
+        elseWrapper={(children) => (
+          <NormalMap
+            className="relative flex h-full w-full items-center justify-center"
+            mapClassName="w-full h-full"
+          >
+            {children}
+          </NormalMap>
+        )}
       >
-        <NormalMap
-          className="relative flex h-full w-full items-center justify-center"
-          mapClassName="w-full h-full"
-        >
-          <RenderWeatherAlerts />
-          {/* {weatherAlerts.length > 0 && (
+        <RenderWeatherAlerts />
+        {/* {weatherAlerts.length > 0 && (
             <article className="absolute bottom-0 left-0 flex flex-row gap-1 p-1 md:flex-col lg:hidden">
               {weatherAlerts.map((alert, index) => (
                 <WeatherAlert
@@ -58,7 +59,6 @@ export function ViewMap() {
               ))}
             </article>
           )} */}
-        </NormalMap>
       </ConditionalWrapper>
     </div>
   );

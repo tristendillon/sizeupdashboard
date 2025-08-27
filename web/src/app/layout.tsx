@@ -3,9 +3,7 @@ import "./globals.css";
 import { type Metadata } from "next";
 import { Geist } from "next/font/google";
 
-import { TRPCReactProvider } from "@/trpc/react";
-import { ConvexClientProvider } from "@/providers/convex-client-proivder";
-import { ConvexQueryCacheProvider } from "convex-helpers/react/cache/provider";
+import { Providers } from "@/providers";
 
 export const metadata: Metadata = {
   title: "MFD Alerts",
@@ -27,11 +25,7 @@ export default function RootLayout({
       className={`${geist.variable} !smooth-scroll dark bg-background h-screen`}
     >
       <body className="h-full w-full">
-        <TRPCReactProvider>
-          <ConvexClientProvider>
-            <ConvexQueryCacheProvider>{children}</ConvexQueryCacheProvider>
-          </ConvexClientProvider>
-        </TRPCReactProvider>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

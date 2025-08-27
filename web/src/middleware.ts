@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { withAuth, type AuthResult } from "./server/middleware/auth";
-import { createRouteMatcher } from "./server/route-matcher";
+import { withAuth, type AuthResult } from "./lib/auth";
+import { createRouteMatcher } from "./lib/route-matcher";
 
 const isAuthPage = createRouteMatcher(["/login"]);
 const isProtectedPage = createRouteMatcher([

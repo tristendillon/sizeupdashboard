@@ -1,6 +1,7 @@
 {
   "devDependencies": {
-    "turbo": "^2.5.3"
+    "turbo": "^2.5.3",
+    "typescript": "^5.8.2"
   },
   "packageManager": "pnpm@10.11.1",
   "pnpm": {
@@ -12,8 +13,5 @@
       "@types/react": "19.0.12",
       "@types/react-dom": "19.0.4"
     }
-  },
-  "dependencies": {
-    "@eslint/js": "^9.29.0"
   }
 }

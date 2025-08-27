@@ -1,10 +1,14 @@
-import { RoutineRouter, RoutineRouterOptions, RoutineStats } from './routineRouter'
-import { api } from '@sizeupdashboard/convex/api/_generated/api'
+import {
+  RoutineRouter,
+  RoutineRouterOptions,
+  RoutineStats,
+} from './routineRouter'
+import { api } from '@sizeupdashboard/convex/src/api/_generated/api.js'
 import {
   Dispatch,
   DispatchType,
   PostDispatch,
-} from '@sizeupdashboard/convex/api/schema'
+} from '@sizeupdashboard/convex/src/api/schema'
 import { config } from '@/config'
 import { Request, Response } from 'express'
 import {
@@ -109,7 +113,7 @@ export class DispatchRoutineRouter extends RoutineRouter {
   private lastDispatchTimeInvalid: boolean = false
   public stats: DispatchStats = this.defaultStats()
   public isSyncing: boolean = false
-  
+
   constructor(options: RoutineRouterOptions = {}) {
     super(DISPATCH_NAME, {
       ...options,

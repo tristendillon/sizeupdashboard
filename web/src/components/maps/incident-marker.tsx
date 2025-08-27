@@ -3,7 +3,7 @@ import { getAlertIconPath } from "@/utils/icons";
 import { AdvancedMarker } from "@vis.gl/react-google-maps";
 import { cn } from "@/utils/ui";
 import Image from "next/image";
-import type { DispatchType } from "@sizeupdashboard/convex/api/schema";
+import type { DispatchType } from "@sizeupdashboard/convex/src/api/schema.ts";
 
 interface IncidentMarkerProps {
   location: LatLng;

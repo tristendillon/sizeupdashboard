@@ -14,7 +14,7 @@ import useDebounce from "@/hooks/use-debounce";
 import type {
   DispatchGroupEnum,
   DispatchWithType,
-} from "@sizeupdashboard/convex/api/schema";
+} from "@sizeupdashboard/convex/src/api/schema.ts";
 
 interface ClusterMarkerProps {
   location: {

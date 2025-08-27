@@ -1,6 +1,6 @@
 import { config } from '@/config'
 import { BaseLogger } from '@/logger'
-import { client } from '@sizeupdashboard/convex/lib'
+import { client } from '@/lib/client'
 
 export class BaseContext {
   public logger: BaseLogger

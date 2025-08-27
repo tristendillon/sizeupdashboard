@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/popover";
 import { useActiveDispatch } from "@/providers/active-dispatch-provider";
 import useDebounce from "@/hooks/use-debounce";
-import type { DispatchWithType } from "@sizeupdashboard/convex/api/schema";
+import type { DispatchWithType } from "@sizeupdashboard/convex/src/api/schema.ts";
 
 interface NoiseMarkerProps {
   dispatch: DispatchWithType;

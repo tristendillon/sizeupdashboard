@@ -19,7 +19,7 @@ COPY convex ./convex
 COPY firstdue-listener ./firstdue-listener
 
 # Step 5: run turbo build for your filtered packages
-RUN turbo run build --filter=@sizeupdashboard/convex --filter=@sizeupdashboard/firstdue-listener --cache-dir=.turbo
+RUN turbo run build --filter=@sizeupdashboard/firstdue-listener --cache-dir=.turbo
 
 
 # Final stage: only production dependencies and dist files

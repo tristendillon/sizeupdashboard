@@ -9,14 +9,14 @@ import {
   useState,
 } from "react";
 import { useDispatches } from "./dispatches-provider";
-import type { DispatchWithType } from "@sizeupdashboard/convex/api/schema";
+import type { DispatchWithType } from "@sizeupdashboard/convex/src/api/schema.ts";
 
 interface ActiveDispatchContextType {
   dispatch: DispatchWithType | null;
   timeLeft: number;
   dismissDispatch: () => void;
   activateDispatch: (dispatch: DispatchWithType) => void;
-};
+}
 
 export const ActiveDispatchContext =
   createContext<ActiveDispatchContextType | null>(null);
@@ -28,7 +28,9 @@ interface ActiveDispatchProviderProps {
 export const DISPLAY_DURATION_MS = 1000 * 60 * 2; // 2 minutes
 const TIMER_INTERVAL_MS = 100; // Update every 100ms
 
-export function ActiveDispatchProvider({ children }: ActiveDispatchProviderProps) {
+export function ActiveDispatchProvider({
+  children,
+}: ActiveDispatchProviderProps) {
   const { dispatches } = useDispatches();
   const [activeDispatch, setActiveDispatch] = useState<DispatchWithType | null>(
     null,

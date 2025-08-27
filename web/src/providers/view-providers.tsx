@@ -1,10 +1,10 @@
 "use client";
 
 import { createContext, useContext } from "react";
-import type { Id } from "@sizeupdashboard/convex/api/_generated/dataModel";
+import type { Id } from "@sizeupdashboard/convex/src/api/_generated/dataModel.js";
 import { usePreloadedQuery, type Preloaded } from "convex/react";
 import Link from "next/link";
-import type { api } from "@sizeupdashboard/convex/api/_generated/api";
+import type { api } from "@sizeupdashboard/convex/src/api/_generated/api.js";
 
 type ViewToken = {
   tokenId?: Id<"viewTokens">;

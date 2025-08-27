@@ -5,15 +5,11 @@
   "type": "module",
   "main": "dist/lib/index.js",
   "exports": {
-    "./lib": "./dist/lib/index.js",
-    "./api/_generated/api": "./src/api/_generated/api.js",
-    "./api/_generated/dataModel": "./src/api/_generated/dataModel.js",
-    "./api/schema": "./dist/api/schema.js"
+    "./*": {
+      "import": "./*"
+    }
   },
-  "types": "./dist/api/schema.d.ts",
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
-    "build:watch": "tsc -p tsconfig.build.json --watch &",
     "dev": "convex dev",
     "predev": "convex dev --until-success",
     "logs": "convex logs",
@@ -30,6 +26,6 @@
     "@typescript-eslint/eslint-plugin": "^6.7.0",
     "@typescript-eslint/parser": "^6.7.0",
     "eslint": "^8.49.0",
-    "typescript": "^5.2.2"
+    "typescript": "^5.8.2"
   }
 }

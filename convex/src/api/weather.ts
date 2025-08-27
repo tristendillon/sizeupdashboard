@@ -155,24 +155,26 @@ const GetWeatherByDateRange = async (
 ) => {
   const startDate = new Date(start * 1000)
   const endDate = new Date(end * 1000)
-  const weatherDays = await ctx.db.query('weatherDays').collect()
-  const realWeatherDays = weatherDays.filter((day) => {
-    const dayObj = new Date(day.dt * 1000)
-    return dayObj >= startDate && dayObj <= endDate
-  })
-  return realWeatherDays
+  const weatherDays = await ctx.db
+    .query('weatherDays')
+    .withIndex('by_dt', (q) =>
+      q.gte('dt', startDate.getTime()).lte('dt', endDate.getTime())
+    )
+    .collect()
+  return weatherDays
 }
 
 const GetWeatherHoursByDate = async (ctx: QueryCtx, date: number) => {
   const dateObj = new Date(date * 1000)
   const startOfDay = new Date(dateObj.setHours(0, 0, 0, 0))
   const endOfDay = new Date(dateObj.setHours(23, 59, 59, 999))
-  const weatherHours = await ctx.db.query('weatherHours').collect()
-  const realWeatherHours = weatherHours.filter((hour) => {
-    const hourObj = new Date(hour.dt * 1000)
-    return hourObj >= startOfDay && hourObj <= endOfDay
-  })
-  return realWeatherHours
+  const weatherHours = await ctx.db
+    .query('weatherHours')
+    .withIndex('by_dt', (q) =>
+      q.gte('dt', startOfDay.getTime()).lte('dt', endOfDay.getTime())
+    )
+    .collect()
+  return weatherHours
 }
 export const getWeatherByDate = query({
   args: {

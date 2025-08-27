@@ -12,7 +12,7 @@ export function Clock() {
   }, []);
 
   return (
-    <span className="min-w-32 text-center text-2xl font-semibold">
+    <span className="min-w-32 text-center text-lg font-semibold md:text-2xl">
       {time?.toLocaleDateString("en-US", {
         weekday: "short",
         month: "short",

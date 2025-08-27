@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "es2020",
+    "target": "ESNext",
     "module": "ESNext",
     "moduleResolution": "node",
     "declaration": true,
@@ -14,8 +14,7 @@
     "noImplicitAny": false,
     "noImplicitOverride": false,
     "paths": {
-      "@/*": ["./src/*"],
-      "@sizeupdashboard/convex/*": ["../convex/src/*"]
+      "@/*": ["./src/*"]
     }
   },
   "include": ["src/**/*"],

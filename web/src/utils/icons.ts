@@ -1,4 +1,4 @@
-import type { DispatchType } from "@sizeupdashboard/convex/api/schema";
+import type { DispatchType } from "@sizeupdashboard/convex/src/api/schema.ts";
 
 const fireDescriptors = ["fire", "burn", "smoke", "explosion", "bomb"];
 

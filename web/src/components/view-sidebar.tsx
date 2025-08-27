@@ -8,25 +8,31 @@ import {
 import React, { useEffect, useRef, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "../ui/skeleton";
+import { Skeleton } from "./ui/skeleton";
 import { useActiveDispatch } from "@/providers/active-dispatch-provider";
-import type { DispatchWithType } from "@sizeupdashboard/convex/api/schema";
+import type { DispatchWithType } from "@sizeupdashboard/convex/src/api/schema.ts";
 import { timeStampFormatter } from "@/utils/timestamp";
 import { CleanUnits } from "@/utils/units";
-import { Tooltip, TooltipTrigger, TooltipContent } from "../ui/tooltip";
+import { Tooltip, TooltipTrigger, TooltipContent } from "./ui/tooltip";
+import { cn } from "@/utils/ui";
 
 const CleanType = (type: string) => {
   return type
-    .replace(/[-_]/g, ' ')         // replace dashes and underscores with space
-    .replace(/[^\w\s]/g, '')       // remove all other special characters
-    .replace(/\s+/g, ' ')          // collapse multiple spaces
-    .trim(); 
-}
+    .replace(/[-_]/g, " ") // replace dashes and underscores with space
+    .replace(/[^\w\s]/g, "") // remove all other special characters
+    .replace(/\s+/g, " ") // collapse multiple spaces
+    .trim();
+};
 
 export function ViewSidebar() {
   const { dispatch } = useActiveDispatch();
   return (
-    <section className="bg-secondary overflow-y-none relative flex h-full max-h-[60vh] w-full flex-col md:max-h-[100vh] md:max-w-[30%]">
+    <section
+      className={cn(
+        "bg-secondary overflow-y-none relative flex h-full max-h-[50vh] w-full flex-col md:max-h-[100vh] md:max-w-[30%]",
+        dispatch && "max-h-[30vh]",
+      )}
+    >
       {dispatch && <AlertPopoverSidebarContent dispatch={dispatch} />}
       <NormalSidebarContent />
     </section>
@@ -41,10 +47,10 @@ function AlertPopoverSidebarContent({ dispatch }: AlertPopoverSidebarProps) {
   return (
     <div className="bg-secondary absolute inset-0 z-50 space-y-4 p-4">
       <div className="space-y-2">
-        <h2 className="text-3xl font-bold tracking-tighter text-red-500 uppercase md:text-6xl text-center">
+        <h2 className="text-center text-3xl font-bold tracking-tighter text-red-500 uppercase md:text-6xl">
           {CleanType(dispatch.type)}
         </h2>
-        <h3 className="text-xl font-semibold md:text-3xl text-center">
+        <h3 className="text-center text-xl font-semibold md:text-3xl">
           {dispatch.address}
         </h3>
       </div>
@@ -53,7 +59,7 @@ function AlertPopoverSidebarContent({ dispatch }: AlertPopoverSidebarProps) {
         <h2 className="text-muted-foreground text-lg md:text-xl">
           Units Assigned:
         </h2>
-        <div className="flex flex-wrap w-full gap-2">
+        <div className="flex w-full flex-wrap gap-2">
           {CleanUnits(dispatch.unitCodes).map((unitCode, index) => (
             <div
               key={index}
@@ -157,24 +163,24 @@ interface DispatchCardProps {
   activateDispatch: (dispatch: DispatchWithType) => void;
 }
 
-
 function DispatchCard({ dispatch, activateDispatch }: DispatchCardProps) {
   const [expanded, setExpanded] = useState(false);
-  const formatRelative = timeStampFormatter("relative")
-  const relativeCreatedAt = formatRelative(dispatch.dispatchCreatedAt)
+  const formatRelative = timeStampFormatter("relative");
+  const relativeCreatedAt = formatRelative(dispatch.dispatchCreatedAt);
 
   const UNITS_TO_SHOW_BASE = 4;
   const sortedUnits = dispatch.unitCodes.sort((a, b) => a.length - b.length);
   const cleanedUnits = CleanUnits(sortedUnits);
   const totalUnits = cleanedUnits.length;
-  
-  const unitsToShow = totalUnits == UNITS_TO_SHOW_BASE + 1
-    ? UNITS_TO_SHOW_BASE - 1
-    : UNITS_TO_SHOW_BASE;
+
+  const unitsToShow =
+    totalUnits == UNITS_TO_SHOW_BASE + 1
+      ? UNITS_TO_SHOW_BASE - 1
+      : UNITS_TO_SHOW_BASE;
 
   const visibleUnits = cleanedUnits.slice(0, unitsToShow);
   const hiddenUnits = cleanedUnits.slice(unitsToShow);
-  
+
   return (
     <Card className="relative bg-zinc-900 p-0 text-zinc-200">
       <a
@@ -208,7 +214,6 @@ function DispatchCard({ dispatch, activateDispatch }: DispatchCardProps) {
             </div>
           </div>
           <div className="flex flex-wrap gap-1">
-            
             {totalUnits > unitsToShow ? (
               <>
                 {visibleUnits.map((unit) => (
@@ -218,20 +223,16 @@ function DispatchCard({ dispatch, activateDispatch }: DispatchCardProps) {
                 ))}
                 <Tooltip>
                   <TooltipTrigger className="pointer-events-auto">
-                    <Badge>
-                      +{hiddenUnits.length} More
-                    </Badge>
+                    <Badge>+{hiddenUnits.length} More</Badge>
                   </TooltipTrigger>
                   <TooltipContent>
                     {hiddenUnits.map((unit, index) => (
                       <p key={index}>{unit}</p>
-                    ))
-
-                    }
+                    ))}
                   </TooltipContent>
                 </Tooltip>
               </>
-            ): (
+            ) : (
               <>
                 {cleanedUnits.map((unit) => (
                   <Badge key={unit} variant="secondary">

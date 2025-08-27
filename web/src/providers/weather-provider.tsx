@@ -6,21 +6,19 @@ import React, {
   type ReactNode,
   useMemo,
 } from "react";
-import {
-  type ActiveWeatherAlertsSchema,
-  type WeatherDaysSchema,
-  type CurrentWeatherSchema,
-  type WeatherDetailSchema,
-} from "@sizeupdashboard/convex/api/schema";
-import { type z } from "zod";
 import { useQuery } from "@/hooks/use-query";
-import { api } from "@sizeupdashboard/convex/api/_generated/api";
+import { api } from "@sizeupdashboard/convex/src/api/_generated/api.js";
+import {
+  type ActiveWeatherAlert,
+  type CurrentWeatherWithDetails,
+  type WeatherDayWithDetails,
+  type WeatherDetail,
+} from "@/lib/types";
 
 interface WeatherContextType {
-  weatherDays: z.infer<typeof WeatherDaysSchema>[];
-  currentWeather: z.infer<typeof CurrentWeatherSchema> | null;
-  weatherAlerts: z.infer<typeof ActiveWeatherAlertsSchema>[];
-  weatherDetails: z.infer<typeof WeatherDetailSchema>[];
+  weatherDays: WeatherDayWithDetails[];
+  currentWeather: CurrentWeatherWithDetails | null;
+  weatherAlerts: ActiveWeatherAlert[];
   isLoading: boolean;
   error: Error | null;
 }
@@ -61,17 +59,28 @@ interface WeatherProviderProps {
 //   },
 // ];
 
+// Any type that contains an array of weather detail ids
+type Weather = {
+  weather: number[];
+};
+
+const mapWeatherDetail = (data: Weather, weatherDetails: WeatherDetail[]) => {
+  return data.weather
+    .map((detail) => weatherDetails.find((dt) => dt.detailId === detail))
+    .filter((dt) => dt !== undefined);
+};
 export const WeatherProvider: React.FC<WeatherProviderProps> = ({
   children,
 }) => {
   const today = useMemo(() => new Date(), []);
+  console.log(today.getTime());
   const {
     data: forecast,
     isPending: forecastPending,
     error: forecastError,
   } = useQuery(api.weather.getWeatherForecast, {
     days: 3,
-    date: today.getTime(),
+    date: today.getTime() / 1000,
   });
   const {
     data: weatherDetails,
@@ -79,13 +88,26 @@ export const WeatherProvider: React.FC<WeatherProviderProps> = ({
     error: weatherDetailsError,
   } = useQuery(api.weather.getWeatherDetails);
 
+  console.log(forecast);
+
+  const mappedWeatherDays = forecast?.days.map((weatherDay) => ({
+    ...weatherDay,
+    weather: mapWeatherDetail(weatherDay, weatherDetails ?? []),
+  }));
+
+  const mappedCurrentWeather = forecast?.current
+    ? {
+        ...forecast.current,
+        weather: mapWeatherDetail(forecast.current, weatherDetails ?? []),
+      }
+    : null;
+
   const value: WeatherContextType = {
-    weatherDays: forecast?.days ?? [],
-    currentWeather: forecast?.current ?? null,
+    weatherDays: mappedWeatherDays ?? [],
+    currentWeather: mappedCurrentWeather ?? null,
     weatherAlerts: forecast?.alerts ?? [],
     // weatherAlerts: sampleAlerts,
     isLoading: forecastPending || weatherDetailsPending,
-    weatherDetails: weatherDetails ?? [],
     error: forecastError ?? weatherDetailsError ?? null,
   };
   return (

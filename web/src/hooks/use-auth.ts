@@ -1,5 +1,5 @@
 import { useAction, useQuery } from "convex/react";
-import { api } from "@sizeupdashboard/convex/api/_generated/api";
+import { api } from "@sizeupdashboard/convex/src/api/_generated/api.js";
 import { deleteCookie, getCookie, setCookie } from "@/utils/cookies";
 import { useCallback, useEffect, useState } from "react";
 

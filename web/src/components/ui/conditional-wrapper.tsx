@@ -1,6 +1,9 @@
 interface ConditionalWrapperProps<T> {
   condition: T;
-  wrapper: (children: React.ReactNode, value: NonNullable<T>) => React.ReactNode;
+  wrapper: (
+    children: React.ReactNode,
+    value: NonNullable<T>,
+  ) => React.ReactNode;
   elseWrapper?: (children: React.ReactNode) => React.ReactNode;
   children: React.ReactNode;
 }
@@ -8,7 +11,7 @@ interface ConditionalWrapperProps<T> {
 /**
  * Conditionally wraps children with different wrapper components based on a condition
  * The wrapper function receives the non-null value when condition is truthy
- * 
+ *
  * @example
  * <ConditionalWrapper
  *   condition={dispatch}
@@ -21,19 +24,19 @@ interface ConditionalWrapperProps<T> {
  *   <span>Content to wrap</span>
  * </ConditionalWrapper>
  */
-export function ConditionalWrapper<T>({ 
-  condition, 
-  wrapper, 
-  elseWrapper, 
-  children 
+export function ConditionalWrapper<T>({
+  condition,
+  wrapper,
+  elseWrapper,
+  children,
 }: ConditionalWrapperProps<T>) {
   if (condition) {
     return wrapper(children, condition);
   }
-  
+
   if (elseWrapper) {
     return elseWrapper(children);
   }
-  
+
   return children;
 }

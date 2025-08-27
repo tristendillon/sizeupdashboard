@@ -255,8 +255,8 @@ export default defineSchema(
       .index('by_event', ['event'])
       .index('by_tags', ['tags'])
       .index('by_senderName', ['senderName']),
-    weatherDays: WeatherDays.table,
-    weatherHours: WeatherHours.table,
+    weatherDays: WeatherDays.table.index('by_dt', ['dt']),
+    weatherHours: WeatherHours.table.index('by_dt', ['dt']),
     weatherDetails: WeatherDetail.table.index('by_detailId', ['detailId']),
     currentWeather: CurrentWeather.table,
     hydrants: Hydrants.table.index('by_hydrantId', ['hydrantId']),

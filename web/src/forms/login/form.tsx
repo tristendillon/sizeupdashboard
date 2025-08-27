@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FieldInfo } from "@/components/ui/field-info";
 import { useAction } from "convex/react";
 import { z } from "zod";
-import { api } from "@sizeupdashboard/convex/api/_generated/api";
+import { api } from "@sizeupdashboard/convex/src/api/_generated/api.js";
 import { useRouter } from "next/navigation";
 import { setCookie } from "@/utils/cookies";
 

@@ -1,7 +1,11 @@
-import { RoutineRouter, RoutineRouterOptions, RoutineStats } from './routineRouter'
-import { PostHydrant } from '@sizeupdashboard/convex/api/schema'
+import {
+  RoutineRouter,
+  RoutineRouterOptions,
+  RoutineStats,
+} from './routineRouter'
+import { PostHydrant } from '@sizeupdashboard/convex/src/api/schema'
 import { config } from '@/config'
-import { api } from '@sizeupdashboard/convex/api/_generated/api'
+import { api } from '@sizeupdashboard/convex/src/api/_generated/api.js'
 import { Request, Response } from 'express'
 import { FormattedDateTime, formatDateTime } from '@/lib/utils'
 import { createDefaultRetryStats } from '@/lib/fetch-with-retry'
@@ -72,7 +76,7 @@ export interface FirstDueHydrant {
 const HYDRANTS_INTERVAL = 1000 * 60 * 60 * 24 // 24 hours
 const HYDRANTS_NAME = 'Hydrants'
 
-interface HydrantsStats extends RoutineStats{
+interface HydrantsStats extends RoutineStats {
   totalHydrantsProcessed: number
   totalHydrantsCreated: number
   lastFetchTime?: FormattedDateTime
@@ -104,7 +108,7 @@ export class HydrantsRoutineRouter extends RoutineRouter {
       totalHydrantsProcessed: 0,
       totalHydrantsCreated: 0,
       errorCount: 0,
-      retryStats: createDefaultRetryStats()
+      retryStats: createDefaultRetryStats(),
     }
   }
 
@@ -182,12 +186,15 @@ export class HydrantsRoutineRouter extends RoutineRouter {
 
       this.ctx.logger.info('Testing FirstDue Hydrants API connection')
 
-      const response = await this.fetchWithRetry(`${config.firstdueApiUrl}/get-hydrants`, {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${config.firstdueApiKey}`,
-        },
-      })
+      const response = await this.fetchWithRetry(
+        `${config.firstdueApiUrl}/get-hydrants`,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${config.firstdueApiKey}`,
+          },
+        }
+      )
 
       const responseTime = testTimer.end()
 

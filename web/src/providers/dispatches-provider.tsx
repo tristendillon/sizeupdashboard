@@ -1,13 +1,13 @@
 "use client";
 
-import { api } from "@sizeupdashboard/convex/api/_generated/api";
+import { api } from "@sizeupdashboard/convex/src/api/_generated/api.js";
 import { createContext, useCallback, useContext } from "react";
 import type { PaginationStatus } from "convex/react";
 import type { LatLng } from "@/lib/types";
 import { getLatLngDistances } from "@/utils/lat-lng";
 import { useViewToken } from "./view-providers";
 import { useAuthenticatedPaginatedQuery } from "@/hooks/use-authenticated-paginated-query";
-import type { DispatchWithType } from "@sizeupdashboard/convex/api/schema";
+import type { DispatchWithType } from "@sizeupdashboard/convex/src/api/schema.ts";
 
 interface DispatchesContextType {
   dispatches: DispatchWithType[];

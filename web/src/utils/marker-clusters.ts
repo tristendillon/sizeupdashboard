@@ -1,6 +1,6 @@
 // Improved DBSCAN clustering with multiple strategies
 
-import type { DispatchWithType } from "@sizeupdashboard/convex/api/schema";
+import type { DispatchWithType } from "@sizeupdashboard/convex/src/api/schema.ts";
 import type { LatLng, LatLngBounds } from "@/lib/types";
 import { getLatLngDistances } from "./lat-lng";
 
@@ -355,10 +355,10 @@ class MapClustering {
       return { north: 0, south: 0, east: 0, west: 0 };
     }
 
-    let north = dispatches[0]!.location.lat;
-    let south = dispatches[0]!.location.lat;
-    let east = dispatches[0]!.location.lng;
-    let west = dispatches[0]!.location.lng;
+    let north = dispatches[0].location.lat;
+    let south = dispatches[0].location.lat;
+    let east = dispatches[0].location.lng;
+    let west = dispatches[0].location.lng;
 
     dispatches.forEach((dispatch) => {
       north = Math.max(north, dispatch.location.lat);

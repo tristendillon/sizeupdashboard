@@ -1,15 +1,15 @@
-import { NORMAL_MAP_ID } from "../view/view-map";
+import { NORMAL_MAP_ID } from "@/components/view-map";
 import { useDispatches } from "@/providers/dispatches-provider";
 import React from "react";
-import ClusterMarker from "./cluster-marker";
-import NoiseMarker from "./noise-marker";
-import { Badge } from "../ui/badge";
+import ClusterMarker from "@/components/maps/cluster-marker";
+import NoiseMarker from "@/components/maps/noise-marker";
+import { Badge } from "@/components/ui/badge";
 import { useZoom } from "@/hooks/use-zoom";
 import { clusterDispatches, type Cluster } from "@/utils/marker-clusters";
 import type {
   DispatchGroupEnum,
   DispatchWithType,
-} from "@sizeupdashboard/convex/api/schema";
+} from "@sizeupdashboard/convex/src/api/schema.ts";
 
 type ClusterByGroup = Record<
   DispatchGroupEnum,

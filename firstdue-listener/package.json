@@ -17,6 +17,7 @@
   "dependencies": {
     "@sizeupdashboard/convex": "workspace:*",
     "chalk": "^5.4.1",
+    "convex": "^1.25.4",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "express-winston": "^4.2.0",
@@ -30,7 +31,8 @@
     "@types/winston": "^2.4.4",
     "@typescript-eslint/eslint-plugin": "^8.34.1",
     "@typescript-eslint/parser": "^8.34.1",
-    "eslint": "^9.29.0",
+    "typescript": "^5.8.2",
+    "eslint": "^8.49.0",
     "nodemon": "^3.1.10",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",

@@ -1,14 +1,9 @@
-import { Header } from "@/components/ui/header";
-import { ViewMap } from "@/components/view/view-map";
-import { ViewSidebar } from "@/components/view/view-sidebar";
-import { DispatchesProvider } from "@/providers/dispatches-provider";
 import { ViewTokenProvider } from "@/providers/view-providers";
-import { WeatherProvider } from "@/providers/weather-provider";
 import { z } from "zod";
 
 import { preloadQuery } from "convex/nextjs";
-import { api } from "@sizeupdashboard/convex/api/_generated/api";
-import { ActiveDispatchProvider } from "@/providers/active-dispatch-provider";
+import { api } from "@sizeupdashboard/convex/src/api/_generated/api.js";
+import { HomeDashboard } from "@/components/home-dashboard";
 
 interface ViewTokenPageProps {
   params: Promise<{
@@ -32,19 +27,7 @@ export default async function ViewTokenPage({ params }: ViewTokenPageProps) {
 
   return (
     <ViewTokenProvider preloadedToken={token}>
-      <WeatherProvider>
-        <DispatchesProvider>
-          <ActiveDispatchProvider>
-            <div className="flex h-screen w-screen flex-col overflow-hidden">
-              <Header />
-              <div className="flex h-full w-full flex-1 flex-col-reverse overflow-hidden md:flex-row">
-                <ViewSidebar />
-                <ViewMap />
-              </div>
-            </div>
-          </ActiveDispatchProvider>
-        </DispatchesProvider>
-      </WeatherProvider>
+      <HomeDashboard />
     </ViewTokenProvider>
   );
 }

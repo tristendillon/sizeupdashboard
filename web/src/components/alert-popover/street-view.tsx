@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import { getAlertIconPath } from "@/utils/icons";
 import { getLatLngDistances } from "@/utils/lat-lng";
 import { env } from "@/env";
-import type { DispatchWithType } from "@sizeupdashboard/convex/api/schema";
+import type { DispatchWithType } from "@sizeupdashboard/convex/src/api/schema.ts";
 import { useMap } from "@vis.gl/react-google-maps";
 import type { LatLng } from "@/lib/types";
 

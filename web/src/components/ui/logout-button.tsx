@@ -3,7 +3,7 @@
 import { deleteCookie, getCookie } from "@/utils/cookies";
 import { useAction } from "convex/react";
 import { useCallback, type ReactNode } from "react";
-import { api } from "@sizeupdashboard/convex/api/_generated/api";
+import { api } from "@sizeupdashboard/convex/src/api/_generated/api.js";
 import { useRouter } from "next/navigation";
 import { Button, type ButtonProps } from "./button";
 import { useAuth } from "@/hooks/use-auth";

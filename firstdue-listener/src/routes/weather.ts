@@ -1,19 +1,20 @@
-import { RoutineRouter, RoutineRouterOptions, RoutineStats } from './routineRouter'
-import { api } from '@sizeupdashboard/convex/api/_generated/api'
+import {
+  RoutineRouter,
+  RoutineRouterOptions,
+  RoutineStats,
+} from './routineRouter'
+import { api } from '@sizeupdashboard/convex/src/api/_generated/api.js'
 import {
   PostActiveWeatherAlert,
   PostWeatherHour,
   PostWeatherDay,
   PostCurrentWeather,
   PostWeatherDetail,
-} from '@sizeupdashboard/convex/api/schema'
+} from '@sizeupdashboard/convex/src/api/schema'
 import { config } from '@/config'
 import { Request, Response } from 'express'
-import {
-  FormattedDateTime,
-  formatDateTime,
-} from '@/lib/utils'
-import { Id } from '@sizeupdashboard/convex/api/_generated/dataModel'
+import { FormattedDateTime, formatDateTime } from '@/lib/utils'
+import { Id } from '@sizeupdashboard/convex/src/api/_generated/dataModel'
 import { createDefaultRetryStats } from '@/lib/fetch-with-retry'
 
 const WEATHER_INTERVAL = 60_000 * 15 // 15 minutes
@@ -172,7 +173,7 @@ export class WeatherRoutineRouter extends RoutineRouter {
       totalDataPointsDeleted: 0,
       errorCount: 0,
       uniqueWeatherDetailsCount: 0,
-      retryStats: createDefaultRetryStats()
+      retryStats: createDefaultRetryStats(),
     }
   }
 

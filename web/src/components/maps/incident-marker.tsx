@@ -1,4 +1,3 @@
-import type { LatLng } from "@/lib/types";
 import { AdvancedMarker } from "@vis.gl/react-google-maps";
 import { cn } from "@/utils/ui";
 import Image from "next/image";

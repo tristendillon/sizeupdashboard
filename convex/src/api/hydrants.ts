@@ -1,8 +1,9 @@
 import { v } from 'convex/values'
 import { Hydrants } from './schema'
 import { mutation, query } from './_generated/server'
+import { authedOrThrowMutation } from '../lib/auth'
 
-export const createHydrants = mutation({
+export const createHydrants = authedOrThrowMutation({
   args: {
     hydrants: v.array(v.object(Hydrants.withoutSystemFields)),
   },

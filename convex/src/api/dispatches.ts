@@ -9,10 +9,10 @@ import {
 } from './schema'
 import { paginationOptsValidator } from 'convex/server'
 import { v } from 'convex/values'
-import { api } from './_generated/api'
 import { TransformationEngine } from '../lib/transformations'
+import { authedOrThrowMutation, queryWithAuthStatus } from '../lib/auth'
 
-export const paginatedClearDispatches = mutation({
+export const paginatedClearDispatches = authedOrThrowMutation({
   args: {
     numItems: v.number(),
   },
@@ -39,7 +39,7 @@ export const getDispatchTypes = query({
   },
 })
 
-export const createDispatches = mutation({
+export const createDispatches = authedOrThrowMutation({
   args: {
     dispatches: v.array(v.object(DispatchesTable.withoutSystemFields)),
   },
@@ -76,18 +76,17 @@ function removeDispatchType(dispatch: DispatchWithType) {
   }
 }
 
-export const getDispatches = query({
+export const getDispatches = queryWithAuthStatus({
   args: {
     paginationOpts: paginationOptsValidator,
-    viewToken: v.optional(v.id('viewTokens')),
-    convexSessionToken: v.optional(v.string()),
   },
-  handler: async (ctx, { paginationOpts, viewToken, convexSessionToken }) => {
+  handler: async (ctx, { paginationOpts }) => {
     const paginationResult = await ctx.db
       .query('dispatches')
       .withIndex('by_dispatchCreatedAt')
       .order('desc')
       .paginate(paginationOpts)
+
     const dispatchesWithType = await Promise.all(
       paginationResult.page.map(async (dispatch) => {
         if (!dispatch.dispatchType) {
@@ -102,23 +101,8 @@ export const getDispatches = query({
       ...dispatch,
       icon: getAlertIconPath(dispatch.dispatchType?.group ?? 'other'),
     }))
-    if (convexSessionToken) {
-      const isAuthenticated = await ctx.runQuery(
-        api.auth.getAuthenticatedSession,
-        {
-          convexSessionToken,
-        }
-      )
-      if (isAuthenticated) {
-        return {
-          ...paginationResult,
-          page: page.map(removeDispatchType),
-        }
-      }
-    }
 
-    const view = viewToken ? await ctx.db.get(viewToken) : null
-    if (view) {
+    if (ctx.authStatus !== 'unauthorized') {
       return {
         ...paginationResult,
         page: page.map(removeDispatchType),
@@ -154,7 +138,7 @@ export const getLastDispatchData = query({
   },
 })
 
-export const updateDispatch = mutation({
+export const updateDispatch = authedOrThrowMutation({
   args: {
     id: v.id('dispatches'),
     diff: v.object(partial(DispatchesTable.withoutSystemFields)),

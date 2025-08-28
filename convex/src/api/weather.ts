@@ -8,6 +8,7 @@ import {
   WeatherDetail,
 } from './schema'
 import { type QueryCtx, query } from './_generated/server'
+import { authedOrThrowMutation } from '../lib/auth'
 
 export const createWeatherDetails = mutation({
   args: {
@@ -79,7 +80,7 @@ export const deleteWeatherData = mutation({
   },
 })
 
-export const createWeather = mutation({
+export const createWeather = authedOrThrowMutation({
   args: {
     hours: v.array(WeatherHours.table.validator),
     days: v.array(WeatherDays.table.validator),
@@ -173,18 +174,6 @@ const GetWeatherByDateRange = async (
   return weatherDays
 }
 
-const GetWeatherHoursByDate = async (ctx: QueryCtx, date: number) => {
-  const dateObj = new Date(date * 1000)
-  const startOfDay = new Date(dateObj.setHours(0, 0, 0, 0))
-  const endOfDay = new Date(dateObj.setHours(23, 59, 59, 999))
-  const weatherHours = await ctx.db
-    .query('weatherHours')
-    .withIndex('by_dt', (q) =>
-      q.gte('dt', startOfDay.getTime()).lte('dt', endOfDay.getTime())
-    )
-    .collect()
-  return weatherHours
-}
 export const getWeatherByDate = query({
   args: {
     date: v.number(),

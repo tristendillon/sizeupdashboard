@@ -1,7 +1,8 @@
 import { v } from 'convex/values'
 import { mutation, query } from './_generated/server'
+import { authedOrThrowMutation } from '../lib/auth'
 
-export const createViewToken = mutation({
+export const createViewToken = authedOrThrowMutation({
   args: {
     name: v.string(),
     // add convex session id

@@ -1,17 +1,22 @@
 import { mutation, query } from './_generated/server'
 import { v } from 'convex/values'
 import { FieldTransformations, TransformationRules } from './schema'
+import {
+  authedOrThrowMutation,
+  authedOrThrowQuery,
+  queryWithAuthStatus,
+} from '../lib/auth'
 
 // Field Transformations CRUD
 
-export const createFieldTransformation = mutation({
+export const createFieldTransformation = authedOrThrowMutation({
   args: FieldTransformations.withoutSystemFields,
   handler: async (ctx, args) => {
     return await ctx.db.insert('fieldTransformations', args)
   },
 })
 
-export const updateFieldTransformation = mutation({
+export const updateFieldTransformation = authedOrThrowMutation({
   args: {
     id: v.id('fieldTransformations'),
     ...FieldTransformations.withoutSystemFields,
@@ -21,7 +26,7 @@ export const updateFieldTransformation = mutation({
   },
 })
 
-export const deleteFieldTransformation = mutation({
+export const deleteFieldTransformation = authedOrThrowMutation({
   args: { id: v.id('fieldTransformations') },
   handler: async (ctx, { id }) => {
     // Check if any transformation rules are using this transformation via mapping table
@@ -40,17 +45,14 @@ export const deleteFieldTransformation = mutation({
   },
 })
 
-export const getFieldTransformations = query({
-  args: {
-    viewToken: v.optional(v.id('viewTokens')),
-    convexSessionToken: v.optional(v.string()),
-  },
-  handler: async (ctx, { viewToken, convexSessionToken }) => {
+export const getFieldTransformations = authedOrThrowQuery({
+  args: {},
+  handler: async (ctx) => {
     return await ctx.db.query('fieldTransformations').collect()
   },
 })
 
-export const getFieldTransformationsByStrategy = query({
+export const getFieldTransformationsByStrategy = authedOrThrowQuery({
   args: {
     strategy: v.union(
       v.literal('static_value'),
@@ -58,10 +60,8 @@ export const getFieldTransformationsByStrategy = query({
       v.literal('random_string'),
       v.literal('merge_data')
     ),
-    viewToken: v.optional(v.id('viewTokens')),
-    convexSessionToken: v.optional(v.string()),
   },
-  handler: async (ctx, { strategy, viewToken, convexSessionToken }) => {
+  handler: async (ctx, { strategy }) => {
     return await ctx.db
       .query('fieldTransformations')
       .withIndex('by_strategy', (q) => q.eq('strategy', strategy))
@@ -69,13 +69,11 @@ export const getFieldTransformationsByStrategy = query({
   },
 })
 
-export const getFieldTransformationsByField = query({
+export const getFieldTransformationsByField = authedOrThrowQuery({
   args: {
     field: v.string(),
-    viewToken: v.optional(v.id('viewTokens')),
-    convexSessionToken: v.optional(v.string()),
   },
-  handler: async (ctx, { field, viewToken, convexSessionToken }) => {
+  handler: async (ctx, { field }) => {
     return await ctx.db
       .query('fieldTransformations')
       .withIndex('by_field', (q) => q.eq('field', field))
@@ -85,7 +83,7 @@ export const getFieldTransformationsByField = query({
 
 // Transformation Rules CRUD
 
-export const createTransformationRule = mutation({
+export const createTransformationRule = authedOrThrowMutation({
   args: TransformationRules.withoutSystemFields,
   handler: async (ctx, args) => {
     // Validate that all referenced transformations exist
@@ -119,7 +117,7 @@ export const createTransformationRule = mutation({
   },
 })
 
-export const updateTransformationRule = mutation({
+export const updateTransformationRule = authedOrThrowMutation({
   args: {
     id: v.id('transformationRules'),
     ...TransformationRules.withoutSystemFields,
@@ -169,7 +167,7 @@ export const updateTransformationRule = mutation({
   },
 })
 
-export const deleteTransformationRule = mutation({
+export const deleteTransformationRule = authedOrThrowMutation({
   args: { id: v.id('transformationRules') },
   handler: async (ctx, { id }) => {
     // Clean up mapping entries
@@ -184,17 +182,14 @@ export const deleteTransformationRule = mutation({
   },
 })
 
-export const getTransformationRules = query({
-  args: {
-    viewToken: v.optional(v.id('viewTokens')),
-    convexSessionToken: v.optional(v.string()),
-  },
-  handler: async (ctx, { viewToken, convexSessionToken }) => {
+export const getTransformationRules = authedOrThrowQuery({
+  args: {},
+  handler: async (ctx) => {
     return await ctx.db.query('transformationRules').collect()
   },
 })
 
-export const getTransformationRuleByName = query({
+export const getTransformationRuleByName = authedOrThrowQuery({
   args: { name: v.string() },
   handler: async (ctx, { name }) => {
     return await ctx.db
@@ -206,7 +201,7 @@ export const getTransformationRuleByName = query({
 
 // Bulk operations
 
-export const createMultipleFieldTransformations = mutation({
+export const createMultipleFieldTransformations = authedOrThrowMutation({
   args: {
     transformations: v.array(
       v.object(FieldTransformations.withoutSystemFields)
@@ -222,7 +217,7 @@ export const createMultipleFieldTransformations = mutation({
   },
 })
 
-export const duplicateTransformationRule = mutation({
+export const duplicateTransformationRule = authedOrThrowMutation({
   args: {
     sourceId: v.id('transformationRules'),
     newName: v.string(),
@@ -258,13 +253,11 @@ export const duplicateTransformationRule = mutation({
 
 // Utility queries
 
-export const getTransformationRuleWithTransformations = query({
+export const getTransformationRuleWithTransformations = authedOrThrowQuery({
   args: {
     ruleId: v.id('transformationRules'),
-    viewToken: v.optional(v.id('viewTokens')),
-    convexSessionToken: v.optional(v.string()),
   },
-  handler: async (ctx, { ruleId, viewToken, convexSessionToken }) => {
+  handler: async (ctx, { ruleId }) => {
     const rule = await ctx.db.get(ruleId)
     if (!rule) return null
 
@@ -279,13 +272,11 @@ export const getTransformationRuleWithTransformations = query({
   },
 })
 
-export const getFieldTransformationUsage = query({
+export const getFieldTransformationUsage = authedOrThrowQuery({
   args: {
     transformationId: v.id('fieldTransformations'),
-    viewToken: v.optional(v.id('viewTokens')),
-    convexSessionToken: v.optional(v.string()),
   },
-  handler: async (ctx, { transformationId, viewToken, convexSessionToken }) => {
+  handler: async (ctx, { transformationId }) => {
     // Use the efficient mapping table lookup
     const mappings = await ctx.db
       .query('transformationRuleMappings')
@@ -311,14 +302,11 @@ export const getFieldTransformationUsage = query({
   },
 })
 
-// New efficient query to get rules by transformation ID
-export const getRulesByTransformationId = query({
+export const getRulesByTransformationId = authedOrThrowQuery({
   args: {
     transformationId: v.id('fieldTransformations'),
-    viewToken: v.optional(v.id('viewTokens')),
-    convexSessionToken: v.optional(v.string()),
   },
-  handler: async (ctx, { transformationId, viewToken, convexSessionToken }) => {
+  handler: async (ctx, { transformationId }) => {
     const mappings = await ctx.db
       .query('transformationRuleMappings')
       .withIndex('by_transformation', (q) =>
@@ -331,44 +319,5 @@ export const getRulesByTransformationId = query({
     )
 
     return rules.filter(Boolean)
-  },
-})
-
-// Migration utility to populate mapping table from existing data
-export const populateMappingTable = mutation({
-  args: {},
-  handler: async (ctx) => {
-    // Get all transformation rules
-    const rules = await ctx.db.query('transformationRules').collect()
-
-    // Clear existing mappings
-    const existingMappings = await ctx.db
-      .query('transformationRuleMappings')
-      .collect()
-    await Promise.all(
-      existingMappings.map((mapping) => ctx.db.delete(mapping._id))
-    )
-
-    // Create new mappings from transformation rules
-    const mappingsToCreate = []
-    for (const rule of rules) {
-      for (const transformationId of rule.transformations) {
-        mappingsToCreate.push({
-          transformationId,
-          ruleId: rule._id,
-        })
-      }
-    }
-
-    await Promise.all(
-      mappingsToCreate.map((mapping) =>
-        ctx.db.insert('transformationRuleMappings', mapping)
-      )
-    )
-
-    return {
-      rulesProcessed: rules.length,
-      mappingsCreated: mappingsToCreate.length,
-    }
   },
 })

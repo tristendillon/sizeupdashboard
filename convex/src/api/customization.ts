@@ -1,8 +1,8 @@
-import { mutation } from './_generated/server'
 import { DispatchTypesTable } from './schema'
 import { v } from 'convex/values'
+import { authedOrThrowMutation } from '../lib/auth'
 
-export const createDispatchType = mutation({
+export const createDispatchType = authedOrThrowMutation({
   args: {
     dispatchTypes: v.array(v.object(DispatchTypesTable.withoutSystemFields)),
   },

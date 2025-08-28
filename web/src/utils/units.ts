@@ -16,4 +16,3 @@ export function CleanUnits(units: string[]): string[] {
     return true;
   });
 }
-  

@@ -1,38 +1,20 @@
 import { ViewTokenProvider } from "@/providers/view-providers";
-import { z } from "zod";
-import { fetchQuery } from "convex/nextjs";
-import { api } from "@sizeupdashboard/convex/src/api/_generated/api.js";
-import type { Id } from "@sizeupdashboard/convex/src/api/_generated/dataModel.js";
 import { DispatchesProvider } from "@/providers/dispatches-provider";
 import { DispatchList } from "@/components/dispatch-list";
+import { getTokenIdFromParams } from "@/utils/server-only";
 
 interface RSSFeedViewTokenPageProps {
   params: Promise<{
-    viewToken: string;
+    viewToken: string[];
   }>;
 }
-
-const viewTokenSchema = z.object({
-  viewToken: z.string().uuid(),
-});
-
 export default async function RSSFeedViewTokenPage({
   params,
 }: RSSFeedViewTokenPageProps) {
-  const { viewToken } = await params;
+  const { data: tokenId, error } = await getTokenIdFromParams(params);
 
-  const { error } = viewTokenSchema.safeParse(viewToken);
-
-  if (error && viewToken) {
-    return <div>Invalid view token</div>;
-  }
-
-  let tokenId: Id<"viewTokens"> | undefined;
-  if (viewToken) {
-    const viewTokenData = await fetchQuery(api.viewToken.getViewToken, {
-      token: viewToken,
-    });
-    tokenId = viewTokenData?._id as Id<"viewTokens">;
+  if (error) {
+    return <div>{error}</div>;
   }
 
   return (

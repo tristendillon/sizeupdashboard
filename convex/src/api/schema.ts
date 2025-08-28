@@ -5,30 +5,6 @@ import { Table } from 'convex-helpers/server'
 import type { Doc, Id } from './_generated/dataModel'
 import type { WithoutSystemFields } from 'convex/server'
 import { z } from 'zod'
-
-export const UserIdentities = Table('userIdentities', {
-  userId: v.id('users'),
-  email: v.string(),
-  hashedPassword: v.string(),
-})
-
-export const UserSessions = Table('userSessions', {
-  userId: v.id('users'),
-  expiresAt: v.number(),
-  token: v.string(),
-})
-
-export const RefreshTokens = Table('refreshTokens', {
-  token: v.string(),
-  expiresAt: v.number(),
-  userId: v.id('users'),
-})
-
-export const Users = Table('users', {
-  email: v.string(),
-  name: v.string(),
-})
-
 export const Dispatches = z.object({
   dispatchId: z.number(),
   narrative: z.string().optional(),
@@ -303,55 +279,33 @@ export const RedactionLevels = Table(
   RedactionLevelsValidator.fields
 )
 
-export default defineSchema(
-  {
-    dispatches: DispatchesTable.table
-      .index('by_dispatchId', ['dispatchId'])
-      .index('by_dispatchCreatedAt', ['dispatchCreatedAt'])
-      .index('by_xrefId', ['xrefId']),
-    activeWeatherAlerts: ActiveWeatherAlerts.table
-      .index('by_event', ['event'])
-      .index('by_tags', ['tags'])
-      .index('by_senderName', ['senderName']),
-    weatherDays: WeatherDays.table.index('by_dt', ['dt']),
-    weatherHours: WeatherHours.table.index('by_dt', ['dt']),
-    weatherDetails: WeatherDetail.table.index('by_detailId', ['detailId']),
-    currentWeather: CurrentWeather.table,
-    hydrants: Hydrants.table.index('by_hydrantId', ['hydrantId']),
+export default defineSchema({
+  dispatches: DispatchesTable.table
+    .index('by_dispatchId', ['dispatchId'])
+    .index('by_dispatchCreatedAt', ['dispatchCreatedAt'])
+    .index('by_xrefId', ['xrefId']),
+  activeWeatherAlerts: ActiveWeatherAlerts.table
+    .index('by_event', ['event'])
+    .index('by_tags', ['tags'])
+    .index('by_senderName', ['senderName']),
+  weatherDays: WeatherDays.table.index('by_dt', ['dt']),
+  weatherHours: WeatherHours.table.index('by_dt', ['dt']),
+  weatherDetails: WeatherDetail.table.index('by_detailId', ['detailId']),
+  currentWeather: CurrentWeather.table,
+  hydrants: Hydrants.table.index('by_hydrantId', ['hydrantId']),
 
-    viewTokens: ViewTokens.table
-      .index('by_token', ['token'])
-      .index('by_name', ['name']),
-    fieldTransformations: FieldTransformations.table
-      .index('by_name', ['name'])
-      .index('by_field', ['field'])
-      .index('by_strategy', ['strategy']),
-    transformationRules: TransformationRules.table
-      .index('by_name', ['name'])
-      .index('by_transformations', ['transformations']),
-    transformationRuleMappings: TransformationRuleMappings.table
-      .index('by_transformation', ['transformationId'])
-      .index('by_rule', ['ruleId']),
-    dispatchTypes: DispatchTypesTable.table.index('by_code', ['code']),
-
-    userSessions: UserSessions.table
-      .index('by_expiresAt', ['expiresAt'])
-      .index('by_userId', ['userId'])
-      .index('by_token', ['token']),
-    refreshTokens: RefreshTokens.table
-      .index('by_expiresAt', ['expiresAt'])
-      .index('by_userId', ['userId'])
-      .index('by_token', ['token']),
-    users: Users.table.index('by_email', ['email']),
-    userIdentities: UserIdentities.table.index('by_email', ['email']),
-  },
-  // If you ever get an error about schema mismatch
-  // between your data and your schema, and you cannot
-  // change the schema to match the current data in your database,
-  // you can:
-  //  1. Use the dashboard to delete tables or individual documents
-  //     that are causing the error.
-  //  2. Change this option to `false` and make changes to the data
-  //     freely, ignoring the schema. Don't forget to change back to `true`!
-  { schemaValidation: true }
-)
+  viewTokens: ViewTokens.table
+    .index('by_token', ['token'])
+    .index('by_name', ['name']),
+  fieldTransformations: FieldTransformations.table
+    .index('by_name', ['name'])
+    .index('by_field', ['field'])
+    .index('by_strategy', ['strategy']),
+  transformationRules: TransformationRules.table
+    .index('by_name', ['name'])
+    .index('by_transformations', ['transformations']),
+  transformationRuleMappings: TransformationRuleMappings.table
+    .index('by_transformation', ['transformationId'])
+    .index('by_rule', ['ruleId']),
+  dispatchTypes: DispatchTypesTable.table.index('by_code', ['code']),
+})

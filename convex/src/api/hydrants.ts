@@ -1,7 +1,6 @@
 import { v } from 'convex/values'
 import { Hydrants } from './schema'
-import { mutation } from '../lib/mutation'
-import { query } from './_generated/server'
+import { mutation, query } from './_generated/server'
 
 export const createHydrants = mutation({
   args: {

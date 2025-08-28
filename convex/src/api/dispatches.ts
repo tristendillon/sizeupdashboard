@@ -1,6 +1,6 @@
 // convex/recipes.ts
 import { partial } from 'convex-helpers/validators'
-import { mutation } from '../lib/mutation'
+import { mutation } from './_generated/server'
 import { query } from './_generated/server'
 import {
   type DispatchType,
@@ -44,7 +44,10 @@ export const createDispatches = mutation({
     dispatches: v.array(v.object(DispatchesTable.withoutSystemFields)),
   },
   handler: async (ctx, { dispatches }) => {
-    return await ctx.db.insertMany('dispatches', dispatches)
+    for (const dispatch of dispatches) {
+      await ctx.db.insert('dispatches', dispatch)
+    }
+    return dispatches
   },
 })
 

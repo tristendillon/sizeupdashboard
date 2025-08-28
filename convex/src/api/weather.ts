@@ -1,5 +1,5 @@
 import { v } from 'convex/values'
-import { mutation } from '../lib/mutation'
+import { mutation } from './_generated/server'
 import {
   CurrentWeather,
   ActiveWeatherAlerts,
@@ -15,12 +15,18 @@ export const createWeatherDetails = mutation({
   },
   handler: async (ctx, args) => {
     const { details } = args
-    const result = await ctx.db.upsertManyByCustomId(
-      'weatherDetails',
-      details,
-      'detailId'
+    const existingDetails = await ctx.db.query('weatherDetails').collect()
+    const existingDetailsMap = new Map(
+      existingDetails.map((detail) => [detail.detailId, detail])
     )
-    return result
+    for (const detail of details) {
+      if (existingDetailsMap.has(detail.detailId)) {
+        await ctx.db.patch(existingDetailsMap.get(detail.detailId)!._id, detail)
+      } else {
+        await ctx.db.insert('weatherDetails', detail)
+      }
+    }
+    return details
   },
 })
 
@@ -82,18 +88,21 @@ export const createWeather = mutation({
   },
   handler: async (ctx, args) => {
     const { hours, days, current, alerts } = args
-    const weatherHours = await ctx.db.insertMany('weatherHours', hours)
-    const weatherDays = await ctx.db.insertMany('weatherDays', days)
+    for (const hour of hours) {
+      await ctx.db.insert('weatherHours', hour)
+    }
+    for (const day of days) {
+      await ctx.db.insert('weatherDays', day)
+    }
     const currentWeather = await ctx.db.insert('currentWeather', current)
-    const activeWeatherAlerts = await ctx.db.insertMany(
-      'activeWeatherAlerts',
-      alerts
-    )
+    for (const alert of alerts) {
+      await ctx.db.insert('activeWeatherAlerts', alert)
+    }
     return {
-      hours: weatherHours,
-      days: weatherDays,
+      hours: hours,
+      days: days,
       current: currentWeather,
-      alerts: activeWeatherAlerts,
+      alerts: alerts,
     }
   },
 })

@@ -1,4 +1,4 @@
-import { mutation } from '../lib/mutation'
+import { mutation } from './_generated/server'
 import { DispatchTypesTable } from './schema'
 import { v } from 'convex/values'
 

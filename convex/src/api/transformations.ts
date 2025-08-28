@@ -1,11 +1,6 @@
-import { mutation, query } from './_generated/server'
 import { v } from 'convex/values'
 import { FieldTransformations, TransformationRules } from './schema'
-import {
-  authedOrThrowMutation,
-  authedOrThrowQuery,
-  queryWithAuthStatus,
-} from '../lib/auth'
+import { authedOrThrowMutation, authedOrThrowQuery } from '../lib/auth'
 
 // Field Transformations CRUD
 

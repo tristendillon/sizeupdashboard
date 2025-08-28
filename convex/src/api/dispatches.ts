@@ -1,6 +1,5 @@
 // convex/recipes.ts
 import { partial } from 'convex-helpers/validators'
-import { mutation } from './_generated/server'
 import { query } from './_generated/server'
 import {
   type DispatchType,
@@ -70,7 +69,7 @@ function getAlertIconPath(dispatchType: DispatchType | string) {
 }
 
 function removeDispatchType(dispatch: DispatchWithType) {
-  const { dispatchType, ...rest } = dispatch
+  const { dispatchType: _, ...rest } = dispatch
   return {
     ...rest,
   }

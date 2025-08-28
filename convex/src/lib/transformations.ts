@@ -31,14 +31,14 @@ export abstract class DataTransformer {
 
 // Static value transformer - sets field to a specific value (redaction)
 export class StaticValueTransformer extends DataTransformer {
-  transform(value: any, dispatch: DispatchWithType): any {
+  transform(): any {
     return this.config.params.value
   }
 }
 
 // Random offset transformer - adds random offset within range
 export class RandomOffsetTransformer extends DataTransformer {
-  transform(value: any, dispatch: DispatchWithType): any {
+  transform(value: any): any {
     if (typeof value !== 'number') return value
 
     const { minOffset, maxOffset } = this.config.params
@@ -49,7 +49,7 @@ export class RandomOffsetTransformer extends DataTransformer {
 
 // Random string transformer - generates random string
 export class RandomStringTransformer extends DataTransformer {
-  transform(value: any, dispatch: DispatchWithType): any {
+  transform(): any {
     const { length = 8, charset = 'alphanumeric' } = this.config.params
 
     let chars = ''

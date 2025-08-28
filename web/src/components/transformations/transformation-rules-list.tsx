@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useMutation } from "convex/react";
-import { useAuthenticatedQuery } from "@/hooks/use-authenticated-query";
+import { useQuery } from "@/hooks/use-query";
 import { api } from "@sizeupdashboard/convex/src/api/_generated/api.js";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -26,13 +26,13 @@ export function TransformationRulesList() {
   const [editingRule, setEditingRule] = useState<TransformationRule | null>(
     null,
   );
-  const { data: rules, isLoading } = useAuthenticatedQuery(
+  const { data: rules, status } = useQuery(
     api.transformations.getTransformationRules,
     {},
   );
   const deleteRule = useMutation(api.transformations.deleteTransformationRule);
 
-  if (isLoading) {
+  if (status === "pending") {
     return (
       <div className="flex items-center justify-center py-8">
         <div className="text-muted-foreground">
@@ -212,7 +212,7 @@ export function TransformationRulesList() {
         mode="edit"
         rule={editingRule}
         open={!!editingRule}
-        onClose={() => setEditingRule(null)}
+        onCloseAction={() => setEditingRule(null)}
       />
     </div>
   );

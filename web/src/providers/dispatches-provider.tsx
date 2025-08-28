@@ -2,11 +2,10 @@
 
 import { api } from "@sizeupdashboard/convex/src/api/_generated/api.js";
 import { createContext, useCallback, useContext } from "react";
-import type { PaginationStatus } from "convex/react";
+import { usePaginatedQuery, type PaginationStatus } from "convex/react";
 import type { LatLng } from "@/lib/types";
 import { getLatLngDistances } from "@/utils/lat-lng";
 import { useViewToken } from "./view-providers";
-import { useAuthenticatedPaginatedQuery } from "@/hooks/use-authenticated-paginated-query";
 import type { DispatchWithType } from "@sizeupdashboard/convex/src/api/schema.ts";
 
 interface DispatchesContextType {
@@ -30,14 +29,13 @@ export const DEFAULT_NUM_DISPATCH_LOCATIONS = 100;
 
 export function DispatchesProvider({ children }: DispatchesProviderProps) {
   const { tokenId } = useViewToken();
-  const { results, loadMore, status } = useAuthenticatedPaginatedQuery(
+  const { results, loadMore, status } = usePaginatedQuery(
     api.dispatches.getDispatches,
     {
-      viewToken: tokenId ?? undefined,
+      viewToken: tokenId,
     },
     {
       initialNumItems: DEFAULT_NUM_DISPATCHES,
-      skipOnUnauthenticated: false,
     },
   );
 

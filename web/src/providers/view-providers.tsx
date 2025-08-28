@@ -8,52 +8,23 @@ import type { api } from "@sizeupdashboard/convex/src/api/_generated/api.js";
 
 type ViewToken = {
   tokenId?: Id<"viewTokens">;
-  convexSessionId?: string;
 };
 
 export const ViewTokenContext = createContext<ViewToken | null>(null);
 
-interface PublicViewTokenProviderProps {
-  children: React.ReactNode;
-  convexSessionId?: string;
-}
-
-export const PublicViewTokenProvider = ({
-  children,
-}: PublicViewTokenProviderProps) => {
-  return (
-    <ViewTokenContext.Provider
-      value={{ tokenId: undefined, convexSessionId: undefined }}
-    >
-      {children}
-    </ViewTokenContext.Provider>
-  );
-};
-
 interface ViewTokenProviderProps {
   children: React.ReactNode;
-  preloadedToken: Preloaded<typeof api.viewToken.getViewToken>;
+  tokenId?: Id<"viewTokens">;
 }
 
 export const ViewTokenProvider = ({
   children,
-  preloadedToken,
+  tokenId,
 }: ViewTokenProviderProps) => {
-  const viewToken = usePreloadedQuery(preloadedToken);
-
-  if (!viewToken) {
-    return (
-      <div>
-        View token is invalid
-        <Link href="/">Go to home</Link>
-      </div>
-    );
-  }
-
   return (
     <ViewTokenContext.Provider
       value={{
-        tokenId: viewToken._id as Id<"viewTokens">,
+        tokenId,
       }}
     >
       {children}

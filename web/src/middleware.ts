@@ -1,30 +1,19 @@
-import { NextResponse, type NextRequest } from "next/server";
-import { withAuth, type AuthResult } from "./lib/auth";
-import { createRouteMatcher } from "./lib/route-matcher";
+import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
-const isAuthPage = createRouteMatcher(["/login"]);
-const isProtectedPage = createRouteMatcher([
-  "/dashboard{/*path}",
-  "/account{/*path}",
-]);
-export function customMiddlewareHandler(
-  req: NextRequest,
-  authResult: AuthResult,
-) {
-  console.log(authResult);
-  if (isAuthPage(req) && authResult.isAuthed) {
-    return NextResponse.redirect(new URL("/dashboard", req.url));
+const isPrivateRoute = createRouteMatcher(["/dashboard(.*)"]);
+const isSignIn = createRouteMatcher(["/sign-in(.*)"]);
+
+export default clerkMiddleware(async (auth, req) => {
+  if (isPrivateRoute(req) && !isSignIn(req)) {
+    await auth.protect();
   }
-
-  if (isProtectedPage(req) && !authResult.isAuthed) {
-    return NextResponse.redirect(new URL("/login", req.url));
-  }
-
-  return NextResponse.next();
-}
-
-export const middleware = withAuth(customMiddlewareHandler);
+});
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/profile/:path*", "/login"],
+  matcher: [
+    // Skip Next.js internals and all static files, unless found in search params
+    "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
+    // Always run for API routes
+    "/(api|trpc)(.*)",
+  ],
 };

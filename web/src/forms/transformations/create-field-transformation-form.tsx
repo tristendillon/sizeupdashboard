@@ -22,14 +22,13 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import type { Id } from "@sizeupdashboard/convex/src/api/_generated/dataModel.js";
 import type { FieldTransformation } from "@sizeupdashboard/convex/src/api/schema.js";
 
 interface FieldTransformationFormProps {
   mode: "create" | "edit";
   transformation: FieldTransformation | null;
   open: boolean;
-  onClose: () => void;
+  onCloseAction: () => void;
 }
 
 type TransformationStrategy =
@@ -279,7 +278,7 @@ export function FieldTransformationForm({
   mode,
   transformation,
   open,
-  onClose,
+  onCloseAction,
 }: FieldTransformationFormProps) {
   const createTransformation = useMutation(
     api.transformations.createFieldTransformation,
@@ -319,7 +318,7 @@ export function FieldTransformationForm({
 
       if (mode === "edit" && transformation) {
         await updateTransformation({
-          id: transformation._id as Id<"fieldTransformations">,
+          id: transformation._id,
           name: value.name,
           field: value.field,
           strategy: value.strategy,
@@ -333,7 +332,7 @@ export function FieldTransformationForm({
           params: value.params,
         });
       }
-      onClose();
+      onCloseAction();
     },
   });
 
@@ -557,7 +556,7 @@ export function FieldTransformationForm({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={onCloseAction}>
       <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
@@ -722,7 +721,7 @@ export function FieldTransformationForm({
           </form.Subscribe>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>
+            <Button type="button" variant="outline" onClick={onCloseAction}>
               Cancel
             </Button>
             <form.Subscribe
@@ -746,4 +745,3 @@ export function FieldTransformationForm({
     </Dialog>
   );
 }
-

@@ -82,14 +82,14 @@ export function TransformationDashboard() {
         mode="create"
         transformation={null}
         open={showCreateTransformation}
-        onClose={() => setShowCreateTransformation(false)}
+        onCloseAction={() => setShowCreateTransformation(false)}
       />
 
       <TransformationRuleForm
         mode="create"
         rule={null}
         open={showCreateRule}
-        onClose={() => setShowCreateRule(false)}
+        onCloseAction={() => setShowCreateRule(false)}
       />
     </div>
   );

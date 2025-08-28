@@ -2,7 +2,7 @@
 
 import { useForm } from "@tanstack/react-form";
 import { useMutation } from "convex/react";
-import { useAuthenticatedQuery } from "@/hooks/use-authenticated-query";
+import { useQuery } from "@/hooks/use-query";
 import { z } from "zod";
 import { api } from "@sizeupdashboard/convex/src/api/_generated/api.js";
 import { Button } from "@/components/ui/button";
@@ -25,7 +25,7 @@ interface TransformationRuleFormProps {
   mode: "create" | "edit";
   rule: TransformationRule | null;
   open: boolean;
-  onClose: () => void;
+  onCloseAction: () => void;
 }
 
 const transformationRuleSchema = z.object({
@@ -42,13 +42,13 @@ export function TransformationRuleForm({
   mode,
   rule,
   open,
-  onClose,
+  onCloseAction,
 }: TransformationRuleFormProps) {
   const createRule = useMutation(api.transformations.createTransformationRule);
   const updateRule = useMutation(api.transformations.updateTransformationRule);
 
   // Get available field transformations
-  const { data: transformations } = useAuthenticatedQuery(
+  const { data: transformations } = useQuery(
     api.transformations.getFieldTransformations,
     {},
   );
@@ -67,7 +67,7 @@ export function TransformationRuleForm({
     onSubmit: async ({ value }) => {
       if (mode === "edit" && rule) {
         await updateRule({
-          id: rule._id as Id<"transformationRules">,
+          id: rule._id,
           name: value.name,
           dispatchTypeRegex: value.dispatchTypeRegex,
           keywords: value.keywords,
@@ -85,7 +85,7 @@ export function TransformationRuleForm({
             value.transformations as Id<"fieldTransformations">[],
         });
       }
-      onClose();
+      onCloseAction();
     },
   });
 
@@ -111,7 +111,7 @@ export function TransformationRuleForm({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={onCloseAction}>
       <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
@@ -311,7 +311,7 @@ export function TransformationRuleForm({
           </form.Subscribe>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>
+            <Button type="button" variant="outline" onClick={onCloseAction}>
               Cancel
             </Button>
             <form.Subscribe

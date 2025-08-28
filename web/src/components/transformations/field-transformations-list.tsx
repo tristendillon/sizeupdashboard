@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useMutation } from "convex/react";
-import { useAuthenticatedQuery } from "@/hooks/use-authenticated-query";
+import { useQuery } from "@/hooks/use-query";
 import { api } from "@sizeupdashboard/convex/src/api/_generated/api.js";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,7 +25,7 @@ export function FieldTransformationsList() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [editingTransformation, setEditingTransformation] =
     useState<FieldTransformation | null>(null);
-  const { data: transformations, isLoading } = useAuthenticatedQuery(
+  const { data: transformations, status } = useQuery(
     api.transformations.getFieldTransformations,
     {},
   );
@@ -33,7 +33,7 @@ export function FieldTransformationsList() {
     api.transformations.deleteFieldTransformation,
   );
 
-  if (isLoading) {
+  if (status === "pending") {
     return (
       <div className="flex items-center justify-center py-8">
         <div className="text-muted-foreground">Loading transformations...</div>
@@ -175,7 +175,7 @@ export function FieldTransformationsList() {
         mode="edit"
         transformation={editingTransformation}
         open={!!editingTransformation}
-        onClose={() => setEditingTransformation(null)}
+        onCloseAction={() => setEditingTransformation(null)}
       />
     </div>
   );

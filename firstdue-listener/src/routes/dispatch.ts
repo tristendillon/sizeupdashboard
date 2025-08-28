@@ -392,6 +392,7 @@ export class DispatchRoutineRouter extends RoutineRouter {
       await this.ctx.client.mutation(api.dispatches.updateDispatch, {
         id: this.latestDispatchData._id,
         diff,
+        apiKey: config.convexApiKey,
       })
     }
   }
@@ -452,7 +453,7 @@ export class DispatchRoutineRouter extends RoutineRouter {
       while (clearedDispatches) {
         const batchCleared = await this.ctx.client.mutation(
           api.dispatches.paginatedClearDispatches,
-          { numItems: 1000 }
+          { numItems: 1000, apiKey: config.convexApiKey }
         )
         clearedDispatches = batchCleared
         if (batchCleared) clearedCount += 1000
@@ -687,7 +688,7 @@ export class DispatchRoutineRouter extends RoutineRouter {
       }))
       const result = await this.ctx.client.mutation(
         api.dispatches.createDispatches,
-        { dispatches: dispatchesWithTypes }
+        { dispatches: dispatchesWithTypes, apiKey: config.convexApiKey }
       )
 
       this.stats.totalInserted += result.length

@@ -650,6 +650,7 @@ export class WeatherRoutineRouter extends RoutineRouter {
           | 'currentWeather'
           | 'activeWeatherAlerts'
         >[],
+        apiKey: config.convexApiKey,
       })
 
       this.stats.totalDataPointsDeleted += this.oldWeatherIds.length
@@ -673,10 +674,9 @@ export class WeatherRoutineRouter extends RoutineRouter {
     })
 
     try {
-      await this.ctx.client.mutation(
-        api.weather.deleteWeatherDataWithoutIds,
-        {}
-      )
+      await this.ctx.client.mutation(api.weather.deleteWeatherDataWithoutIds, {
+        apiKey: config.convexApiKey,
+      })
       this.ctx.logger.info('Old weather data cleanup completed')
     } catch (error) {
       this.ctx.logger.error('Failed to cleanup old weather data', {
@@ -739,6 +739,7 @@ export class WeatherRoutineRouter extends RoutineRouter {
         hours: data.hours,
         days: data.days,
         alerts: data.alerts || [],
+        apiKey: config.convexApiKey,
       })
 
       // Update statistics
@@ -779,6 +780,7 @@ export class WeatherRoutineRouter extends RoutineRouter {
     try {
       await this.ctx.client.mutation(api.weather.createWeatherDetails, {
         details: data,
+        apiKey: config.convexApiKey,
       })
 
       this.stats.totalWeatherDetailsProcessed += data.length

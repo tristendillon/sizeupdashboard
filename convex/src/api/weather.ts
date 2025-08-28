@@ -9,8 +9,9 @@ import {
 } from './schema'
 import { type QueryCtx, query } from './_generated/server'
 import { authedOrThrowMutation } from '../lib/auth'
+import type { Id } from './_generated/dataModel'
 
-export const createWeatherDetails = mutation({
+export const createWeatherDetails = authedOrThrowMutation({
   args: {
     details: v.array(WeatherDetail.table.validator),
   },
@@ -38,7 +39,8 @@ export const getWeatherDetails = query({
   },
 })
 
-export const deleteWeatherDataWithoutIds = mutation({
+export const deleteWeatherDataWithoutIds = authedOrThrowMutation({
+  args: {},
   handler: async (ctx) => {
     const weatherHours = await ctx.db.query('weatherHours').collect()
     const weatherDays = await ctx.db.query('weatherDays').collect()
@@ -61,7 +63,7 @@ export const deleteWeatherDataWithoutIds = mutation({
   },
 })
 
-export const deleteWeatherData = mutation({
+export const deleteWeatherData = authedOrThrowMutation({
   args: {
     ids: v.array(
       v.union(
@@ -89,21 +91,27 @@ export const createWeather = authedOrThrowMutation({
   },
   handler: async (ctx, args) => {
     const { hours, days, current, alerts } = args
+    let hoursIds: Id<'weatherHours'>[] = []
     for (const hour of hours) {
-      await ctx.db.insert('weatherHours', hour)
+      const hourId = await ctx.db.insert('weatherHours', hour)
+      hoursIds.push(hourId)
     }
+    let daysIds: Id<'weatherDays'>[] = []
     for (const day of days) {
-      await ctx.db.insert('weatherDays', day)
+      const dayId = await ctx.db.insert('weatherDays', day)
+      daysIds.push(dayId)
     }
-    const currentWeather = await ctx.db.insert('currentWeather', current)
+    const currentWeatherId = await ctx.db.insert('currentWeather', current)
+    let alertsIds: Id<'activeWeatherAlerts'>[] = []
     for (const alert of alerts) {
-      await ctx.db.insert('activeWeatherAlerts', alert)
+      const alertId = await ctx.db.insert('activeWeatherAlerts', alert)
+      alertsIds.push(alertId)
     }
     return {
-      hours: hours,
-      days: days,
-      current: currentWeather,
-      alerts: alerts,
+      hours: hoursIds,
+      days: daysIds,
+      current: currentWeatherId,
+      alerts: alertsIds,
     }
   },
 })

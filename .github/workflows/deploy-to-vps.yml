@@ -21,20 +21,23 @@ jobs:
       - name: Stop and remove existing container (if any)
         run: docker rm -f firstdue-listener || true
 
-      - name: Create .env file safely
+      - name: Generate .env file from template
+        env:
+          NODE_ENV: production
+          FIRSTDUE_API_KEY: ${{ secrets.FIRSTDUE_API_KEY }}
+          PORT: ${{ secrets.PORT }}
+          TIMEZONE: ${{ vars.TIMEZONE }}
+          LOG_LEVEL: ${{ vars.LOG_LEVEL }}
+          CONVEX_URL: ${{ vars.CONVEX_URL }}
+          WEATHER_API_KEY: ${{ secrets.WEATHER_API_KEY }}
+          WEATHER_LAT: ${{ vars.WEATHER_LAT }}
+          WEATHER_LNG: ${{ vars.WEATHER_LNG }}
+          WEATHER_UNITS: ${{ vars.WEATHER_UNITS }}
+          GITHUB_COMMIT_SHA: ${{ github.sha }}
+          API_KEY: ${{ secrets.API_KEY }}
+          CONVEX_API_KEY: ${{ secrets.CONVEX_API_KEY }}
         run: |
-          printf 'NODE_ENV=production\n' > .env
-          printf 'FIRSTDUE_API_KEY=%s\n' "${{ secrets.FIRSTDUE_API_KEY }}" >> .env
-          printf 'PORT=%s\n' "${{ secrets.PORT }}" >> .env
-          printf 'TIMEZONE=%s\n' "${{ vars.TIMEZONE }}" >> .env
-          printf 'LOG_LEVEL=%s\n' "${{ vars.LOG_LEVEL }}" >> .env
-          printf 'CONVEX_URL=%s\n' "${{ vars.CONVEX_URL }}" >> .env
-          printf 'WEATHER_API_KEY=%s\n' "${{ secrets.WEATHER_API_KEY }}" >> .env
-          printf 'WEATHER_LAT=%s\n' "${{ vars.WEATHER_LAT }}" >> .env
-          printf 'WEATHER_LNG=%s\n' "${{ vars.WEATHER_LNG }}" >> .env
-          printf 'WEATHER_UNITS=%s\n' "${{ vars.WEATHER_UNITS }}" >> .env
-          printf 'GITHUB_COMMIT_SHA=%s\n' "${{ github.sha }}" >> .env
-          printf 'API_KEY=%s\n' "${{ secrets.API_KEY }}" >> .env
+          envsubst < firstdue-listener/.env.template > .env
 
       - name: Run container with env file
         run: |

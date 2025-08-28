@@ -142,6 +142,7 @@ export class HydrantsRoutineRouter extends RoutineRouter {
         api.hydrants.createHydrants,
         {
           hydrants: parsedHydrants,
+          apiKey: config.convexApiKey,
         }
       )
 
@@ -218,39 +219,6 @@ export class HydrantsRoutineRouter extends RoutineRouter {
       throw error
     }
   }
-
-  // private async handleGetCurrentData(
-  //   _req: Request,
-  //   res: Response
-  // ): Promise<void> {
-  //   try {
-  //     const dataTimer = this.ctx.logger.perf.start({
-  //       id: 'getCurrentHydrantsData',
-  //       printf: (duration: number) =>
-  //         `Retrieved current hydrants data in ${duration}ms`,
-  //     })
-
-  //     const lastSync = await this.ctx.client.query(
-  //       api.sync.getLastHydrantSync,
-  //       {}
-  //     )
-  //     const hydrantsCount = await this.ctx.client.query(
-  //       api.hydrants.getHydrantsCount,
-  //       {}
-  //     )
-
-  //     dataTimer.end()
-
-  //     res.json({
-  //       lastSync: lastSync ? new Date(lastSync).toISOString() : null,
-  //       hydrantsCount,
-  //       stats: this.calculateCurrentStats(),
-  //     })
-  //   } catch (error) {
-  //     this.stats.errorCount++
-  //     throw error
-  //   }
-  // }
 
   // ==================== CORE BUSINESS LOGIC ====================
 

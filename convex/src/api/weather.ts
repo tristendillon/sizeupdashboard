@@ -91,18 +91,18 @@ export const createWeather = authedOrThrowMutation({
   },
   handler: async (ctx, args) => {
     const { hours, days, current, alerts } = args
-    let hoursIds: Id<'weatherHours'>[] = []
+    const hoursIds: Id<'weatherHours'>[] = []
     for (const hour of hours) {
       const hourId = await ctx.db.insert('weatherHours', hour)
       hoursIds.push(hourId)
     }
-    let daysIds: Id<'weatherDays'>[] = []
+    const daysIds: Id<'weatherDays'>[] = []
     for (const day of days) {
       const dayId = await ctx.db.insert('weatherDays', day)
       daysIds.push(dayId)
     }
     const currentWeatherId = await ctx.db.insert('currentWeather', current)
-    let alertsIds: Id<'activeWeatherAlerts'>[] = []
+    const alertsIds: Id<'activeWeatherAlerts'>[] = []
     for (const alert of alerts) {
       const alertId = await ctx.db.insert('activeWeatherAlerts', alert)
       alertsIds.push(alertId)

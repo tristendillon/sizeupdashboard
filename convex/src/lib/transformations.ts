@@ -112,7 +112,7 @@ export class TransformerFactory {
       case 'merge_data':
         return new MergeDataTransformer(config)
       default:
-        throw new Error(`Unknown transformation strategy: ${config.strategy}`)
+        throw new Error(`Unknown transformation strategy`)
     }
   }
 }

@@ -36,4 +36,4 @@ jobs:
       - name: Deploy to Convex
         env:
           CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
-        run: pnpm dlx convex deploy --cmd "pnpm build"
+        run: pnpm dlx convex deploy --cmd "pnpm lint"

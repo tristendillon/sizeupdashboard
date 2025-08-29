@@ -17,7 +17,7 @@ export function Header({ isIframe }: HeaderProps) {
     );
   }
   return (
-    <nav className="bg-card flex h-32 w-screen items-center">
+    <nav className="bg-background flex h-32 w-screen items-center pr-10">
       <div className="hidden min-w-28 items-center gap-4 p-4 sm:flex md:w-full md:max-w-[30%]">
         <Image
           src="/logos/logo_256.png"
@@ -26,23 +26,19 @@ export function Header({ isIframe }: HeaderProps) {
           height={98}
           className="h-16 w-16 sm:h-20 sm:w-20 md:h-24 md:w-24"
         />
-        <h1 className="text-muted-foreground hidden text-center text-lg font-bold tracking-wider uppercase lg:block lg:text-2xl">
+        <h1 className="text-primary hidden text-center text-lg font-bold tracking-wider uppercase lg:block lg:text-2xl">
           Manhattan <br />
           Fire Department
         </h1>
       </div>
-      <div className="border-border flex h-full w-full items-center gap-4 border-l-2 pl-4 text-lg font-semibold">
-        <div className="flex flex-col items-center gap-2">
-          <Clock />
-          <div className="block lg:hidden">
-            <DismissButton />
-          </div>
-        </div>
-        <div className="bg-border h-full w-[2px]" />
+      <div className="flex h-full w-full items-center gap-4 pl-4 text-lg font-semibold">
         <WeatherDays />
         <TurnoutTimer />
         <div className="hidden lg:block">
           <DismissButton />
+        </div>
+        <div className="flex flex-1 items-center justify-end">
+          <Clock />
         </div>
       </div>
     </nav>

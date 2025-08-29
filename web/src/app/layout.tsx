@@ -22,7 +22,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geist.variable} !smooth-scroll dark bg-background h-screen`}
+      className={`${geist.variable} !smooth-scroll bg-background h-screen`}
     >
       <body className="h-full w-full">
         <Providers>{children}</Providers>

@@ -56,7 +56,7 @@ const ResizableHandle = ({
       {withHandle && (
         <div
           className={cn(
-            "bg-secondary z-10 flex h-4 w-3 items-center justify-center rounded-sm border",
+            "bg-muted z-10 flex h-4 w-3 items-center justify-center rounded-sm border",
           )}
         >
           <GripVertical className="h-2.5 w-2.5" />

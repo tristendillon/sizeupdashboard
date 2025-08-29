@@ -12,6 +12,7 @@ import type { DispatchWithType } from "@sizeupdashboard/convex/src/api/schema.ts
 import { timeStampFormatter } from "@/utils/timestamp";
 import { CleanUnits } from "@/utils/units";
 import { Tooltip, TooltipTrigger, TooltipContent } from "./ui/tooltip";
+import { cn } from "@/utils/ui";
 
 const CleanType = (type: string) => {
   return type
@@ -33,8 +34,6 @@ export function DispatchList({
   const { dispatches, loadMore, status } = useDispatches();
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const [loadCount, setLoadCount] = useState(0);
-
-  console.log(dispatches);
 
   useEffect(() => {
     if (status !== "CanLoadMore") return;
@@ -67,41 +66,44 @@ export function DispatchList({
   }, [status, loadMore, loadCount]);
 
   return (
-    <div className={className}>
-      <div className="space-y-2 p-4">
-        {status === "LoadingFirstPage" &&
-          Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
+    <div
+      className={cn(
+        "scroll-wrapper h-full space-y-2 overflow-y-auto p-4",
+        className,
+      )}
+    >
+      {status === "LoadingFirstPage" &&
+        Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
 
-        {dispatches.map((dispatch) => (
-          <DispatchCard
-            key={dispatch.dispatchId}
-            dispatch={dispatch}
-            onDispatchClick={onDispatchClick}
-          />
+      {dispatches.map((dispatch) => (
+        <DispatchCard
+          key={dispatch.dispatchId}
+          dispatch={dispatch}
+          onDispatchClick={onDispatchClick}
+        />
+      ))}
+
+      {status === "LoadingMore" &&
+        Array.from({ length: 3 }).map((_, i) => (
+          <SkeletonCard key={`loading-more-${i}`} />
         ))}
 
-        {status === "LoadingMore" &&
-          Array.from({ length: 3 }).map((_, i) => (
-            <SkeletonCard key={`loading-more-${i}`} />
-          ))}
-
-        {status === "CanLoadMore" && <div ref={loadMoreRef} className="h-1" />}
-      </div>
+      {status === "CanLoadMore" && <div ref={loadMoreRef} className="h-1" />}
     </div>
   );
 }
 
 function SkeletonCard() {
   return (
-    <Card className="bg-zinc-900">
+    <Card>
       <CardContent className="space-y-2 py-4">
-        <Skeleton className="h-4 w-32 bg-zinc-700" />
-        <Skeleton className="h-4 w-full bg-zinc-700" />
-        <Skeleton className="h-4 w-48 bg-zinc-700" />
+        <Skeleton className="h-4 w-32" />
+        <Skeleton className="h-4 w-full" />
+        <Skeleton className="h-4 w-48" />
         <div className="flex gap-2">
-          <Skeleton className="h-5 w-12 rounded bg-zinc-700" />
-          <Skeleton className="h-5 w-12 rounded bg-zinc-700" />
-          <Skeleton className="h-5 w-12 rounded bg-zinc-700" />
+          <Skeleton className="h-5 w-12 rounded" />
+          <Skeleton className="h-5 w-12 rounded" />
+          <Skeleton className="h-5 w-12 rounded" />
         </div>
       </CardContent>
     </Card>
@@ -132,7 +134,7 @@ function DispatchCard({ dispatch, onDispatchClick }: DispatchCardProps) {
   const hiddenUnits = cleanedUnits.slice(unitsToShow);
 
   return (
-    <Card className="relative bg-zinc-900 p-0 text-zinc-200">
+    <Card className="relative p-0">
       {onDispatchClick && (
         <a
           className="pointer-events-auto absolute inset-0 cursor-pointer"

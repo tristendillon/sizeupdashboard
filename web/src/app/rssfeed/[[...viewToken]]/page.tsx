@@ -24,7 +24,7 @@ export default async function RSSFeedViewTokenPage({
           {/* <Header /> */}
           <main className="flex-1 overflow-hidden">
             <div className="container mx-auto h-full">
-              <DispatchList className="h-full overflow-y-auto" />
+              <DispatchList />
             </div>
           </main>
         </div>

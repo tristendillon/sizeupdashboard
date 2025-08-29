@@ -52,14 +52,17 @@ function WeatherDay({ day }: WeatherDayProps) {
   const formatDate = timeStampFormatter("relative-date");
   return (
     <div className="flex min-w-[120px] flex-col items-center">
-      <div className="text-xs text-white/70">{formatDate(day.dt)}</div>
-      <Image
-        src={getWeatherIconUrl(day.weather[0].icon)}
-        alt={day.weather[0].description}
-        width={24}
-        height={24}
-        className="mb-1 h-6 w-6"
-      />
+      <div className="text-primary/70 text-xs">{formatDate(day.dt)}</div>
+
+      <div className="bg-primary mb-1 flex h-7 w-7 items-center justify-center rounded-full">
+        <Image
+          src={getWeatherIconUrl(day.weather[0].icon)}
+          alt={day.weather[0].description}
+          width={24}
+          height={24}
+          className="h-6 w-6"
+        />
+      </div>
       <div className="mb text-lg font-bold">
         {typeof day.temp === "number"
           ? Math.round(day.temp)
@@ -67,7 +70,7 @@ function WeatherDay({ day }: WeatherDayProps) {
         °
       </div>
       <div className="text-xs capitalize">{day.weather[0]?.main}</div>
-      <div className="text-center text-xs text-white/70">
+      <div className="text-muted-foreground text-center text-xs">
         <div>Humid: {day.humidity}%</div>
         {day.windSpeed !== undefined && (
           <div>
@@ -160,7 +163,7 @@ export function WeatherDays() {
   return (
     <>
       {/* Desktop/Tablet View - Hidden on mobile */}
-      <div className="hidden items-center gap-4 text-white md:flex">
+      <div className="hidden items-center gap-4 md:flex">
         {/* Today - Current Weather */}
         {currentWeather && <WeatherDay day={currentWeather} />}
         {/* Forecast Days */}

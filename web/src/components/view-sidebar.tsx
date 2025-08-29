@@ -17,13 +17,12 @@ const CleanType = (type: string) => {
 export function ViewSidebar() {
   const { dispatch, activateDispatch } = useActiveDispatch();
   return (
-    <section className="bg-secondary overflow-y-none relative flex h-full w-full flex-col">
+    <section className="bg-sidebar overflow-y-none relative flex h-full w-full flex-col">
       {dispatch ? (
         <AlertPopoverSidebarContent dispatch={dispatch} />
       ) : (
         <div className="flex-1 overflow-y-auto">
           <DispatchList
-            className="h-full overflow-y-auto"
             onDispatchClick={activateDispatch}
           />
         </div>
@@ -38,9 +37,9 @@ interface AlertPopoverSidebarProps {
 
 function AlertPopoverSidebarContent({ dispatch }: AlertPopoverSidebarProps) {
   return (
-    <div className="bg-secondary absolute inset-0 z-40 space-y-4 p-4">
+    <div className="bg-sidebar absolute inset-0 z-40 space-y-4 p-4">
       <div className="space-y-2">
-        <h2 className="text-center text-3xl font-bold tracking-tighter text-red-500 uppercase md:text-6xl">
+        <h2 className="text-destructive text-center text-3xl font-bold tracking-tighter uppercase md:text-6xl">
           {CleanType(dispatch.type)}
         </h2>
         <h3 className="text-center text-xl font-semibold md:text-3xl">
@@ -61,7 +60,7 @@ function AlertPopoverSidebarContent({ dispatch }: AlertPopoverSidebarProps) {
               {!dispatch.unitCodes.includes(unitCode) ? (
                 <span className="mr-2 h-3 w-3 rounded-full bg-green-500"></span>
               ) : (
-                <span className="mr-2 h-3 w-3 rounded-full bg-gray-300"></span>
+                <span className="bg-muted mr-2 h-3 w-3 rounded-full"></span>
               )}
               <span className="text-base font-medium">{unitCode}</span>
             </div>

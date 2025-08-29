@@ -5,6 +5,7 @@ import { ActiveDispatchProvider } from "@/providers/active-dispatch-provider";
 import { DispatchesProvider } from "@/providers/dispatches-provider";
 import { WeatherProvider } from "@/providers/weather-provider";
 import { getTokenIdFromParams } from "@/utils/server-only";
+import { headers } from "next/headers";
 
 interface ViewTokenPageProps {
   params: Promise<{
@@ -12,7 +13,18 @@ interface ViewTokenPageProps {
   }>;
 }
 
+const getIframeStatus = async () => {
+  const h = await headers();
+  const fetchDest = h.get("sec-fetch-dest");
+  const isIframe = fetchDest === "iframe";
+
+  return {
+    isIframe,
+  };
+};
+
 export default async function ViewTokenPage({ params }: ViewTokenPageProps) {
+  const { isIframe } = await getIframeStatus();
   const { data: tokenId, error } = await getTokenIdFromParams(params);
 
   if (error) {
@@ -25,7 +37,7 @@ export default async function ViewTokenPage({ params }: ViewTokenPageProps) {
         <DispatchesProvider>
           <ActiveDispatchProvider>
             <div className="flex h-screen w-screen flex-col overflow-hidden">
-              <Header />
+              <Header isIframe={isIframe} />
               <ResponsiveLayout />
             </div>
           </ActiveDispatchProvider>

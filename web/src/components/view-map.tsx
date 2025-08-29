@@ -27,7 +27,7 @@ export function ViewMap() {
         wrapper={(children, dispatch) => (
           <PopoverMap
             dispatch={dispatch}
-            className="absolute inset-0 z-50 flex h-full w-full items-center justify-center"
+            className="absolute inset-0 z-30 flex h-full w-full items-center justify-center"
             mapClassName="w-full h-full"
           >
             {children}
@@ -157,9 +157,7 @@ export function PopoverMap({
       mapClassName={mapClassName}
       disableMovement={true}
     >
-      <IncidentMarker
-        dispatch={dispatch}
-      />
+      <IncidentMarker dispatch={dispatch} />
       <HydrantsRenderer mapId={POPOVER_MAP_ID} />
       <div className="absolute right-0 bottom-0 hidden h-[300px] w-[300px] md:block">
         <StreetView dispatch={dispatch} />

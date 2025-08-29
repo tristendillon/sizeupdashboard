@@ -4,7 +4,18 @@ import { DismissButton } from "./dismiss-button";
 import { TurnoutTimer } from "./turnout-timer";
 import { WeatherDays } from "./weather-days";
 
-export function Header() {
+interface HeaderProps {
+  isIframe: boolean;
+}
+
+export function Header({ isIframe }: HeaderProps) {
+  if (isIframe) {
+    return (
+      <div className="absolute top-6 right-0 z-50">
+        <DismissButton />
+      </div>
+    );
+  }
   return (
     <nav className="bg-card flex h-32 w-screen items-center">
       <div className="hidden min-w-28 items-center gap-4 p-4 sm:flex md:w-full md:max-w-[30%]">

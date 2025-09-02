@@ -1,10 +1,12 @@
-import { useQuery } from "@/hooks/use-query";
+"use client";
+
 import { api } from "@sizeupdashboard/convex/src/api/_generated/api.js";
-import React from "react";
+import React, { useEffect } from "react";
 import { Marker } from "@vis.gl/react-google-maps";
 import { useBounds } from "@/hooks/use-bounds";
 import type { LatLngBounds } from "@/lib/types";
 import { getFlowRateColor } from "@/utils/icons";
+import { usePaginatedQuery } from "convex/react";
 
 interface HydrantsRendererProps {
   mapId: string;
@@ -21,7 +23,7 @@ export function HydrantsRenderer({ mapId }: HydrantsRendererProps) {
 }
 
 const Hydrants = (bounds: LatLngBounds) => {
-  const { data, isPending, error } = useQuery(
+  const { status, results, loadMore } = usePaginatedQuery(
     api.hydrants.getHydrantsByBounds,
     {
       topLeft: {
@@ -33,16 +35,22 @@ const Hydrants = (bounds: LatLngBounds) => {
         longitude: bounds.west,
       },
     },
+    {
+      initialNumItems: 100,
+    },
   );
 
-  if (isPending) {
+  useEffect(() => {
+    if (status === "CanLoadMore") {
+      void loadMore(100);
+    }
+  }, [status, loadMore]);
+
+  if (status === "LoadingFirstPage" || status === "LoadingMore") {
     return null;
   }
 
-  if (error) {
-    return <div>Error: {error.message}</div>;
-  }
-  const hydrantsWithIcons = data.map((hydrant) => ({
+  const hydrantsWithIcons = results.map((hydrant) => ({
     ...hydrant,
     icon: `icons/hydrants/hydrant-${getFlowRateColor(Number(hydrant.calculatedFlowRate))}.png`,
   }));

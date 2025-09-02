@@ -3,9 +3,7 @@ import { Hydrants } from './schema'
 import { query } from './_generated/server'
 import { authedOrThrowMutation } from '../lib/auth'
 import { geospatial } from '.'
-import type { Id } from './_generated/dataModel'
-import type { Point } from '@convex-dev/geospatial'
-
+import { paginationOptsValidator } from 'convex/server'
 export const paginatedCreateHydrants = authedOrThrowMutation({
   args: {
     hydrants: v.array(
@@ -85,14 +83,9 @@ export const paginatedDeleteHydrants = authedOrThrowMutation({
   },
 })
 
-export const getHydrants = query({
-  handler: async (ctx) => {
-    const hydrants = await ctx.db.query('hydrants').collect()
-    return hydrants
-  },
-})
 export const getHydrantsByBounds = query({
   args: {
+    paginationOpts: paginationOptsValidator,
     topLeft: v.object({
       latitude: v.number(),
       longitude: v.number(),
@@ -111,31 +104,23 @@ export const getHydrantsByBounds = query({
       east: bottomRight.longitude,
       north: bottomRight.latitude,
     }
-    const ids: { key: Id<'hydrants'>; coordinates: Point }[] = []
-    const result = await geospatial.query(ctx, {
-      shape: { type: 'rectangle', rectangle },
-      limit: 32,
-    })
-    let nextCursor: string | undefined = result.nextCursor
-
-    ids.push(...result.results)
-    while (nextCursor) {
-      const nextResult = await geospatial.query(
-        ctx,
-        {
-          shape: { type: 'rectangle', rectangle },
-          limit: 32,
-        },
-        result.nextCursor
-      )
-      nextCursor = nextResult.nextCursor
-      ids.push(...nextResult.results)
-    }
-    return await Promise.all(
-      ids.map(async (id) => ({
-        ...(await ctx.db.get(id.key)),
-        location: id.coordinates,
-      }))
+    const result = await geospatial.query(
+      ctx,
+      {
+        shape: { type: 'rectangle', rectangle },
+        limit: args.paginationOpts.numItems,
+      },
+      args.paginationOpts.cursor ?? undefined
     )
+    return {
+      page: await Promise.all(
+        result.results.map(async (id) => ({
+          ...(await ctx.db.get(id.key)),
+          location: id.coordinates,
+        }))
+      ),
+      isDone: result.nextCursor === undefined,
+      continueCursor: result.nextCursor ?? '',
+    }
   },
 })

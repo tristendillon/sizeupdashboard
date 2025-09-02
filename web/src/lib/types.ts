@@ -2,8 +2,8 @@ import {
   type ActiveWeatherAlertsSchema,
   type CurrentWeatherSchema,
   type DispatchesSchema,
-  type WeatherDaysSchema,
   type WeatherDetailSchema,
+  type WeatherHoursSchema,
 } from "@sizeupdashboard/convex/src/api/schema.ts";
 import { type z } from "zod";
 
@@ -21,16 +21,16 @@ export type Dispatch = z.infer<typeof DispatchesSchema> & {
   _creationTime: number;
 };
 
-export type WeatherDay = z.infer<typeof WeatherDaysSchema>;
+export type WeatherHour = z.infer<typeof WeatherHoursSchema>;
 export type WeatherDetail = z.infer<typeof WeatherDetailSchema>;
 export type CurrentWeather = z.infer<typeof CurrentWeatherSchema>;
 export type ActiveWeatherAlert = z.infer<typeof ActiveWeatherAlertsSchema>;
 
-export interface WeatherDayWithDetails extends Omit<WeatherDay, "weather"> {
+export interface WeatherHourWithDetails extends Omit<WeatherHour, "weather"> {
   weather: WeatherDetail[];
 }
 
-export interface CurrentWeatherWithDetails extends Omit<CurrentWeather, "weather"> {
+export interface CurrentWeatherWithDetails
+  extends Omit<CurrentWeather, "weather"> {
   weather: WeatherDetail[];
 }
-

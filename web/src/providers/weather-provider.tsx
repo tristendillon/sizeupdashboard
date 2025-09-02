@@ -11,12 +11,12 @@ import { api } from "@sizeupdashboard/convex/src/api/_generated/api.js";
 import {
   type ActiveWeatherAlert,
   type CurrentWeatherWithDetails,
-  type WeatherDayWithDetails,
+  type WeatherHourWithDetails,
   type WeatherDetail,
 } from "@/lib/types";
 
 interface WeatherContextType {
-  weatherDays: WeatherDayWithDetails[];
+  weatherHours: WeatherHourWithDetails[];
   currentWeather: CurrentWeatherWithDetails | null;
   weatherAlerts: ActiveWeatherAlert[];
   isLoading: boolean;
@@ -60,12 +60,12 @@ interface WeatherProviderProps {
 // ];
 
 // Any type that contains an array of weather detail ids
-type Weather = {
-  weather: number[];
-};
 
-const mapWeatherDetail = (data: Weather, weatherDetails: WeatherDetail[]) => {
-  return data.weather
+const mapWeatherDetail = (
+  data: number[],
+  weatherDetails: WeatherDetail[],
+): WeatherDetail[] => {
+  return data
     .map((detail) => weatherDetails.find((dt) => dt.detailId === detail))
     .filter((dt) => dt !== undefined);
 };
@@ -79,7 +79,7 @@ export const WeatherProvider: React.FC<WeatherProviderProps> = ({
     isPending: forecastPending,
     error: forecastError,
   } = useQuery(api.weather.getWeatherForecast, {
-    days: 3,
+    hours: 3,
     date: today.getTime() / 1000,
   });
   const {
@@ -88,22 +88,23 @@ export const WeatherProvider: React.FC<WeatherProviderProps> = ({
     error: weatherDetailsError,
   } = useQuery(api.weather.getWeatherDetails);
 
-  console.log(forecast);
-
-  const mappedWeatherDays = forecast?.days.map((weatherDay) => ({
-    ...weatherDay,
-    weather: mapWeatherDetail(weatherDay, weatherDetails ?? []),
+  const mappedWeatherHours = forecast?.hours.map(({ weather, ...rest }) => ({
+    ...rest,
+    weather: mapWeatherDetail(weather, weatherDetails ?? []),
   }));
 
   const mappedCurrentWeather = forecast?.current
     ? {
         ...forecast.current,
-        weather: mapWeatherDetail(forecast.current, weatherDetails ?? []),
+        weather: mapWeatherDetail(
+          forecast.current.weather,
+          weatherDetails ?? [],
+        ),
       }
     : null;
 
   const value: WeatherContextType = {
-    weatherDays: mappedWeatherDays ?? [],
+    weatherHours: mappedWeatherHours ?? [],
     currentWeather: mappedCurrentWeather ?? null,
     weatherAlerts: forecast?.alerts ?? [],
     // weatherAlerts: sampleAlerts,

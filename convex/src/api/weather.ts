@@ -165,20 +165,20 @@ const GetWeatherByDate = async (ctx: QueryCtx, date: number) => {
   return joinedDay
 }
 
-const GetWeatherByDateRange = async (
+const GetWeatherHoursByDateRange = async (
   ctx: QueryCtx,
   start: number,
   end: number
 ) => {
   const startDate = new Date(start * 1000)
   const endDate = new Date(end * 1000)
-  const weatherDays = await ctx.db
-    .query('weatherDays')
+  const weatherHours = await ctx.db
+    .query('weatherHours')
     .withIndex('by_dt', (q) =>
       q.gte('dt', startDate.getTime()).lte('dt', endDate.getTime())
     )
     .collect()
-  return weatherDays
+  return weatherHours
 }
 
 export const getWeatherByDate = query({
@@ -201,19 +201,19 @@ export const getTodaysWeather = query({
 export const getWeatherForecast = query({
   args: {
     date: v.number(),
-    days: v.number(),
+    hours: v.number(),
   },
   handler: async (ctx, args) => {
-    const { date, days } = args
+    const { date, hours } = args
     const alerts = await ctx.db.query('activeWeatherAlerts').collect()
     const currentWeather = await ctx.db.query('currentWeather').first()
-    const weatherDays = await GetWeatherByDateRange(
+    const weatherHours = await GetWeatherHoursByDateRange(
       ctx,
       date,
-      date + days * 24 * 60 * 60
+      date + hours * 60 * 60
     )
     const value = {
-      days: weatherDays,
+      hours: weatherHours,
       current: currentWeather,
       alerts: alerts,
     }

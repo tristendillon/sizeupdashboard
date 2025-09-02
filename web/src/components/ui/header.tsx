@@ -2,7 +2,7 @@ import Image from "next/image";
 import { Clock } from "./clock";
 import { DismissButton } from "./dismiss-button";
 import { TurnoutTimer } from "./turnout-timer";
-import { WeatherDays } from "./weather-days";
+import { WeatherHours } from "./weather-hours";
 
 interface HeaderProps {
   isIframe: boolean;
@@ -32,7 +32,7 @@ export function Header({ isIframe }: HeaderProps) {
         </h1>
       </div>
       <div className="flex h-full w-full items-center gap-4 pl-4 text-lg font-semibold">
-        <WeatherDays />
+        <WeatherHours />
         <TurnoutTimer />
         <div className="hidden lg:block">
           <DismissButton />

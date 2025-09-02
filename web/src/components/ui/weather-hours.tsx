@@ -2,7 +2,7 @@
 
 import type {
   CurrentWeatherWithDetails,
-  WeatherDayWithDetails,
+  WeatherHourWithDetails,
 } from "@/lib/types";
 import { useWeather } from "@/providers/weather-provider";
 import { timeStampFormatter } from "@/utils/timestamp";
@@ -44,38 +44,33 @@ const getWindDirection = (degrees: number) => {
   return directions[Math.round(degrees / 22.5) % 16];
 };
 
-interface WeatherDayProps {
-  day: WeatherDayWithDetails | CurrentWeatherWithDetails;
+interface WeatherHourProps {
+  weather: WeatherHourWithDetails | CurrentWeatherWithDetails;
 }
 
-function WeatherDay({ day }: WeatherDayProps) {
-  const formatDate = timeStampFormatter("relative-date");
+function WeatherHour({ weather }: WeatherHourProps) {
+  const formatDate = timeStampFormatter("short-24h");
   return (
     <div className="flex min-w-[120px] flex-col items-center">
-      <div className="text-primary/70 text-xs">{formatDate(day.dt)}</div>
+      <div className="text-primary/70 text-xs">{formatDate(weather.dt)}</div>
 
       <div className="bg-primary mb-1 flex h-7 w-7 items-center justify-center rounded-full">
         <Image
-          src={getWeatherIconUrl(day.weather[0].icon)}
-          alt={day.weather[0].description}
+          src={getWeatherIconUrl(weather.weather[0].icon)}
+          alt={weather.weather[0].description}
           width={24}
           height={24}
           className="h-6 w-6"
         />
       </div>
-      <div className="mb text-lg font-bold">
-        {typeof day.temp === "number"
-          ? Math.round(day.temp)
-          : Math.round(day.temp.day)}
-        °
-      </div>
-      <div className="text-xs capitalize">{day.weather[0]?.main}</div>
+      <div className="mb text-lg font-bold">{Math.round(weather.temp)}°</div>
+      <div className="text-xs capitalize">{weather.weather[0]?.main}</div>
       <div className="text-muted-foreground text-center text-xs">
-        <div>Humid: {day.humidity}%</div>
-        {day.windSpeed !== undefined && (
+        <div>Humid: {weather.humidity}%</div>
+        {weather.windSpeed !== undefined && (
           <div>
-            Wind: {Math.round(day.windSpeed)} mph{" "}
-            {getWindDirection(day.windDeg ?? 0)}
+            Wind: {Math.round(weather.windSpeed)} mph{" "}
+            {getWindDirection(weather.windDeg ?? 0)}
           </div>
         )}
       </div>
@@ -85,12 +80,12 @@ function WeatherDay({ day }: WeatherDayProps) {
 
 interface MobileWeatherCardProps {
   currentWeather: CurrentWeatherWithDetails;
-  weatherDays: WeatherDayWithDetails[];
+  weatherHours: WeatherHourWithDetails[];
 }
 
 function MobileWeatherCard({
   currentWeather,
-  weatherDays,
+  weatherHours,
 }: MobileWeatherCardProps) {
   const [isOpen, setIsOpen] = useState(false);
   return (
@@ -133,9 +128,9 @@ function MobileWeatherCard({
 
       <PopoverContent className="w-80">
         <div className="grid grid-cols-2 gap-4">
-          <WeatherDay day={currentWeather} />
-          {weatherDays.slice(0, 4).map((day) => (
-            <WeatherDay key={day.dt} day={day} />
+          <WeatherHour weather={currentWeather} />
+          {weatherHours.slice(0, 4).map((weather) => (
+            <WeatherHour key={weather.dt} weather={weather} />
           ))}
         </div>
       </PopoverContent>
@@ -143,8 +138,8 @@ function MobileWeatherCard({
   );
 }
 
-export function WeatherDays() {
-  const { currentWeather, weatherDays, isLoading } = useWeather();
+export function WeatherHours() {
+  const { currentWeather, weatherHours, isLoading } = useWeather();
 
   if (isLoading) {
     return (
@@ -158,17 +153,17 @@ export function WeatherDays() {
     return null;
   }
 
-  const forecastDays = weatherDays.slice(0, 4);
+  const forecastHours = weatherHours.slice(0, 4);
 
   return (
     <>
       {/* Desktop/Tablet View - Hidden on mobile */}
       <div className="hidden items-center gap-4 md:flex">
         {/* Today - Current Weather */}
-        {currentWeather && <WeatherDay day={currentWeather} />}
+        {currentWeather && <WeatherHour weather={currentWeather} />}
         {/* Forecast Days */}
-        {forecastDays.map((day) => (
-          <WeatherDay key={day.dt} day={day} />
+        {forecastHours.map((weather) => (
+          <WeatherHour key={weather.dt} weather={weather} />
         ))}
       </div>
 
@@ -176,7 +171,7 @@ export function WeatherDays() {
       <div className="md:hidden">
         <MobileWeatherCard
           currentWeather={currentWeather}
-          weatherDays={weatherDays}
+          weatherHours={weatherHours}
         />
       </div>
     </>

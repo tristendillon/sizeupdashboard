@@ -45,8 +45,8 @@ export const paginatedDeleteHydrants = authedOrThrowMutation({
       await ctx.db.delete(hydrant._id)
     }
     await Promise.all(
-      hydrants.page.map((hydrant) => {
-        geospatial.remove(ctx, hydrant._id)
+      hydrants.page.map(async (hydrant) => {
+        await geospatial.remove(ctx, hydrant._id)
       })
     )
     return hydrants.continueCursor

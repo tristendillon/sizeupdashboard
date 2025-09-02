@@ -51,7 +51,10 @@ const Hydrants = (bounds: LatLngBounds) => {
       {hydrantsWithIcons.map((hydrant) => (
         <Marker
           key={hydrant._id}
-          position={{ lat: hydrant.latitude, lng: hydrant.longitude }}
+          position={{
+            lat: hydrant.location.latitude,
+            lng: hydrant.location.longitude,
+          }}
           icon={{
             url: hydrant.icon,
             scaledSize: new google.maps.Size(40, 40),

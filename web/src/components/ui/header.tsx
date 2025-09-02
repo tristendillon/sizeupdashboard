@@ -34,10 +34,8 @@ export function Header({ isIframe }: HeaderProps) {
       <div className="flex h-full w-full items-center gap-4 pl-4 text-lg font-semibold">
         <WeatherHours />
         <TurnoutTimer />
-        <div className="hidden lg:block">
-          <DismissButton />
-        </div>
-        <div className="flex flex-1 items-center justify-end">
+        <DismissButton />
+        <div className="hidden flex-1 items-center justify-end xl:flex">
           <Clock />
         </div>
       </div>

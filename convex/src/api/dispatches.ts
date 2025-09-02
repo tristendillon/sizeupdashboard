@@ -1,11 +1,7 @@
 // convex/recipes.ts
 import { partial } from 'convex-helpers/validators'
 import { query } from './_generated/server'
-import {
-  type DispatchType,
-  type DispatchWithType,
-  DispatchesTable,
-} from './schema'
+import { type DispatchWithType, DispatchesTable } from './schema'
 import { paginationOptsValidator } from 'convex/server'
 import { v } from 'convex/values'
 import { TransformationEngine } from '../lib/transformations'
@@ -49,16 +45,6 @@ export const createDispatches = authedOrThrowMutation({
     return dispatches
   },
 })
-
-const fireDescriptors = ['fire', 'burn', 'smoke', 'explosion', 'bomb']
-
-function getAlertIconType(input: string): 'fire' | 'medical' {
-  const descriptor = input.toLowerCase()
-  if (fireDescriptors.some((desc) => descriptor.includes(desc))) {
-    return 'fire'
-  }
-  return 'medical'
-}
 
 function getAlertIconPath(group: string) {
   return `/icons/incidents/${group}.png`

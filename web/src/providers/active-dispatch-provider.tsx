@@ -77,7 +77,6 @@ export function ActiveDispatchProvider({
 
       // Calculate time left based on dispatch creation time
       const elapsed = Date.now() - dispatch._creationTime;
-      console.log("elapsed", elapsed);
       const remainingTime = Math.max(0, DISPLAY_DURATION_MS - elapsed);
 
       setTimeLeft(remainingTime);

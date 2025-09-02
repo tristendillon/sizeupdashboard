@@ -104,7 +104,6 @@ export default function ClusterMarker({
     <Popover
       open={isOpen}
       onOpenChange={(open) => {
-        console.log("OPEN CHANGE", open);
         setIsOpen(open);
       }}
     >

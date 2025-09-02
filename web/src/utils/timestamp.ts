@@ -148,7 +148,6 @@ export function timeStampFormatter(
           // Handle special cases
           if (daysDiff === -1) return "Yesterday";
           if (daysDiff === 1) return "Tomorrow";
-          console.log(daysDiff);
 
           // For past dates within a week, use relative time ("3 days ago")
           if (daysDiff < 0) {

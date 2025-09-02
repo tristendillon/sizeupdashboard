@@ -125,7 +125,6 @@ export function FieldTransformationsList() {
                   variant="outline"
                   size="sm"
                   onClick={() => {
-                    console.log("Editing transformation:", transformation);
                     setEditingTransformation(transformation);
                   }}
                 >

@@ -73,7 +73,6 @@ export const WeatherProvider: React.FC<WeatherProviderProps> = ({
   children,
 }) => {
   const today = useMemo(() => new Date(), []);
-  console.log(today.getTime());
   const {
     data: forecast,
     isPending: forecastPending,

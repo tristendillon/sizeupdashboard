@@ -35,8 +35,6 @@ interface AlertPopoverSidebarProps {
 }
 
 function AlertPopoverSidebarContent({ dispatch }: AlertPopoverSidebarProps) {
-  console.log(dispatch);
-
   return (
     <div className="bg-sidebar absolute inset-0 z-40 space-y-4 p-4">
       <div className="space-y-2">
@@ -46,7 +44,7 @@ function AlertPopoverSidebarContent({ dispatch }: AlertPopoverSidebarProps) {
         <h3 className="text-center text-xl font-semibold md:text-3xl">
           {dispatch.address}
         </h3>
-        <ApproximationWarning 
+        <ApproximationWarning
           dispatchGroup={dispatch.group as string}
           variant="full"
         />

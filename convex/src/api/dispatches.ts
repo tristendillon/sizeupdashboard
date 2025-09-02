@@ -60,12 +60,8 @@ function getAlertIconType(input: string): 'fire' | 'medical' {
   return 'medical'
 }
 
-function getAlertIconPath(dispatchType: DispatchType | string) {
-  if (typeof dispatchType === 'string') {
-    const fallbackType = getAlertIconType(dispatchType)
-    return `/icons/incidents/${fallbackType}.png`
-  }
-  return `/icons/incidents/${dispatchType.group}.png`
+function getAlertIconPath(group: string) {
+  return `/icons/incidents/${group}.png`
 }
 
 function removeDispatchType(dispatch: DispatchWithType) {
@@ -86,19 +82,24 @@ export const getDispatches = queryWithAuthStatus({
       .order('desc')
       .paginate(paginationOpts)
 
-    const dispatchesWithType = await Promise.all(
+    const dispatchesWithType: DispatchWithType[] = await Promise.all(
       paginationResult.page.map(async (dispatch) => {
         if (!dispatch.dispatchType) {
-          return { ...dispatch, dispatchType: undefined }
+          return { ...dispatch, dispatchType: undefined, group: 'other' }
         }
         const dispatchType = await ctx.db.get(dispatch.dispatchType)
-        return { ...dispatch, dispatchType: dispatchType ?? undefined }
+        return {
+          ...dispatch,
+          dispatchType: dispatchType ?? undefined,
+          group: dispatchType?.group,
+        }
       })
     )
 
     let page: DispatchWithType[] = dispatchesWithType.map((dispatch) => ({
       ...dispatch,
-      icon: getAlertIconPath(dispatch.dispatchType?.group ?? 'other'),
+      icon: getAlertIconPath(dispatch.group ?? 'other'),
+      group: dispatch.group,
     }))
 
     if (ctx.authStatus !== 'unauthorized') {

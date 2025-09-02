@@ -10,10 +10,12 @@ import {
 import { useActiveDispatch } from "@/providers/active-dispatch-provider";
 import { useDispatches } from "@/providers/dispatches-provider";
 import useDebounce from "@/hooks/use-debounce";
+import { ApproximationWarning } from "@/components/ui/approximation-warning";
 import type {
   DispatchGroupEnum,
   DispatchWithType,
 } from "@sizeupdashboard/convex/src/api/schema.ts";
+import { SquareArrowOutUpRight } from "lucide-react";
 
 interface ClusterMarkerProps {
   location: {
@@ -47,7 +49,7 @@ function DispatchCard({
   return (
     <div
       className={cn(
-        "bg-muted border-border hover:bg-muted/80 cursor-pointer rounded-md border p-3 text-sm",
+        "bg-muted border-border hover:bg-muted/80 relative cursor-pointer rounded-md border p-3 text-sm",
         className,
       )}
       onClick={handleClick}
@@ -67,6 +69,8 @@ function DispatchCard({
       <p className="text-muted-foreground mt-2 text-xs">
         Dispatch ID: {dispatch.dispatchId}
       </p>
+
+      <SquareArrowOutUpRight className="absolute top-2 right-2 h-3 w-3" />
     </div>
   );
 }
@@ -134,6 +138,12 @@ export default function ClusterMarker({
               {group} Cluster
             </h3>
           </div>
+
+          {/* Approximation warning */}
+          <ApproximationWarning
+            dispatchGroup={group as string}
+            variant="compact"
+          />
 
           <div className="text-muted-foreground text-sm">
             <p>Contains {dispatches.length} incidents</p>

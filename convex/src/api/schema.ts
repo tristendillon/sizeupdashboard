@@ -62,6 +62,7 @@ export const DispatchTypesSchema = DispatchTypes.extend({
 export const DispatchesWithTypeSchema = DispatchesSchema.extend({
   dispatchType: DispatchTypesSchema.optional(),
   icon: z.string().optional(),
+  group: DispatchGroupEnumSchema.optional(),
 })
 
 export const DispatchTypesValidator = zodToConvex(DispatchTypes)

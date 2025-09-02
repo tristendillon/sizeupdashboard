@@ -10,7 +10,9 @@ import {
 } from "@/components/ui/popover";
 import { useActiveDispatch } from "@/providers/active-dispatch-provider";
 import useDebounce from "@/hooks/use-debounce";
+import { ApproximationWarning } from "@/components/ui/approximation-warning";
 import type { DispatchWithType } from "@sizeupdashboard/convex/src/api/schema.ts";
+import { SquareArrowOutUpRight } from "lucide-react";
 
 interface NoiseMarkerProps {
   dispatch: DispatchWithType;
@@ -34,7 +36,7 @@ function NoiseCard({ dispatch, className, closePopover }: NoiseCardProps) {
   return (
     <div
       className={cn(
-        "bg-muted border-border hover:bg-muted/80 cursor-pointer rounded-md border p-3 text-sm",
+        "bg-muted border-border hover:bg-muted/80 relative cursor-pointer rounded-md border p-3 text-sm",
         className,
       )}
       onClick={handleClick}
@@ -54,6 +56,8 @@ function NoiseCard({ dispatch, className, closePopover }: NoiseCardProps) {
       <p className="text-muted-foreground mt-2 text-xs">
         Dispatch ID: {dispatch.dispatchId}
       </p>
+
+      <SquareArrowOutUpRight className="absolute top-2 right-2 h-3 w-3" />
     </div>
   );
 }
@@ -111,9 +115,15 @@ export default function NoiseMarker({ dispatch, className }: NoiseMarkerProps) {
               height={24}
             />
             <h3 className="text-lg font-semibold capitalize">
-              {dispatch.dispatchType?.group} Incident
+              {dispatch.type}
             </h3>
           </div>
+
+          {/* Approximation warning */}
+          <ApproximationWarning
+            dispatchGroup={dispatch.group as string}
+            variant="compact"
+          />
 
           {/* Main dispatch info */}
           <div className="text-muted-foreground text-sm">

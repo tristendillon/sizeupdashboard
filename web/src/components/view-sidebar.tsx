@@ -5,6 +5,7 @@ import { useActiveDispatch } from "@/providers/active-dispatch-provider";
 import type { DispatchWithType } from "@sizeupdashboard/convex/src/api/schema.ts";
 import { DispatchList } from "@/components/dispatch-list";
 import { CleanUnits } from "@/utils/units";
+import { ApproximationWarning } from "@/components/ui/approximation-warning";
 
 const CleanType = (type: string) => {
   return type
@@ -22,9 +23,7 @@ export function ViewSidebar() {
         <AlertPopoverSidebarContent dispatch={dispatch} />
       ) : (
         <div className="flex-1 overflow-y-auto">
-          <DispatchList
-            onDispatchClick={activateDispatch}
-          />
+          <DispatchList onDispatchClick={activateDispatch} />
         </div>
       )}
     </section>
@@ -36,6 +35,8 @@ interface AlertPopoverSidebarProps {
 }
 
 function AlertPopoverSidebarContent({ dispatch }: AlertPopoverSidebarProps) {
+  console.log(dispatch);
+
   return (
     <div className="bg-sidebar absolute inset-0 z-40 space-y-4 p-4">
       <div className="space-y-2">
@@ -45,6 +46,10 @@ function AlertPopoverSidebarContent({ dispatch }: AlertPopoverSidebarProps) {
         <h3 className="text-center text-xl font-semibold md:text-3xl">
           {dispatch.address}
         </h3>
+        <ApproximationWarning 
+          dispatchGroup={dispatch.group as string}
+          variant="full"
+        />
       </div>
       <Separator />
       <div className="space-y-2">

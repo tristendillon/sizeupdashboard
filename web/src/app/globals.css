@@ -148,24 +148,15 @@
   --shadow-2xl: 0px 6px 12px -3px hsl(0 0% 0% / 0.63);
 }
 
-.scroll-wrapper {
-  overflow: auto;
-  scrollbar-width: none;
-}
 
-.scroll-wrapper::-webkit-scrollbar {
-  width: 0;
-}
-
-.scroll-wrapper:hover {
+::-webkit-scrollbar {
+  width: 4px;
   scrollbar-width: thin;
 }
 
-.scroll-wrapper:hover::-webkit-scrollbar {
-  width: 8px;
-}
 
-.scroll-wrapper:hover::-webkit-scrollbar-thumb {
+
+::-webkit-scrollbar-thumb {
   background-color: rgba(0, 0, 0, 0.3);
   border-radius: 4px;
 }

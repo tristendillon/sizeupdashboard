@@ -1,5 +1,8 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { api } from "@sizeupdashboard/convex/src/api/_generated/api.js";
 import { useMutation } from "convex/react";
 
@@ -38,14 +41,23 @@ export default function HydrantsPage() {
     }
   };
 
+  const deleteHydrants = useMutation(api.hydrants.paginatedDeleteHydrants);
+
+  const deleteAllHydrants = async () => {
+    let cursor = await deleteHydrants({ cursor: null });
+    while (cursor) {
+      await deleteHydrants({ cursor });
+      cursor = await deleteHydrants({ cursor });
+    }
+    alert("Hydrants deleted successfully!");
+  };
+
   return (
     <div>
       <h2>Hydrants</h2>
-      <input
-        type="file"
-        accept="application/json"
-        onChange={handleFileChange}
-      />
+      <Label htmlFor="upload-hydrants">Upload Hydrants</Label>
+      <Input id="upload-hydrants" type="file" accept="application/json" />
+      <Button onClick={deleteAllHydrants}>Delete Hydrants</Button>
     </div>
   );
 }

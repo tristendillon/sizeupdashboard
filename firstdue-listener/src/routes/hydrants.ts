@@ -138,16 +138,22 @@ export class HydrantsRoutineRouter extends RoutineRouter {
         this.parseFirstDueHydrant(hydrant)
       )
 
-      const createdHydrants = await this.ctx.client.mutation(
-        api.hydrants.createHydrants,
-        {
-          hydrants: parsedHydrants,
-          apiKey: config.convexApiKey,
-        }
-      )
-
-      this.stats.totalHydrantsCreated += createdHydrants.length
-      this.stats.totalHydrantsProcessed += parsedHydrants.length
+      const batchSize = 100
+      for (let i = 0; i < parsedHydrants.length; i += batchSize) {
+        const batch = parsedHydrants.slice(i, i + batchSize)
+        this.ctx.logger.info(
+          `Creating hydrants batch ${i / batchSize + 1} with ${batch.length} hydrants`
+        )
+        const createdHydrantsBatch = await this.ctx.client.mutation(
+          api.hydrants.paginatedCreateHydrants,
+          {
+            hydrants: batch,
+            apiKey: config.convexApiKey,
+          }
+        )
+        this.stats.totalHydrantsCreated += createdHydrantsBatch.length
+        this.stats.totalHydrantsProcessed += batch.length
+      }
 
       this.stats.lastUpdateTime = formatDateTime(new Date())
 

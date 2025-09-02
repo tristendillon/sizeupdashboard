@@ -20,12 +20,44 @@ export const paginatedCreateHydrants = authedOrThrowMutation({
     if (args.hydrants.length > 100) {
       throw new Error('Cannot create more than 100 hydrants at once')
     }
-    const newHydrants: any[] = []
-    await Promise.all(
+    const existingHydrants = (
+      await Promise.all(
+        args.hydrants.map(async (hydrant) => {
+          const existingHydrant = await ctx.db
+            .query('hydrants')
+            .withIndex('by_hydrantId', (q) =>
+              q.eq('hydrantId', hydrant.hydrantId)
+            )
+            .first()
+          return existingHydrant
+        })
+      )
+    ).filter((hydrant) => hydrant !== null)
+    const existingHydrantsMap = new Map(
+      existingHydrants.map((hydrant) => [hydrant.hydrantId, hydrant])
+    )
+
+    const newHydrants = await Promise.all(
       args.hydrants.map(async ({ latitude, longitude, ...hydrant }) => {
-        const id = await ctx.db.insert('hydrants', hydrant)
-        await geospatial.insert(ctx, id, { latitude, longitude }, {})
-        return { ...hydrant, _id: id }
+        const existingHydrant = existingHydrantsMap.get(hydrant.hydrantId)
+        if (existingHydrant) {
+          await ctx.db.patch(existingHydrant._id, hydrant)
+          await geospatial.remove(ctx, existingHydrant._id)
+          await geospatial.insert(
+            ctx,
+            existingHydrant._id,
+            { latitude, longitude },
+            {}
+          )
+          return {
+            ...hydrant,
+            _id: existingHydrant._id,
+          }
+        } else {
+          const id = await ctx.db.insert('hydrants', hydrant)
+          await geospatial.insert(ctx, id, { latitude, longitude }, {})
+          return { ...hydrant, _id: id }
+        }
       })
     )
     return newHydrants
@@ -50,37 +82,6 @@ export const paginatedDeleteHydrants = authedOrThrowMutation({
       })
     )
     return hydrants.continueCursor
-  },
-})
-
-export const createHydrants = authedOrThrowMutation({
-  args: {
-    hydrants: v.array(
-      v.object({
-        ...Hydrants.withoutSystemFields,
-        latitude: v.number(),
-        longitude: v.number(),
-      })
-    ),
-  },
-  handler: async (ctx, args) => {
-    const newHydrants: any[] = []
-
-    const operations: Promise<any>[] = []
-
-    for (const { latitude, longitude, ...hydrant } of args.hydrants) {
-      const insertPromise = (async () => {
-        const id = await ctx.db.insert('hydrants', hydrant)
-        await geospatial.insert(ctx, id, { latitude, longitude }, {})
-        return { ...hydrant, _id: id }
-      })()
-
-      operations.push(insertPromise.then((res) => newHydrants.push(res)))
-    }
-
-    await Promise.all(operations)
-
-    return newHydrants
   },
 })
 

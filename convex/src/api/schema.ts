@@ -192,7 +192,10 @@ export const Hydrants = Table('hydrants', {
 })
 
 export const HydrantsSchema = convexToZod(Hydrants.table.validator)
-export type PostHydrant = WithoutSystemFields<Doc<'hydrants'>>
+export type PostHydrant = WithoutSystemFields<Doc<'hydrants'>> & {
+  latitude: number
+  longitude: number
+}
 
 export const ViewTokens = Table('viewTokens', {
   name: v.string(),

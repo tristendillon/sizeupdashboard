@@ -6,6 +6,7 @@ import type { DispatchWithType } from "@sizeupdashboard/convex/src/api/schema.ts
 import { DispatchList } from "@/components/dispatch-list";
 import { CleanUnits } from "@/utils/units";
 import { ApproximationWarning } from "@/components/ui/approximation-warning";
+import { logger } from "@/utils/logger";
 
 const CleanType = (type: string) => {
   return type
@@ -35,6 +36,7 @@ interface AlertPopoverSidebarProps {
 }
 
 function AlertPopoverSidebarContent({ dispatch }: AlertPopoverSidebarProps) {
+  logger.debug(dispatch);
   return (
     <div className="bg-sidebar absolute inset-0 z-40 space-y-4 p-4">
       <div className="space-y-2">

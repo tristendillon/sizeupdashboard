@@ -56,7 +56,12 @@ export default function HydrantsPage() {
     <div>
       <h2>Hydrants</h2>
       <Label htmlFor="upload-hydrants">Upload Hydrants</Label>
-      <Input id="upload-hydrants" type="file" accept="application/json" />
+      <Input
+        id="upload-hydrants"
+        type="file"
+        accept="application/json"
+        onChange={handleFileChange}
+      />
       <Button onClick={deleteAllHydrants}>Delete Hydrants</Button>
     </div>
   );

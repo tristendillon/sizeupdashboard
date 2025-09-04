@@ -4,17 +4,20 @@ import { useQuery } from "./use-query";
 import { api } from "@sizeupdashboard/convex/src/api/_generated/api.js";
 
 export function useDispatchAnalytics() {
-  const { data, status } = useQuery(api.dispatches.getRecentDispatches, {
-    limit: 5,
-  });
-  const { data: dispatchStats, status: dispatchStatsStatus } = useQuery(
+  const { data: recentDispatches, isPending: isPendingRecentDispatches } =
+    useQuery(api.dispatches.getRecentDispatches, {
+      limit: 5,
+    });
+  const { data: dispatchStats, isPending: isPendingDispatchStats } = useQuery(
     api.dispatches.getDispatchStats,
     {},
   );
 
   return {
-    loading: status === "pending" || dispatchStatsStatus === "pending",
-    dispatches: data,
+    loading:
+      isPendingRecentDispatches ||
+      (isPendingDispatchStats && recentDispatches && dispatchStats),
+    dispatches: recentDispatches,
     totalDispatches: dispatchStats?.total,
     counts: dispatchStats?.counts,
     todaysDispatches: dispatchStats?.todaysDispatches,

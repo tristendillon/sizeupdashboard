@@ -143,7 +143,6 @@ function ChartTooltipContent({
         : itemConfig?.label;
 
     if (labelFormatter) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       const formattedValue = labelFormatter(value, payload);
       return (
         <div className={cn("font-medium", labelClassName)}>
@@ -280,7 +279,7 @@ function ChartLegendContent({
       )}
     >
       {payload.map((item) => {
-        const key = `${nameKey ?? item.dataKey ?? "value"}`;
+        const key = `${nameKey ?? item.dataKey?.toString() ?? "value"}`;
         const itemConfig = getPayloadConfigFromPayload(config, item, key);
 
         return (

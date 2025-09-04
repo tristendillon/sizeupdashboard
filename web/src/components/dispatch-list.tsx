@@ -78,7 +78,9 @@ export function DispatchList({
       )}
     >
       {status === "LoadingFirstPage" &&
-        Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
+        Array.from({ length: 6 }).map((_, i) => (
+          <DispatchSkeletonCard key={i} />
+        ))}
 
       {displayDispatches.map((dispatch) => (
         <DispatchCard
@@ -90,7 +92,7 @@ export function DispatchList({
 
       {status === "LoadingMore" &&
         Array.from({ length: 3 }).map((_, i) => (
-          <SkeletonCard key={`loading-more-${i}`} />
+          <DispatchSkeletonCard key={`loading-more-${i}`} />
         ))}
 
       {status === "CanLoadMore" && !limit && (
@@ -100,7 +102,7 @@ export function DispatchList({
   );
 }
 
-function SkeletonCard() {
+export function DispatchSkeletonCard() {
   return (
     <Card>
       <CardContent className="space-y-2 py-4">

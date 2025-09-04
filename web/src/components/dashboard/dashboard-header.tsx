@@ -5,16 +5,15 @@ import { Search, Bell } from "lucide-react";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import Link from "next/link";
+import React from "react";
 
 export function DashboardHeader() {
   const pathname = usePathname();
 
   return (
     <div className="flex w-full items-center justify-between">
-      {/* Left side - Breadcrumbs */}
       <Breadcrumbs />
 
-      {/* Right side - Actions */}
       <div className="flex items-center gap-2">
         <Link
           href={`${pathname}/search`}
@@ -34,7 +33,6 @@ export function DashboardHeader() {
           </span>
         </Link>
 
-        {/* Mobile Sidebar Trigger - only shows on mobile */}
         <SidebarTrigger className="md:hidden" />
       </div>
     </div>

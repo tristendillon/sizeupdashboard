@@ -1,14 +1,7 @@
 "use client";
 
 import { Pie, PieChart } from "recharts";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   type ChartConfig,
   ChartContainer,
@@ -17,13 +10,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
-
-interface DispatchPieChartProps {
-  data: Record<string, number>;
-  title?: string;
-  description?: string;
-  total: number;
-}
+import { useDashboard } from "@/providers/dashboard-provider";
 
 const chartConfig = {
   count: {
@@ -67,48 +54,55 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
-export function DispatchPieChart({
-  data,
-  total,
-  title = "Dispatch Distribution",
-  description = "Breakdown by emergency type",
-}: DispatchPieChartProps) {
+export function DispatchPieChart() {
+  const { data, loading } = useDashboard();
   // Transform data to include colors using chart config
-  const chartData = Object.entries(data)
+
+  if (loading) {
+    return (
+      <div className="flex flex-col">
+        <div className="flex-1 pb-0">
+          <div className="mx-auto flex aspect-square max-h-[250px] items-center justify-center pb-0">
+            <Skeleton className="h-[200px] w-[200px] rounded-full" />
+          </div>
+          <div className="mt-4 flex flex-wrap justify-center gap-2">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <Skeleton className="h-3 w-3 rounded-full" />
+                <Skeleton className="h-3 w-16" />
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="flex-col gap-2 pt-4 text-sm">
+          <Skeleton className="h-4 w-32" />
+        </div>
+      </div>
+    );
+  }
+
+  const chartData = Object.entries(data.counts)
     .filter(([_, count]) => count > 0)
     .map(([group, count]) => ({
       group,
       count,
       fill: `var(--color-${group})`,
-      percentage: ((count / total) * 100).toFixed(2),
+      percentage: ((count / data.totalDispatches) * 100).toFixed(2),
     }));
 
   return (
-    <Card className="flex flex-col">
-      <CardHeader className="items-center pb-0">
-        <CardTitle>{title}</CardTitle>
-        <CardDescription>{description}</CardDescription>
-      </CardHeader>
-      <CardContent className="flex-1 pb-0">
-        <ChartContainer
-          config={chartConfig}
-          className="[&_.recharts-pie-label-text]:fill-foreground mx-auto aspect-square max-h-[250px] pb-0"
-        >
-          <PieChart>
-            <ChartTooltip content={<ChartTooltipContent hideLabel />} />
-            <Pie data={chartData} dataKey="count" label nameKey="group" />
-            <ChartLegend
-              content={<ChartLegendContent nameKey="group" />}
-              className="-translate-y-2 flex-wrap gap-2 *:basis-1/4 *:justify-center"
-            />
-          </PieChart>
-        </ChartContainer>
-      </CardContent>
-      <CardFooter className="flex-col gap-2 text-sm">
-        <div className="flex items-center gap-2 leading-none font-medium">
-          Showing {total} dispatches
-        </div>
-      </CardFooter>
-    </Card>
+    <ChartContainer
+      config={chartConfig}
+      className="[&_.recharts-pie-label-text]:fill-foreground mx-auto aspect-square max-h-[250px] pb-0"
+    >
+      <PieChart>
+        <ChartTooltip content={<ChartTooltipContent hideLabel />} />
+        <Pie data={chartData} dataKey="count" label nameKey="group" />
+        <ChartLegend
+          content={<ChartLegendContent nameKey="group" />}
+          className="-translate-y-2 flex-wrap gap-2 *:basis-1/4 *:justify-center"
+        />
+      </PieChart>
+    </ChartContainer>
   );
 }

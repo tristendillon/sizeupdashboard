@@ -16,7 +16,9 @@ export function useDispatchAnalytics() {
   return {
     loading:
       isPendingRecentDispatches ||
-      (isPendingDispatchStats && recentDispatches && dispatchStats),
+      isPendingDispatchStats ||
+      recentDispatches === undefined ||
+      dispatchStats === undefined,
     dispatches: recentDispatches,
     totalDispatches: dispatchStats?.total,
     counts: dispatchStats?.counts,

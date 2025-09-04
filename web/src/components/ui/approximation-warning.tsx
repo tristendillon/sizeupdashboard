@@ -35,7 +35,6 @@ const ApproximationWarning = React.forwardRef<
 
   const authStatus = {
     isLoaded: isLoaded,
-    // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
     authorized: isSignedIn || !!tokenId,
   };
 

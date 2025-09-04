@@ -82,7 +82,7 @@ export function DispatchPieChart() {
   }
 
   const chartData = Object.entries(data.counts)
-    .filter(([_, count]) => count > 0)
+    .filter(([, count]) => count > 0)
     .map(([group, count]) => ({
       group,
       count,

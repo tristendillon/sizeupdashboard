@@ -265,22 +265,6 @@ export const TransformationRuleMappings = Table(
   TransformationRuleMappingValidator.fields
 )
 
-// Legacy RedactionLevel schema - kept for backward compatibility during migration
-export const RedactionLevelSchema = z.object({
-  name: z.string(),
-  dispatchTypeRegex: z.string(),
-  keywords: z.array(z.string()),
-  dispatchTypes: z.array(zid('dispatchTypes')),
-  redactionFields: z.array(z.string()),
-})
-
-export type RedactionLevel = z.infer<typeof RedactionLevelSchema>
-const RedactionLevelsValidator = zodToConvex(RedactionLevelSchema)
-export const RedactionLevels = Table(
-  'redactionLevels',
-  RedactionLevelsValidator.fields
-)
-
 export default defineSchema({
   dispatches: DispatchesTable.table
     .index('by_dispatchId', ['dispatchId'])

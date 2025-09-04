@@ -6,6 +6,7 @@ import { DispatchesProvider } from "@/providers/dispatches-provider";
 import { WeatherProvider } from "@/providers/weather-provider";
 import { getTokenIdFromParams } from "@/utils/server-only";
 import { headers } from "next/headers";
+import { notFound } from "next/navigation";
 
 interface ViewTokenPageProps {
   params: Promise<{
@@ -28,7 +29,7 @@ export default async function ViewTokenPage({ params }: ViewTokenPageProps) {
   const { data: tokenId, error } = await getTokenIdFromParams(params);
 
   if (error) {
-    return <div>{error}</div>;
+    return notFound();
   }
 
   return (

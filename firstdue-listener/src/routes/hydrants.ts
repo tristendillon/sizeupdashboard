@@ -12,7 +12,7 @@ import { createDefaultRetryStats } from '@/lib/fetch-with-retry'
 
 export interface FirstDueHydrant {
   facility_code: string
-  id: number
+  firstdue_id: number
   client_code: string
   hydrant_type_code: string
   year: string | null
@@ -83,6 +83,15 @@ interface HydrantsStats extends RoutineStats {
   lastUpdateTime?: FormattedDateTime
   averageApiResponseTime?: number
   averageProcessingTime?: number
+}
+
+interface Pagination {
+  current_page: number
+  total_pages: number
+  total_hydrant_records: number
+  total_hydrants_per_page: number
+  has_more: boolean
+  items: FirstDueHydrant[]
 }
 
 export class HydrantsRoutineRouter extends RoutineRouter {
@@ -230,7 +239,7 @@ export class HydrantsRoutineRouter extends RoutineRouter {
 
   protected parseFirstDueHydrant(hydrant: FirstDueHydrant): PostHydrant {
     return {
-      hydrantId: hydrant.id,
+      hydrantId: hydrant.firstdue_id,
       latitude: parseFloat(hydrant.latitude),
       longitude: parseFloat(hydrant.longitude),
       hydrantStatusCode: hydrant.hydrant_status_code,
@@ -250,32 +259,41 @@ export class HydrantsRoutineRouter extends RoutineRouter {
         `Get Hydrants API call completed in ${duration}ms`,
     })
 
+    let hasNext = true
+    let currentPage = 1
+    const hydrants: FirstDueHydrant[] = []
+
     try {
-      const response = await this.fetchWithRetry(
-        `${config.firstdueApiUrl}/get-hydrants?hydrant_status_code=${hydrantStatusCode}`,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${config.firstdueApiKey}`,
-          },
+      while (hasNext) {
+        this.ctx.logger.info(
+          `Fetching ${hydrantStatusCode} hydrants page ${currentPage}`
+        )
+        const response = await this.fetchWithRetry(
+          `${config.firstdueApiUrl}/get-hydrants?hydrant_status_code=${hydrantStatusCode}&page=${currentPage}&limit=1000`,
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${config.firstdueApiKey}`,
+            },
+          }
+        )
+
+        const responseTime = fetchTimer.end()
+
+        if (!response.ok) {
+          throw new Error(`${response.status}: ${response.statusText}`)
         }
-      )
 
-      const responseTime = fetchTimer.end()
+        const data = (await response.json()) as Pagination
+        this.ctx.logger.info(
+          `${hydrantStatusCode} hydrants page ${currentPage} fetched in ${responseTime}ms`
+        )
 
-      if (!response.ok) {
-        throw new Error(`${response.status}: ${response.statusText}`)
+        hasNext = data.has_more
+        hydrants.push(...data.items)
+        currentPage++
       }
-
-      const data = await response.json()
-      this.stats.lastFetchTime = formatDateTime(new Date())
-
-      this.ctx.logger.info('Hydrants data fetched successfully', {
-        hydrantsCount: Array.isArray(data) ? data.length : 0,
-        responseTime,
-      })
-
-      return data
+      return hydrants
     } catch (error) {
       this.stats.errorCount++
       this.ctx.logger.error('Hydrants API fetch failed', {
@@ -283,6 +301,7 @@ export class HydrantsRoutineRouter extends RoutineRouter {
       })
       return []
     } finally {
+      this.stats.lastFetchTime = formatDateTime(new Date())
       fetchTimer.end()
     }
   }

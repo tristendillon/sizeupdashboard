@@ -112,13 +112,22 @@ export const getHydrantsByBounds = query({
       },
       args.paginationOpts.cursor ?? undefined
     )
+    const joinedPage = (
+      await Promise.all(
+        result.results.map(async (id) => {
+          const hydrant = await ctx.db.get(id.key)
+          if (!hydrant) {
+            return null
+          }
+          return {
+            ...hydrant,
+            location: id.coordinates,
+          }
+        })
+      )
+    ).filter((hydrant) => hydrant !== null)
     return {
-      page: await Promise.all(
-        result.results.map(async (id) => ({
-          ...(await ctx.db.get(id.key)),
-          location: id.coordinates,
-        }))
-      ),
+      page: joinedPage,
       isDone: result.nextCursor === undefined,
       continueCursor: result.nextCursor ?? '',
     }

@@ -183,7 +183,7 @@ export const CurrentWeatherSchema = convexToZod(CurrentWeather.table.validator)
 export type PostCurrentWeather = WithoutSystemFields<Doc<'currentWeather'>>
 
 export const Hydrants = Table('hydrants', {
-  hydrantId: v.number(),
+  hydrantId: v.optional(v.number()),
   address: v.union(v.string(), v.null()),
   numOutlet: v.union(v.number(), v.null()),
   notes: v.union(v.string(), v.null()),

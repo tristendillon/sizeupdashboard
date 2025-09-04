@@ -37,6 +37,7 @@ export const paginatedClearDispatches = authedOrThrowMutation({
       .take(numItems)
     for (const dispatch of dispatches) {
       await ctx.db.delete(dispatch._id)
+      await DispatchAggregate.delete(ctx, dispatch!)
     }
     if (dispatches.length < numItems) {
       return false

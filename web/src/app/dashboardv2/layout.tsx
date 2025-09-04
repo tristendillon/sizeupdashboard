@@ -1,9 +1,6 @@
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { DashboardSidebar } from "@/components/dashboard/dashboard-sidebar";
-import {
-  SidebarProvider,
-  SidebarInset,
-} from "@/components/ui/sidebar";
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { cookies } from "next/headers";
 import React from "react";
 

@@ -5,6 +5,17 @@ import { Table } from 'convex-helpers/server'
 import type { Doc, Id } from './_generated/dataModel'
 import type { WithoutSystemFields } from 'convex/server'
 import { z } from 'zod'
+export const DispatchGroupEnumSchema = z.enum([
+  'aircraft',
+  'fire',
+  'hazmat',
+  'mva',
+  'marine',
+  'law',
+  'rescue',
+  'medical',
+  'other',
+])
 export const Dispatches = z.object({
   dispatchId: z.number(),
   narrative: z.string().optional(),
@@ -19,6 +30,7 @@ export const Dispatches = z.object({
   }),
   unitCodes: z.array(z.string()),
   xrefId: z.string().optional(),
+  dispatchGroup: DispatchGroupEnumSchema,
   dispatchType: zid('dispatchTypes').optional(),
   dispatchCreatedAt: z.number(),
 })
@@ -33,18 +45,6 @@ export type Dispatch = z.infer<typeof DispatchesSchema> & {
   _id: Id<'dispatches'>
   _creationTime: number
 }
-
-export const DispatchGroupEnumSchema = z.enum([
-  'aircraft',
-  'fire',
-  'hazmat',
-  'mva',
-  'marine',
-  'law',
-  'rescue',
-  'medical',
-  'other',
-])
 
 export type DispatchGroupEnum = z.infer<typeof DispatchGroupEnumSchema>
 

@@ -82,7 +82,6 @@ export const paginatedDeleteHydrants = authedOrThrowMutation({
     return hydrants.continueCursor
   },
 })
-
 export const getHydrantsByBounds = query({
   args: {
     paginationOpts: paginationOptsValidator,

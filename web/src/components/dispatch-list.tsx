@@ -25,18 +25,23 @@ const CleanType = (type: string) => {
 interface DispatchListProps {
   onDispatchClick?: (dispatch: DispatchWithType) => void;
   className?: string;
+  limit?: number;
 }
 
 export function DispatchList({
   onDispatchClick,
   className,
+  limit,
 }: DispatchListProps) {
   const { dispatches, loadMore, status } = useDispatches();
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const [loadCount, setLoadCount] = useState(0);
 
+  // If limit is provided, slice the dispatches array
+  const displayDispatches = limit ? dispatches.slice(0, limit) : dispatches;
+
   useEffect(() => {
-    if (status !== "CanLoadMore") return;
+    if (status !== "CanLoadMore" || limit) return; // Don't auto-load more if limit is set
     const loadMoreRefCurrent = loadMoreRef.current;
 
     const observer = new IntersectionObserver(
@@ -63,7 +68,7 @@ export function DispatchList({
         observer.unobserve(loadMoreRefCurrent);
       }
     };
-  }, [status, loadMore, loadCount]);
+  }, [status, loadMore, loadCount, limit]);
 
   return (
     <div
@@ -75,7 +80,7 @@ export function DispatchList({
       {status === "LoadingFirstPage" &&
         Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
 
-      {dispatches.map((dispatch) => (
+      {displayDispatches.map((dispatch) => (
         <DispatchCard
           key={dispatch.dispatchId}
           dispatch={dispatch}
@@ -88,7 +93,9 @@ export function DispatchList({
           <SkeletonCard key={`loading-more-${i}`} />
         ))}
 
-      {status === "CanLoadMore" && <div ref={loadMoreRef} className="h-1" />}
+      {status === "CanLoadMore" && !limit && (
+        <div ref={loadMoreRef} className="h-1" />
+      )}
     </div>
   );
 }
@@ -115,7 +122,7 @@ interface DispatchCardProps {
   onDispatchClick?: (dispatch: DispatchWithType) => void;
 }
 
-function DispatchCard({ dispatch, onDispatchClick }: DispatchCardProps) {
+export function DispatchCard({ dispatch, onDispatchClick }: DispatchCardProps) {
   const [expanded, setExpanded] = useState(false);
   const formatRelative = timeStampFormatter("relative");
   const relativeCreatedAt = formatRelative(dispatch.dispatchCreatedAt);

@@ -11,7 +11,7 @@ import {
   queryWithAuthStatus,
 } from '../lib/auth'
 import { TableAggregate } from '@convex-dev/aggregate'
-import { api, components } from './_generated/api'
+import { components } from './_generated/api'
 import type { DataModel } from './_generated/dataModel'
 import { omit } from 'convex-helpers'
 

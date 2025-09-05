@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import {
   ResizablePanelGroup,
   ResizablePanel,
@@ -8,20 +7,10 @@ import {
 } from "./ui/resizable";
 import { ViewMap } from "./view-map";
 import { ViewSidebar } from "./view-sidebar";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export function ResponsiveLayout() {
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const checkIsMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-
-    checkIsMobile();
-    window.addEventListener("resize", checkIsMobile);
-
-    return () => window.removeEventListener("resize", checkIsMobile);
-  }, []);
+  const isMobile = useIsMobile();
 
   return (
     <ResizablePanelGroup

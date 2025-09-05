@@ -4,6 +4,22 @@ import { query } from './_generated/server'
 import { authedOrThrowMutation } from '../lib/auth'
 import { geospatial } from '.'
 import { paginationOptsValidator } from 'convex/server'
+import type { DataModel } from './_generated/dataModel'
+import { TableAggregate } from '@convex-dev/aggregate'
+import { components } from './_generated/api'
+import { partial } from 'convex-helpers/validators'
+import { BetterPaginate, BetterPaginateValidator } from '../lib/better-paginate'
+
+export const HydrantsAggregate = new TableAggregate<{
+  Namespace: string
+  Key: number
+  DataModel: DataModel
+  TableName: 'hydrants'
+}>(components.aggregate, {
+  namespace: () => 'hydrants',
+  sortKey: (doc) => doc._creationTime,
+})
+
 export const paginatedCreateHydrants = authedOrThrowMutation({
   args: {
     hydrants: v.array(
@@ -54,11 +70,80 @@ export const paginatedCreateHydrants = authedOrThrowMutation({
         } else {
           const id = await ctx.db.insert('hydrants', hydrant)
           await geospatial.insert(ctx, id, { latitude, longitude }, {})
+          await HydrantsAggregate.insert(ctx, {
+            ...hydrant,
+            _id: id,
+            _creationTime: Date.now(),
+          })
           return { ...hydrant, _id: id }
         }
       })
     )
     return newHydrants
+  },
+})
+
+export const deleteHydrant = authedOrThrowMutation({
+  args: {
+    id: v.id('hydrants'),
+  },
+  handler: async (ctx, { id }) => {
+    const doc = await ctx.db.get(id)
+    await HydrantsAggregate.delete(ctx, doc!)
+    await geospatial.remove(ctx, id)
+    return await ctx.db.delete(id)
+  },
+})
+
+export const updateHydrant = authedOrThrowMutation({
+  args: {
+    id: v.id('hydrants'),
+    diff: v.object(
+      partial({
+        ...Hydrants.withoutSystemFields,
+        latitude: v.number(),
+        longitude: v.number(),
+      })
+    ),
+  },
+  handler: async (ctx, { id, diff }) => {
+    const old = await geospatial.get(ctx, id)
+    await geospatial.remove(ctx, id)
+    if (diff.latitude && diff.longitude) {
+      await geospatial.insert(
+        ctx,
+        id,
+        { latitude: diff.latitude, longitude: diff.longitude },
+        {}
+      )
+    }
+    if (diff.latitude && !diff.longitude) {
+      await geospatial.insert(
+        ctx,
+        id,
+        {
+          latitude: diff.latitude,
+          longitude: old!.coordinates.longitude,
+        },
+        {}
+      )
+    }
+    if (!diff.latitude && diff.longitude) {
+      await geospatial.insert(
+        ctx,
+        id,
+        { latitude: old!.coordinates.latitude, longitude: diff.longitude },
+        {}
+      )
+    }
+    return await ctx.db.patch(id, diff)
+  },
+})
+
+export const paginatedHydrants = query({
+  args: BetterPaginateValidator,
+  handler: async (ctx, args) => {
+    return await BetterPaginate(ctx, 'hydrants', HydrantsAggregate, args)
   },
 })
 
@@ -73,12 +158,9 @@ export const paginatedDeleteHydrants = authedOrThrowMutation({
     })
     for (const hydrant of hydrants.page) {
       await ctx.db.delete(hydrant._id)
+      await HydrantsAggregate.delete(ctx, hydrant!)
+      await geospatial.remove(ctx, hydrant._id)
     }
-    await Promise.all(
-      hydrants.page.map(async (hydrant) => {
-        await geospatial.remove(ctx, hydrant._id)
-      })
-    )
     return hydrants.continueCursor
   },
 })
@@ -130,5 +212,24 @@ export const getHydrantsByBounds = query({
       isDone: result.nextCursor === undefined,
       continueCursor: result.nextCursor ?? '',
     }
+  },
+})
+
+export const backFillHydrantsAggregate = authedOrThrowMutation({
+  args: {
+    paginationOpts: paginationOptsValidator,
+  },
+  handler: async (ctx, args) => {
+    const hydrants = await ctx.db
+      .query('hydrants')
+      .paginate(args.paginationOpts)
+    for (const hydrant of hydrants.page) {
+      try {
+        await HydrantsAggregate.insert(ctx, hydrant!)
+      } catch (error) {
+        continue
+      }
+    }
+    return !hydrants.isDone ? hydrants.continueCursor : null
   },
 })

@@ -14,28 +14,11 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { useUser } from "@clerk/nextjs";
-import {
-  ChevronUp,
-  Database,
-  FileText,
-  Home,
-  Key,
-  LogOut,
-  Settings,
-  Shield,
-  User2,
-  Wrench,
-} from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { UserButton } from "@clerk/nextjs";
+import { Database, FileText, Home, Key, Shield, Wrench } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import { cn } from "@/utils/ui";
 
 const DASHBOARD_URL = "/dashboardv2";
 
@@ -80,8 +63,7 @@ const transformationItems = [
 ];
 
 export function DashboardSidebar() {
-  const { user } = useUser();
-  const { state, toggleSidebar } = useSidebar();
+  const { open, toggleSidebar, openMobile } = useSidebar();
 
   return (
     <Sidebar collapsible="icon" className="border-r">
@@ -89,7 +71,7 @@ export function DashboardSidebar() {
         <div className="flex items-center justify-between">
           <SidebarMenu>
             <SidebarMenuItem>
-              {state === "expanded" ? (
+              {open || openMobile ? (
                 <div className="flex items-center gap-2">
                   <div className="text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
                     <Image
@@ -126,11 +108,11 @@ export function DashboardSidebar() {
               )}
             </SidebarMenuItem>
           </SidebarMenu>
-          {state === "expanded" && <SidebarTrigger className="ml-auto" />}
+          {(open || openMobile) && <SidebarTrigger className="ml-auto" />}
         </div>
       </SidebarHeader>
 
-      <SidebarContent>
+      <SidebarContent className="overflow-x-hidden">
         {/* Main Navigation */}
         <SidebarGroup>
           <SidebarGroupLabel>Navigation</SidebarGroupLabel>
@@ -193,51 +175,20 @@ export function DashboardSidebar() {
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <SidebarMenuButton
-                  size="lg"
-                  className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
-                >
-                  <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-                    <User2 className="size-4" />
-                  </div>
-                  <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-semibold">
-                      {user?.firstName ?? "User"}
-                    </span>
-                    <span className="truncate text-xs">
-                      {user?.emailAddresses[0]?.emailAddress ??
-                        "user@example.com"}
-                    </span>
-                  </div>
-                  <ChevronUp className="ml-auto size-4" />
-                </SidebarMenuButton>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                className="w-[--radix-popper-anchor-width] min-w-56 rounded-lg"
-                side="bottom"
-                align="end"
-                sideOffset={4}
-              >
-                <DropdownMenuItem asChild>
-                  <Link
-                    href={`${DASHBOARD_URL}/settings`}
-                    className="cursor-pointer"
-                  >
-                    <Settings className="mr-2 size-4" />
-                    Settings
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href="/sign-in" className="cursor-pointer">
-                    <LogOut className="mr-2 size-4" />
-                    Sign out
-                  </Link>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <UserButton
+              showName={open || openMobile}
+              appearance={{
+                theme: "clerk",
+                elements: {
+                  rootBox: "w-full",
+                  button: "w-full",
+                  userButtonBox: cn(
+                    (open || openMobile) && "w-full flex justify-between",
+                  ),
+                  userButtonOuterIdentifier: "capitalize",
+                },
+              }}
+            />
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>

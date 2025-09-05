@@ -1,13 +1,44 @@
 import { v } from 'convex/values'
 import { FieldTransformations, TransformationRules } from './schema'
 import { authedOrThrowMutation, authedOrThrowQuery } from '../lib/auth'
+import { TableAggregate } from '@convex-dev/aggregate'
+import { components } from './_generated/api'
+import type { DataModel } from './_generated/dataModel'
+import { paginationOptsValidator } from 'convex/server'
+import { BetterPaginate, BetterPaginateValidator } from '../lib/better-paginate'
+
+export const FieldTransformationsAggregate = new TableAggregate<{
+  Namespace: string
+  Key: number
+  DataModel: DataModel
+  TableName: 'fieldTransformations'
+}>(components.aggregate, {
+  namespace: () => 'fieldTransformations',
+  sortKey: (doc) => doc._creationTime,
+})
+
+export const TransformationRulesAggregate = new TableAggregate<{
+  Key: number
+  Namespace: string
+  DataModel: DataModel
+  TableName: 'transformationRules'
+}>(components.aggregate, {
+  namespace: () => 'transformationRules',
+  sortKey: (doc) => doc._creationTime,
+})
 
 // Field Transformations CRUD
 
 export const createFieldTransformation = authedOrThrowMutation({
   args: FieldTransformations.withoutSystemFields,
   handler: async (ctx, args) => {
-    return await ctx.db.insert('fieldTransformations', args)
+    const id = await ctx.db.insert('fieldTransformations', args)
+    await FieldTransformationsAggregate.insert(ctx, {
+      ...args,
+      _id: id,
+      _creationTime: Date.now(),
+    })
+    return id
   },
 })
 
@@ -36,6 +67,8 @@ export const deleteFieldTransformation = authedOrThrowMutation({
       )
     }
 
+    const doc = await ctx.db.get(id)
+    await FieldTransformationsAggregate.delete(ctx, doc!)
     return await ctx.db.delete(id)
   },
 })
@@ -97,6 +130,11 @@ export const createTransformationRule = authedOrThrowMutation({
     }
 
     const ruleId = await ctx.db.insert('transformationRules', args)
+    await TransformationRulesAggregate.insert(ctx, {
+      ...args,
+      _id: ruleId,
+      _creationTime: Date.now(),
+    })
 
     // Create mapping entries for efficient lookups
     await Promise.all(
@@ -173,6 +211,8 @@ export const deleteTransformationRule = authedOrThrowMutation({
 
     await Promise.all(mappings.map((mapping) => ctx.db.delete(mapping._id)))
 
+    const doc = await ctx.db.get(id)
+    await TransformationRulesAggregate.delete(ctx, doc!)
     return await ctx.db.delete(id)
   },
 })
@@ -193,60 +233,6 @@ export const getTransformationRuleByName = authedOrThrowQuery({
       .first()
   },
 })
-
-// Bulk operations
-
-export const createMultipleFieldTransformations = authedOrThrowMutation({
-  args: {
-    transformations: v.array(
-      v.object(FieldTransformations.withoutSystemFields)
-    ),
-  },
-  handler: async (ctx, { transformations }) => {
-    const results = []
-    for (const transformation of transformations) {
-      const id = await ctx.db.insert('fieldTransformations', transformation)
-      results.push({ id, ...transformation })
-    }
-    return results
-  },
-})
-
-export const duplicateTransformationRule = authedOrThrowMutation({
-  args: {
-    sourceId: v.id('transformationRules'),
-    newName: v.string(),
-  },
-  handler: async (ctx, { sourceId, newName }) => {
-    const sourceRule = await ctx.db.get(sourceId)
-    if (!sourceRule) {
-      throw new Error('Source transformation rule not found')
-    }
-
-    // Check if name already exists
-    const existing = await ctx.db
-      .query('transformationRules')
-      .withIndex('by_name', (q) => q.eq('name', newName))
-      .first()
-
-    if (existing) {
-      throw new Error(
-        `Transformation rule with name '${newName}' already exists`
-      )
-    }
-
-    const newRule = {
-      ...sourceRule,
-      name: newName,
-    }
-    delete (newRule as any)._id
-    delete (newRule as any)._creationTime
-
-    return await ctx.db.insert('transformationRules', newRule)
-  },
-})
-
-// Utility queries
 
 export const getTransformationRuleWithTransformations = authedOrThrowQuery({
   args: {
@@ -314,5 +300,71 @@ export const getRulesByTransformationId = authedOrThrowQuery({
     )
 
     return rules.filter(Boolean)
+  },
+})
+
+export const paginatedFieldTransformations = authedOrThrowQuery({
+  args: BetterPaginateValidator,
+  handler: async (ctx, args) => {
+    return await BetterPaginate(
+      ctx,
+      'fieldTransformations',
+      FieldTransformationsAggregate,
+      args
+    )
+  },
+})
+
+export const paginatedTransformationRules = authedOrThrowQuery({
+  args: BetterPaginateValidator,
+  handler: async (ctx, args) => {
+    return await BetterPaginate(
+      ctx,
+      'transformationRules',
+      TransformationRulesAggregate,
+      args
+    )
+  },
+})
+
+export const backFillFieldTransformationsAggregate = authedOrThrowMutation({
+  args: {
+    paginationOpts: paginationOptsValidator,
+  },
+  handler: async (ctx, args) => {
+    const fieldTransformations = await ctx.db
+      .query('fieldTransformations')
+      .paginate(args.paginationOpts)
+    for (const fieldTransformation of fieldTransformations.page) {
+      try {
+        await FieldTransformationsAggregate.insert(ctx, fieldTransformation!)
+      } catch (error) {
+        continue
+      }
+    }
+    return !fieldTransformations.isDone
+      ? fieldTransformations.continueCursor
+      : null
+  },
+})
+
+export const backFillTransformationRulesAggregate = authedOrThrowMutation({
+  args: {
+    paginationOpts: paginationOptsValidator,
+  },
+  handler: async (ctx, args) => {
+    const transformationRules = await ctx.db
+      .query('transformationRules')
+      .paginate(args.paginationOpts)
+    for (const transformationRule of transformationRules.page) {
+      try {
+        await TransformationRulesAggregate.insert(ctx, transformationRule!)
+      } catch (error) {
+        continue
+      }
+    }
+    return !transformationRules.isDone
+      ? transformationRules.continueCursor
+      : null
   },
 })

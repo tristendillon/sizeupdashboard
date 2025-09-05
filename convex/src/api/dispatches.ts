@@ -14,6 +14,7 @@ import { TableAggregate } from '@convex-dev/aggregate'
 import { components } from './_generated/api'
 import type { DataModel } from './_generated/dataModel'
 import { omit } from 'convex-helpers'
+import { BetterPaginate, BetterPaginateValidator } from '../lib/better-paginate'
 
 const DispatchAggregate = new TableAggregate<{
   Namespace: string
@@ -21,7 +22,7 @@ const DispatchAggregate = new TableAggregate<{
   DataModel: DataModel
   TableName: 'dispatches'
 }>(components.aggregate, {
-  namespace: (d) => d.dispatchGroup,
+  namespace: () => 'dispatches',
   sortKey: (d) => d._creationTime,
 })
 
@@ -101,42 +102,23 @@ const prefixes = [
   'other',
 ] as const
 
-type Counts = Record<string, number>
-async function getCounts(
-  ctx: QueryCtx
-): Promise<{ counts: Counts; total: number }> {
-  const counts = await Promise.all(
-    prefixes.map(
-      async (p) =>
-        await DispatchAggregate.count(ctx, {
-          namespace: p,
-        })
-    )
-  )
-  return {
-    counts: Object.fromEntries(
-      prefixes.map((p, i) => [p, counts[i]])
-    ) as unknown as Counts,
-    total: counts.reduce((acc, count) => acc + count, 0),
-  }
-}
-
-export const getDispatchesCount = authedOrThrowQuery({
-  args: {},
-  handler: async (ctx) => {
-    const counts = await getCounts(ctx)
-
-    return counts
-  },
-})
-
 // This is an intensive query and it should be cached for long periods of time
 export const getDispatchStats = authedOrThrowQuery({
   args: {},
   handler: async (ctx) => {
-    const { counts, total } = await getCounts(ctx)
-
     const allDispatches = await ctx.db.query('dispatches').collect()
+
+    const counts = await Promise.all(
+      prefixes.map(
+        async (p) =>
+          allDispatches.filter((dispatch) => dispatch.dispatchGroup === p)
+            .length
+      )
+    )
+    const countsObject = Object.fromEntries(
+      prefixes.map((p, i) => [p, counts[i]])
+    )
+    const total = allDispatches.length
 
     const hourlyData = Array.from({ length: 24 }, (_, hour) => ({
       hour,
@@ -184,15 +166,10 @@ export const getDispatchStats = authedOrThrowQuery({
     })
     return {
       hours: hourlyData,
-      counts: counts,
+      counts: countsObject,
       todaysDispatches: todaysDispatches.length,
       total: total,
     }
-
-    // return {
-    //   hours: hourlyData,
-    //   counts: counts,
-    // }
   },
 })
 
@@ -290,6 +267,25 @@ export const getLastDispatchData = query({
   },
 })
 
+export const searchDispatchesByNarrative = query({
+  args: {
+    query: v.string(),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query('dispatches')
+      .withSearchIndex('by_narrative', (q) => q.search('narrative', args.query))
+      .collect()
+  },
+})
+
+export const paginatedDispatches = query({
+  args: BetterPaginateValidator,
+  handler: async (ctx, args) => {
+    return await BetterPaginate(ctx, 'dispatches', DispatchAggregate, args)
+  },
+})
+
 export const updateDispatch = authedOrThrowMutation({
   args: {
     id: v.id('dispatches'),
@@ -303,5 +299,24 @@ export const updateDispatch = authedOrThrowMutation({
       ...diff,
     })
     return await ctx.db.patch(id, diff)
+  },
+})
+
+export const backFillDispatchAggregate = authedOrThrowMutation({
+  args: {
+    paginationOpts: paginationOptsValidator,
+  },
+  handler: async (ctx, args) => {
+    const dispatches = await ctx.db
+      .query('dispatches')
+      .paginate(args.paginationOpts)
+    for (const dispatch of dispatches.page) {
+      try {
+        await DispatchAggregate.insert(ctx, dispatch!)
+      } catch (error) {
+        continue
+      }
+    }
+    return !dispatches.isDone ? dispatches.continueCursor : null
   },
 })

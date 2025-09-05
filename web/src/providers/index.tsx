@@ -9,7 +9,11 @@ import { ConvexProviderWithClerk } from "convex/react-clerk";
 const convex = new ConvexReactClient(env.NEXT_PUBLIC_CONVEX_URL);
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <ClerkProvider>
+    <ClerkProvider
+      appearance={{
+        cssLayerName: "clerk",
+      }}
+    >
       <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
         <ConvexQueryCacheProvider>{children}</ConvexQueryCacheProvider>
       </ConvexProviderWithClerk>

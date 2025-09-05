@@ -267,6 +267,10 @@ export const TransformationRuleMappings = Table(
 
 export default defineSchema({
   dispatches: DispatchesTable.table
+    .searchIndex('by_narrative', {
+      searchField: 'narrative',
+      filterFields: ['address', 'dispatchGroup', 'unitCodes'],
+    })
     .index('by_dispatchId', ['dispatchId'])
     .index('by_dispatchCreatedAt', ['dispatchCreatedAt'])
     .index('by_xrefId', ['xrefId']),

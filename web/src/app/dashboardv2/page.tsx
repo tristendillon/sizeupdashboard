@@ -24,8 +24,8 @@ export default function DashboardV2Page() {
         </CardContent>
       </Card>
       <div className="space-y-6">
-        <div className="grid gap-6 lg:grid-cols-6">
-          <Card className="col-span-4">
+        <div className="flex flex-col gap-6 lg:grid lg:grid-cols-6">
+          <Card className="lg:col-span-4">
             <CardHeader>
               <CardTitle>Recent Dispatches</CardTitle>
               <CardDescription>Latest emergency responses</CardDescription>
@@ -35,7 +35,7 @@ export default function DashboardV2Page() {
             </CardContent>
           </Card>
 
-          <Card className="col-span-2">
+          <Card className="lg:col-span-2">
             <CardHeader>
               <CardTitle>View Token Status</CardTitle>
               <CardDescription>Connected viewing locations</CardDescription>
@@ -45,7 +45,7 @@ export default function DashboardV2Page() {
             </CardContent>
           </Card>
 
-          <Card className="col-span-2">
+          <Card className="lg:col-span-2">
             <CardHeader>
               <CardTitle>Dispatch Distribution</CardTitle>
               <CardDescription>Breakdown by emergency type</CardDescription>
@@ -55,7 +55,7 @@ export default function DashboardV2Page() {
             </CardContent>
           </Card>
 
-          <Card className="col-span-4">
+          <Card className="lg:col-span-4">
             <CardHeader>
               <CardTitle>24-Hour Activity</CardTitle>
               <CardDescription>Dispatch volume by hour of day</CardDescription>

@@ -21,7 +21,6 @@ const getAuthStatus = async (
   if (!process.env.API_KEY) {
     throw new Error('API_KEY is not set, set it in the convex environment!')
   }
-
   return apiKey === process.env.API_KEY
     ? 'apiKey'
     : token

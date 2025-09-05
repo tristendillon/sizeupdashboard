@@ -97,7 +97,7 @@ export function DispatchPieChart() {
     >
       <PieChart>
         <ChartTooltip content={<ChartTooltipContent hideLabel />} />
-        <Pie data={chartData} dataKey="count" label nameKey="group" />
+        <Pie data={chartData} dataKey="count" nameKey="group" />
         <ChartLegend
           content={<ChartLegendContent nameKey="group" />}
           className="-translate-y-2 flex-wrap gap-2 *:basis-1/4 *:justify-center"

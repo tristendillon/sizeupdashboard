@@ -6,8 +6,12 @@ import { DataTableToolbar } from "@/components/data-table/data-table-toolbar";
 import { CopyCell } from "@/components/ui/copy-cell";
 import { StatusCell } from "@/components/ui/status-cell";
 import { TimestampCell } from "@/components/ui/timestamp-cell";
+import { ActionCell } from "@/components/ui/action-cell";
 import { Cell, CellContent } from "@/components/ui/cell";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useDataTable } from "@/hooks/use-data-table";
+import { Modals } from "@/lib/enums";
+import { TableActionBar } from "@/components/table-action-bar";
 import type { api } from "@sizeupdashboard/convex/src/api/_generated/api.js";
 import type { DispatchType } from "@sizeupdashboard/convex/src/api/schema.js";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -24,8 +28,35 @@ export function DispatchTypesTable({ preloaded }: DispatchTypesTableProps) {
   const columns = useMemo<ColumnDef<DispatchType>[]>(
     () => [
       {
+        id: "select",
+        header: ({ table }) => (
+          <Checkbox
+            checked={
+              table.getIsAllPageRowsSelected() ||
+              (table.getIsSomePageRowsSelected() && "indeterminate")
+            }
+            onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+            aria-label="Select all"
+            className="translate-y-0.5"
+          />
+        ),
+        cell: ({ row }) => (
+          <Checkbox
+            checked={row.getIsSelected()}
+            onCheckedChange={(value) => row.toggleSelected(!!value)}
+            aria-label="Select row"
+            className="translate-y-0.5"
+          />
+        ),
+        enableSorting: false,
+        enableHiding: false,
+        size: 40,
+      },
+      {
         accessorKey: "code",
         header: "Code",
+        size: 120,
+        enableResizing: true,
         cell: ({ row }) => {
           return <CopyCell value={row.original.code} />;
         },
@@ -34,6 +65,8 @@ export function DispatchTypesTable({ preloaded }: DispatchTypesTableProps) {
       {
         accessorKey: "group",
         header: "Group",
+        size: 150,
+        enableResizing: true,
         cell: ({ row }) => {
           return (
             <StatusCell 
@@ -48,6 +81,8 @@ export function DispatchTypesTable({ preloaded }: DispatchTypesTableProps) {
       {
         accessorKey: "name",
         header: "Name",
+        minSize: 200,
+        enableResizing: true,
         cell: ({ row }) => {
           const name = row.original.name;
           return (
@@ -61,6 +96,8 @@ export function DispatchTypesTable({ preloaded }: DispatchTypesTableProps) {
       {
         accessorKey: "_creationTime",
         header: "Created At",
+        size: 140,
+        enableResizing: true,
         cell: ({ row }) => {
           return (
             <TimestampCell 
@@ -73,6 +110,22 @@ export function DispatchTypesTable({ preloaded }: DispatchTypesTableProps) {
         meta: {
           variant: "number",
         },
+      },
+      {
+        id: "actions",
+        header: "",
+        size: 50,
+        enableResizing: true,
+        cell: ({ row }) => {
+          return (
+            <ActionCell
+              modalType={Modals.DISPATCH_TYPE}
+              itemId={row.original._id}
+            />
+          );
+        },
+        enableSorting: false,
+        enableHiding: false,
       },
     ],
     [],
@@ -92,7 +145,10 @@ export function DispatchTypesTable({ preloaded }: DispatchTypesTableProps) {
   });
 
   return (
-    <DataTable table={table}>
+    <DataTable 
+      table={table}
+      actionBar={<TableActionBar table={table} entityName="dispatch types" />}
+    >
       <DataTableToolbar table={table}>
         <DataTableSortList table={table} />
       </DataTableToolbar>

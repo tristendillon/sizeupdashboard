@@ -8,8 +8,12 @@ import { StatusCell } from "@/components/ui/status-cell";
 import { NumberCell } from "@/components/ui/number-cell";
 import { NarrativeCell } from "@/components/ui/narrative-cell";
 import { TimestampCell } from "@/components/ui/timestamp-cell";
+import { ActionCell } from "@/components/ui/action-cell";
 import { Cell, CellContent } from "@/components/ui/cell";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useDataTable } from "@/hooks/use-data-table";
+import { Modals } from "@/lib/enums";
+import { TableActionBar } from "@/components/table-action-bar";
 import type { api } from "@sizeupdashboard/convex/src/api/_generated/api.js";
 import type { ColumnDef } from "@tanstack/react-table";
 import { usePreloadedQuery, type Preloaded } from "convex/react";
@@ -26,8 +30,35 @@ export function HydrantsTable({ preloaded }: HydrantsTableProps) {
   const columns = useMemo<ColumnDef<Hydrant>[]>(
     () => [
       {
+        id: "select",
+        header: ({ table }) => (
+          <Checkbox
+            checked={
+              table.getIsAllPageRowsSelected() ||
+              (table.getIsSomePageRowsSelected() && "indeterminate")
+            }
+            onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+            aria-label="Select all"
+            className="translate-y-0.5"
+          />
+        ),
+        cell: ({ row }) => (
+          <Checkbox
+            checked={row.getIsSelected()}
+            onCheckedChange={(value) => row.toggleSelected(!!value)}
+            aria-label="Select row"
+            className="translate-y-0.5"
+          />
+        ),
+        enableSorting: false,
+        enableHiding: false,
+        size: 40,
+      },
+      {
         accessorKey: "hydrantId",
         header: "Hydrant ID",
+        size: 100,
+        enableResizing: true,
         cell: ({ row }) => {
           const hydrantId = row.original.hydrantId;
           if (!hydrantId)
@@ -43,6 +74,8 @@ export function HydrantsTable({ preloaded }: HydrantsTableProps) {
       {
         accessorKey: "address",
         header: "Address",
+        minSize: 200,
+        enableResizing: true,
         cell: ({ row }) => {
           const address = row.original.address;
           return (
@@ -56,6 +89,8 @@ export function HydrantsTable({ preloaded }: HydrantsTableProps) {
       {
         accessorKey: "hydrantStatusCode",
         header: "Status",
+        size: 120,
+        enableResizing: true,
         cell: ({ row }) => {
           const status = row.original.hydrantStatusCode;
           if (!status)
@@ -71,6 +106,8 @@ export function HydrantsTable({ preloaded }: HydrantsTableProps) {
       {
         accessorKey: "numOutlet",
         header: "Outlets",
+        size: 80,
+        enableResizing: true,
         cell: ({ row }) => {
           return (
             <NumberCell
@@ -85,6 +122,8 @@ export function HydrantsTable({ preloaded }: HydrantsTableProps) {
       {
         accessorKey: "calculatedFlowRate",
         header: "Flow Rate",
+        size: 110,
+        enableResizing: true,
         cell: ({ row }) => {
           const flowRate = row.original.calculatedFlowRate;
           if (!flowRate) {
@@ -109,6 +148,8 @@ export function HydrantsTable({ preloaded }: HydrantsTableProps) {
       {
         accessorKey: "notes",
         header: "Notes",
+        minSize: 150,
+        enableResizing: true,
         cell: ({ row }) => {
           return <NarrativeCell text={row.original.notes} maxLength={80} />;
         },
@@ -117,6 +158,8 @@ export function HydrantsTable({ preloaded }: HydrantsTableProps) {
       {
         accessorKey: "_creationTime",
         header: "Created At",
+        size: 140,
+        enableResizing: true,
         cell: ({ row }) => {
           return (
             <TimestampCell
@@ -129,6 +172,22 @@ export function HydrantsTable({ preloaded }: HydrantsTableProps) {
         meta: {
           variant: "number",
         },
+      },
+      {
+        id: "actions",
+        header: "",
+        size: 50,
+        enableResizing: true,
+        cell: ({ row }) => {
+          return (
+            <ActionCell
+              modalType={Modals.HYDRANT}
+              itemId={row.original._id}
+            />
+          );
+        },
+        enableSorting: false,
+        enableHiding: false,
       },
     ],
     [],
@@ -148,7 +207,10 @@ export function HydrantsTable({ preloaded }: HydrantsTableProps) {
   });
 
   return (
-    <DataTable table={table}>
+    <DataTable 
+      table={table}
+      actionBar={<TableActionBar table={table} entityName="hydrants" />}
+    >
       <DataTableToolbar table={table}>
         <DataTableSortList table={table} />
       </DataTableToolbar>

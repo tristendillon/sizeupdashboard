@@ -6,8 +6,12 @@ import { DataTableToolbar } from "@/components/data-table/data-table-toolbar";
 import { StatusCell } from "@/components/ui/status-cell";
 import { JsonCell } from "@/components/ui/json-cell";
 import { TimestampCell } from "@/components/ui/timestamp-cell";
+import { ActionCell } from "@/components/ui/action-cell";
 import { Cell, CellContent } from "@/components/ui/cell";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useDataTable } from "@/hooks/use-data-table";
+import { Modals } from "@/lib/enums";
+import { TableActionBar } from "@/components/table-action-bar";
 import type { api } from "@sizeupdashboard/convex/src/api/_generated/api.js";
 import type { FieldTransformation } from "@sizeupdashboard/convex/src/api/schema.js";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -24,8 +28,35 @@ export function FieldTransformationsTable({ preloaded }: FieldTransformationsTab
   const columns = useMemo<ColumnDef<FieldTransformation>[]>(
     () => [
       {
+        id: "select",
+        header: ({ table }) => (
+          <Checkbox
+            checked={
+              table.getIsAllPageRowsSelected() ||
+              (table.getIsSomePageRowsSelected() && "indeterminate")
+            }
+            onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+            aria-label="Select all"
+            className="translate-y-0.5"
+          />
+        ),
+        cell: ({ row }) => (
+          <Checkbox
+            checked={row.getIsSelected()}
+            onCheckedChange={(value) => row.toggleSelected(!!value)}
+            aria-label="Select row"
+            className="translate-y-0.5"
+          />
+        ),
+        enableSorting: false,
+        enableHiding: false,
+        size: 40,
+      },
+      {
         accessorKey: "name",
         header: "Name",
+        minSize: 150,
+        enableResizing: true,
         cell: ({ row }) => {
           return (
             <Cell>
@@ -38,6 +69,8 @@ export function FieldTransformationsTable({ preloaded }: FieldTransformationsTab
       {
         accessorKey: "field",
         header: "Field",
+        size: 180,
+        enableResizing: true,
         cell: ({ row }) => {
           return (
             <Cell>
@@ -52,6 +85,8 @@ export function FieldTransformationsTable({ preloaded }: FieldTransformationsTab
       {
         accessorKey: "strategy",
         header: "Strategy",
+        size: 140,
+        enableResizing: true,
         cell: ({ row }) => {
           const strategyLabels = {
             static_value: "Static Value",
@@ -70,6 +105,8 @@ export function FieldTransformationsTable({ preloaded }: FieldTransformationsTab
       {
         accessorKey: "params",
         header: "Parameters",
+        minSize: 200,
+        enableResizing: true,
         cell: ({ row }) => {
           return (
             <JsonCell 
@@ -83,6 +120,8 @@ export function FieldTransformationsTable({ preloaded }: FieldTransformationsTab
       {
         accessorKey: "_creationTime",
         header: "Created At",
+        size: 140,
+        enableResizing: true,
         cell: ({ row }) => {
           return (
             <TimestampCell 
@@ -95,6 +134,22 @@ export function FieldTransformationsTable({ preloaded }: FieldTransformationsTab
         meta: {
           variant: "number",
         },
+      },
+      {
+        id: "actions",
+        header: "",
+        size: 50,
+        enableResizing: true,
+        cell: ({ row }) => {
+          return (
+            <ActionCell
+              modalType={Modals.FIELD_TRANSFORMATION}
+              itemId={row.original._id}
+            />
+          );
+        },
+        enableSorting: false,
+        enableHiding: false,
       },
     ],
     [],
@@ -114,7 +169,10 @@ export function FieldTransformationsTable({ preloaded }: FieldTransformationsTab
   });
 
   return (
-    <DataTable table={table}>
+    <DataTable 
+      table={table}
+      actionBar={<TableActionBar table={table} entityName="field transformations" />}
+    >
       <DataTableToolbar table={table}>
         <DataTableSortList table={table} />
       </DataTableToolbar>

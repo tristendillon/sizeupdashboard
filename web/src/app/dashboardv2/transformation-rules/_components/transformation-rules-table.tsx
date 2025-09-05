@@ -7,8 +7,12 @@ import { RegexCell } from "@/components/ui/regex-cell";
 import { ArrayCell } from "@/components/ui/array-cell";
 import { TimestampCell } from "@/components/ui/timestamp-cell";
 import { NumberCell } from "@/components/ui/number-cell";
+import { ActionCell } from "@/components/ui/action-cell";
 import { Cell, CellContent } from "@/components/ui/cell";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useDataTable } from "@/hooks/use-data-table";
+import { Modals } from "@/lib/enums";
+import { TableActionBar } from "@/components/table-action-bar";
 import type { api } from "@sizeupdashboard/convex/src/api/_generated/api.js";
 import type { TransformationRule } from "@sizeupdashboard/convex/src/api/schema.js";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -25,8 +29,35 @@ export function TransformationRulesTable({ preloaded }: TransformationRulesTable
   const columns = useMemo<ColumnDef<TransformationRule>[]>(
     () => [
       {
+        id: "select",
+        header: ({ table }) => (
+          <Checkbox
+            checked={
+              table.getIsAllPageRowsSelected() ||
+              (table.getIsSomePageRowsSelected() && "indeterminate")
+            }
+            onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+            aria-label="Select all"
+            className="translate-y-0.5"
+          />
+        ),
+        cell: ({ row }) => (
+          <Checkbox
+            checked={row.getIsSelected()}
+            onCheckedChange={(value) => row.toggleSelected(!!value)}
+            aria-label="Select row"
+            className="translate-y-0.5"
+          />
+        ),
+        enableSorting: false,
+        enableHiding: false,
+        size: 40,
+      },
+      {
         accessorKey: "name",
         header: "Name",
+        minSize: 150,
+        enableResizing: true,
         cell: ({ row }) => {
           return (
             <Cell>
@@ -39,6 +70,8 @@ export function TransformationRulesTable({ preloaded }: TransformationRulesTable
       {
         accessorKey: "dispatchTypeRegex",
         header: "Dispatch Regex",
+        minSize: 200,
+        enableResizing: true,
         cell: ({ row }) => {
           return (
             <RegexCell 
@@ -52,6 +85,8 @@ export function TransformationRulesTable({ preloaded }: TransformationRulesTable
       {
         accessorKey: "keywords",
         header: "Keywords",
+        size: 180,
+        enableResizing: true,
         cell: ({ row }) => {
           return (
             <ArrayCell 
@@ -66,6 +101,8 @@ export function TransformationRulesTable({ preloaded }: TransformationRulesTable
       {
         accessorKey: "dispatchTypes",
         header: "Dispatch Types",
+        size: 120,
+        enableResizing: true,
         cell: ({ row }) => {
           const count = row.original.dispatchTypes.length;
           return (
@@ -81,6 +118,8 @@ export function TransformationRulesTable({ preloaded }: TransformationRulesTable
       {
         accessorKey: "transformations",
         header: "Transformations",
+        size: 140,
+        enableResizing: true,
         cell: ({ row }) => {
           const count = row.original.transformations.length;
           return (
@@ -96,6 +135,8 @@ export function TransformationRulesTable({ preloaded }: TransformationRulesTable
       {
         accessorKey: "_creationTime",
         header: "Created At",
+        size: 140,
+        enableResizing: true,
         cell: ({ row }) => {
           return (
             <TimestampCell 
@@ -108,6 +149,22 @@ export function TransformationRulesTable({ preloaded }: TransformationRulesTable
         meta: {
           variant: "number",
         },
+      },
+      {
+        id: "actions",
+        header: "",
+        size: 50,
+        enableResizing: true,
+        cell: ({ row }) => {
+          return (
+            <ActionCell
+              modalType={Modals.TRANSFORMATION_RULE}
+              itemId={row.original._id}
+            />
+          );
+        },
+        enableSorting: false,
+        enableHiding: false,
       },
     ],
     [],
@@ -127,7 +184,10 @@ export function TransformationRulesTable({ preloaded }: TransformationRulesTable
   });
 
   return (
-    <DataTable table={table}>
+    <DataTable 
+      table={table}
+      actionBar={<TableActionBar table={table} entityName="transformation rules" />}
+    >
       <DataTableToolbar table={table}>
         <DataTableSortList table={table} />
       </DataTableToolbar>

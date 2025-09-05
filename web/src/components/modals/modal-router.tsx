@@ -7,11 +7,22 @@ import useKeybind from "@/hooks/use-keybind";
 import { Modals } from "@/lib/enums";
 import { useModalState } from "@/hooks/nuqs/use-modal-state";
 
+// Placeholder component for unimplemented modals
+const PlaceholderModal: React.FC = () => (
+  <div className="p-6">
+    <h2 className="text-lg font-semibold mb-2">Modal Coming Soon</h2>
+    <p className="text-muted-foreground">This modal functionality will be implemented soon.</p>
+  </div>
+);
+
 const modalComponents: Record<Modals, React.FC> = {
   [Modals.SEARCH]: SearchModal,
-  [Modals.NOTIFICATIONS]: SearchModal,
-  [Modals.FIELD_TRANSFORMATION]: SearchModal,
-  [Modals.TRANSFORMATION_RULE]: SearchModal,
+  [Modals.NOTIFICATIONS]: PlaceholderModal,
+  [Modals.FIELD_TRANSFORMATION]: PlaceholderModal,
+  [Modals.TRANSFORMATION_RULE]: PlaceholderModal,
+  [Modals.HYDRANT]: PlaceholderModal,
+  [Modals.DISPATCH_TYPE]: PlaceholderModal,
+  [Modals.VIEW_TOKEN]: PlaceholderModal,
 };
 
 export function ModalRouter() {

@@ -1,11 +1,15 @@
 import { v } from 'convex/values'
 import { query } from './_generated/server'
-import { authedOrThrowMutation } from '../lib/auth'
+import { authedOrThrowMutation, authedOrThrowQuery } from '../lib/auth'
 import { paginationOptsValidator } from 'convex/server'
 import { TableAggregate } from '@convex-dev/aggregate'
 import { components } from './_generated/api'
 import type { DataModel } from './_generated/dataModel'
-import { BetterPaginate, BetterPaginateValidator, BetterPaginationSortValidator } from '../lib/better-paginate'
+import {
+  BetterPaginate,
+  BetterPaginateValidator,
+  BetterPaginationSortValidator,
+} from '../lib/better-paginate'
 
 export const ViewTokensAggregate = new TableAggregate<{
   Namespace: string
@@ -48,7 +52,7 @@ export const deleteViewToken = authedOrThrowMutation({
   },
 })
 
-export const getViewToken = query({
+export const getViewToken = authedOrThrowQuery({
   args: {
     token: v.string(),
   },
@@ -60,7 +64,7 @@ export const getViewToken = query({
     return viewToken
   },
 })
-export const paginatedViewTokens = query({
+export const paginatedViewTokens = authedOrThrowQuery({
   args: {
     paginationOpts: BetterPaginateValidator,
     sort: BetterPaginationSortValidator,

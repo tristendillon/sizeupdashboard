@@ -271,7 +271,7 @@ export const getLastDispatchData = query({
   },
 })
 
-export const searchDispatchesByNarrative = query({
+export const searchDispatchesByNarrative = authedOrThrowQuery({
   args: {
     query: v.string(),
   },
@@ -283,7 +283,7 @@ export const searchDispatchesByNarrative = query({
   },
 })
 
-export const paginatedDispatches = query({
+export const paginatedDispatches = authedOrThrowQuery({
   args: {
     paginationOpts: BetterPaginateValidator,
     sort: BetterPaginationSortValidator,

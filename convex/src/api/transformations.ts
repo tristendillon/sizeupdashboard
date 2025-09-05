@@ -5,7 +5,11 @@ import { TableAggregate } from '@convex-dev/aggregate'
 import { components } from './_generated/api'
 import type { DataModel } from './_generated/dataModel'
 import { paginationOptsValidator } from 'convex/server'
-import { BetterPaginate, BetterPaginateValidator } from '../lib/better-paginate'
+import {
+  BetterPaginate,
+  BetterPaginateValidator,
+  BetterPaginationSortValidator,
+} from '../lib/better-paginate'
 
 export const FieldTransformationsAggregate = new TableAggregate<{
   Namespace: string
@@ -304,25 +308,33 @@ export const getRulesByTransformationId = authedOrThrowQuery({
 })
 
 export const paginatedFieldTransformations = authedOrThrowQuery({
-  args: BetterPaginateValidator,
+  args: {
+    paginationOpts: BetterPaginateValidator,
+    sort: BetterPaginationSortValidator,
+  },
   handler: async (ctx, args) => {
     return await BetterPaginate(
       ctx,
       'fieldTransformations',
       FieldTransformationsAggregate,
-      args
+      args.paginationOpts,
+      args.sort
     )
   },
 })
 
 export const paginatedTransformationRules = authedOrThrowQuery({
-  args: BetterPaginateValidator,
+  args: {
+    paginationOpts: BetterPaginateValidator,
+    sort: BetterPaginationSortValidator,
+  },
   handler: async (ctx, args) => {
     return await BetterPaginate(
       ctx,
       'transformationRules',
       TransformationRulesAggregate,
-      args
+      args.paginationOpts,
+      args.sort
     )
   },
 })

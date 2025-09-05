@@ -196,6 +196,10 @@ export type PostHydrant = WithoutSystemFields<Doc<'hydrants'>> & {
   latitude: number
   longitude: number
 }
+export type Hydrant = z.infer<typeof HydrantsSchema> & {
+  _id: Id<'hydrants'>
+  _creationTime: number
+}
 
 export const ViewTokens = Table('viewTokens', {
   name: v.string(),

@@ -31,7 +31,7 @@ const FORMATTING_THRESHOLDS = {
   RELATIVE_DATE_WINDOW: TIME_UNITS.WEEK,
 } as const;
 
-type DateTimeFormatVariant =
+export type DateTimeFormatVariant =
   | "relative"
   | "relative-date"
   | "short-12h"

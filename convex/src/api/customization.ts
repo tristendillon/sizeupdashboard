@@ -1,13 +1,17 @@
 import { DispatchTypesTable } from './schema'
 import { v } from 'convex/values'
-import { authedOrThrowMutation } from '../lib/auth'
+import { authedOrThrowMutation, authedOrThrowQuery } from '../lib/auth'
 import { TableAggregate } from '@convex-dev/aggregate'
 import { components } from './_generated/api'
 import type { DataModel } from './_generated/dataModel'
 import { paginationOptsValidator } from 'convex/server'
 import { partial } from 'convex-helpers/validators'
 import { query } from './_generated/server'
-import { BetterPaginate, BetterPaginateValidator } from '../lib/better-paginate'
+import {
+  BetterPaginate,
+  BetterPaginateValidator,
+  BetterPaginationSortValidator,
+} from '../lib/better-paginate'
 
 export const DispatchTypesAggregate = new TableAggregate<{
   Namespace: string
@@ -19,14 +23,18 @@ export const DispatchTypesAggregate = new TableAggregate<{
   sortKey: (doc) => doc._creationTime,
 })
 
-export const paginatedDispatchTypes = query({
-  args: BetterPaginateValidator,
+export const paginatedDispatchTypes = authedOrThrowQuery({
+  args: {
+    paginationOpts: BetterPaginateValidator,
+    sort: BetterPaginationSortValidator,
+  },
   handler: async (ctx, args) => {
     const result = await BetterPaginate(
       ctx,
       'dispatchTypes',
       DispatchTypesAggregate,
-      args
+      args.paginationOpts,
+      args.sort
     )
     return result
   },

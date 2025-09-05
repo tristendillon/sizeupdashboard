@@ -1,5 +1,6 @@
 "server only";
 
+import { env } from "@/env";
 import { api } from "@sizeupdashboard/convex/src/api/_generated/api.js";
 import type { Id } from "@sizeupdashboard/convex/src/api/_generated/dataModel.js";
 import { fetchQuery } from "convex/nextjs";
@@ -29,6 +30,7 @@ export const getTokenIdFromParams = async (params: TokenIdPageParams) => {
   if (viewToken) {
     const viewTokenData = await fetchQuery(api.viewToken.getViewToken, {
       token: viewToken,
+      apiKey: env.CONVEX_API_KEY,
     });
     return {
       data: viewTokenData?._id as Id<"viewTokens">,

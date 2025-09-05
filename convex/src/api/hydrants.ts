@@ -1,14 +1,18 @@
 import { v } from 'convex/values'
 import { Hydrants } from './schema'
 import { query } from './_generated/server'
-import { authedOrThrowMutation } from '../lib/auth'
+import { authedOrThrowMutation, authedOrThrowQuery } from '../lib/auth'
 import { geospatial } from '.'
 import { paginationOptsValidator } from 'convex/server'
 import type { DataModel } from './_generated/dataModel'
 import { TableAggregate } from '@convex-dev/aggregate'
 import { components } from './_generated/api'
 import { partial } from 'convex-helpers/validators'
-import { BetterPaginate, BetterPaginateValidator } from '../lib/better-paginate'
+import {
+  BetterPaginate,
+  BetterPaginateValidator,
+  BetterPaginationSortValidator,
+} from '../lib/better-paginate'
 
 export const HydrantsAggregate = new TableAggregate<{
   Namespace: string
@@ -140,10 +144,19 @@ export const updateHydrant = authedOrThrowMutation({
   },
 })
 
-export const paginatedHydrants = query({
-  args: BetterPaginateValidator,
+export const paginatedHydrants = authedOrThrowQuery({
+  args: {
+    paginationOpts: BetterPaginateValidator,
+    sort: BetterPaginationSortValidator,
+  },
   handler: async (ctx, args) => {
-    return await BetterPaginate(ctx, 'hydrants', HydrantsAggregate, args)
+    return await BetterPaginate(
+      ctx,
+      'hydrants',
+      HydrantsAggregate,
+      args.paginationOpts,
+      args.sort
+    )
   },
 })
 

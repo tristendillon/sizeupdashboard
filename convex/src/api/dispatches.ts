@@ -14,7 +14,11 @@ import { TableAggregate } from '@convex-dev/aggregate'
 import { components } from './_generated/api'
 import type { DataModel } from './_generated/dataModel'
 import { omit } from 'convex-helpers'
-import { BetterPaginate, BetterPaginateValidator } from '../lib/better-paginate'
+import {
+  BetterPaginate,
+  BetterPaginateValidator,
+  BetterPaginationSortValidator,
+} from '../lib/better-paginate'
 
 const DispatchAggregate = new TableAggregate<{
   Namespace: string
@@ -23,7 +27,7 @@ const DispatchAggregate = new TableAggregate<{
   TableName: 'dispatches'
 }>(components.aggregate, {
   namespace: () => 'dispatches',
-  sortKey: (d) => d._creationTime,
+  sortKey: (d) => d.dispatchCreatedAt,
 })
 
 export const paginatedClearDispatches = authedOrThrowMutation({
@@ -280,9 +284,22 @@ export const searchDispatchesByNarrative = query({
 })
 
 export const paginatedDispatches = query({
-  args: BetterPaginateValidator,
+  args: {
+    paginationOpts: BetterPaginateValidator,
+    sort: BetterPaginationSortValidator,
+  },
   handler: async (ctx, args) => {
-    return await BetterPaginate(ctx, 'dispatches', DispatchAggregate, args)
+    return await BetterPaginate(
+      ctx,
+      'dispatches',
+      DispatchAggregate,
+      args.paginationOpts,
+      {
+        index: 'by_dispatchCreatedAt',
+        field: 'dispatchCreatedAt',
+        order: args.sort.order,
+      }
+    )
   },
 })
 
@@ -316,6 +333,21 @@ export const backFillDispatchAggregate = authedOrThrowMutation({
       } catch (error) {
         continue
       }
+    }
+    return !dispatches.isDone ? dispatches.continueCursor : null
+  },
+})
+
+export const unfillDispatchAggregate = authedOrThrowMutation({
+  args: {
+    paginationOpts: paginationOptsValidator,
+  },
+  handler: async (ctx, args) => {
+    const dispatches = await ctx.db
+      .query('dispatches')
+      .paginate(args.paginationOpts)
+    for (const dispatch of dispatches.page) {
+      await DispatchAggregate.delete(ctx, dispatch!)
     }
     return !dispatches.isDone ? dispatches.continueCursor : null
   },

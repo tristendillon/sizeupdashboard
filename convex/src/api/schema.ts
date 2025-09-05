@@ -204,6 +204,10 @@ export const ViewTokens = Table('viewTokens', {
 })
 
 export const ViewTokensSchema = convexToZod(ViewTokens.table.validator)
+export type ViewToken = z.infer<typeof ViewTokensSchema> & {
+  _id: Id<'viewTokens'>
+  _creationTime: number
+}
 export type PostViewToken = WithoutSystemFields<Doc<'viewTokens'>>
 
 // Field Transformations - Reusable transformation definitions

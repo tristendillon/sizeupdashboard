@@ -125,9 +125,9 @@ interface DispatchCardProps {
 }
 
 export function DispatchCard({ dispatch, onDispatchClick }: DispatchCardProps) {
-  const [expanded, setExpanded] = useState(false);
   const formatRelative = timeStampFormatter("relative");
   const relativeCreatedAt = formatRelative(dispatch.dispatchCreatedAt);
+  const [expanded, setExpanded] = useState(false);
 
   const UNITS_TO_SHOW_BASE = 4;
   const sortedUnits = dispatch.unitCodes.sort((a, b) => a.length - b.length);
@@ -208,5 +208,35 @@ export function DispatchCard({ dispatch, onDispatchClick }: DispatchCardProps) {
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+interface NarrativeProps {
+  narrative: string;
+}
+
+export function Narrative({ narrative }: NarrativeProps) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <>
+      <pre
+        className={`mb-1 whitespace-pre-wrap ${expanded ? "" : "line-clamp-3"}`}
+      >
+        {narrative ?? "No details available"}
+      </pre>
+      <div className="flex items-center justify-between">
+        <div>
+          {narrative && narrative.length > 80 && (
+            <button
+              className="pointer-events-auto z-10 text-xs text-blue-400 hover:underline"
+              onClick={() => setExpanded(!expanded)}
+            >
+              {expanded ? "Show less" : "Show more"}
+            </button>
+          )}
+        </div>
+      </div>
+    </>
   );
 }

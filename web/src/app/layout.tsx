@@ -4,6 +4,7 @@ import { type Metadata } from "next";
 import { Geist } from "next/font/google";
 
 import { Providers } from "@/providers";
+import { Toaster } from "@/components/ui/sonner";
 
 export const metadata: Metadata = {
   title: "MFD Alerts",
@@ -26,6 +27,7 @@ export default function RootLayout({
     >
       <body className="h-full w-full">
         <Providers>{children}</Providers>
+        <Toaster />
       </body>
     </html>
   );

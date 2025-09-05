@@ -12,12 +12,22 @@ import z from 'zod'
 export const BetterPaginateValidator = v.object({
   page: v.optional(v.number()),
   pageSize: v.optional(v.number()),
-  order: v.optional(v.union(v.literal('asc'), v.literal('desc'))),
 })
 
 export const BetterPaginationSchema = z.object({
   page: z.number().default(1),
   pageSize: z.number().default(10),
+})
+
+export const BetterPaginationSortValidator = v.object({
+  index: v.optional(v.string()),
+  field: v.optional(v.string()),
+  order: v.optional(v.union(v.literal('asc'), v.literal('desc'))),
+})
+
+export const BetterPaginationSortSchema = z.object({
+  index: z.string().default('by_creation_time'),
+  field: z.string().default('_creationTime'),
   order: z.enum(['asc', 'desc']).default('desc'),
 })
 
@@ -27,13 +37,18 @@ export const BetterPaginate = async <
   ctx: QueryCtx,
   tableName: TableName,
   aggregate: TableAggregate<any>,
-  options: {
+  options?: {
     page?: number
     pageSize?: number
+  },
+  sort?: {
+    index?: string
+    field?: string
     order?: 'asc' | 'desc'
   }
 ) => {
-  const { page, pageSize, order } = BetterPaginationSchema.parse(options)
+  const { page, pageSize } = BetterPaginationSchema.parse(options)
+  const { index, field, order } = BetterPaginationSortSchema.parse(sort)
   if (page < 1) {
     throw new Error('Page must be atleast 1')
   }
@@ -61,10 +76,10 @@ export const BetterPaginate = async <
 
   const paginated = await ctx.db
     .query(tableName)
-    .withIndex('by_creation_time', (q) =>
+    .withIndex(index, (q) =>
       order === 'desc'
-        ? q.lte('_creationTime', cursorAggregate.key)
-        : q.gte('_creationTime', cursorAggregate.key)
+        ? q.lte(field, cursorAggregate.key)
+        : q.gte(field, cursorAggregate.key)
     )
     .order(order)
     .take(pageSize)

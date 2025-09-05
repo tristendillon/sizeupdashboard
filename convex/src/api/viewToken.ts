@@ -5,7 +5,7 @@ import { paginationOptsValidator } from 'convex/server'
 import { TableAggregate } from '@convex-dev/aggregate'
 import { components } from './_generated/api'
 import type { DataModel } from './_generated/dataModel'
-import { BetterPaginate, BetterPaginateValidator } from '../lib/better-paginate'
+import { BetterPaginate, BetterPaginateValidator, BetterPaginationSortValidator } from '../lib/better-paginate'
 
 export const ViewTokensAggregate = new TableAggregate<{
   Namespace: string
@@ -61,9 +61,18 @@ export const getViewToken = query({
   },
 })
 export const paginatedViewTokens = query({
-  args: BetterPaginateValidator,
+  args: {
+    paginationOpts: BetterPaginateValidator,
+    sort: BetterPaginationSortValidator,
+  },
   handler: async (ctx, args) => {
-    return await BetterPaginate(ctx, 'viewTokens', ViewTokensAggregate, args)
+    return await BetterPaginate(
+      ctx,
+      'viewTokens',
+      ViewTokensAggregate,
+      args.paginationOpts,
+      args.sort
+    )
   },
 })
 

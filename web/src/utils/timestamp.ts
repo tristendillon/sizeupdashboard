@@ -1,4 +1,5 @@
 import { env } from "@/env";
+import { useEffect, useState } from "react";
 
 const buildTimeUnits = () => {
   const SECOND = 1000;
@@ -43,6 +44,13 @@ type DateTimeFormatVariant =
 type DateTimeFormatter = (timestamp: number, localeOverride?: string) => string;
 
 /**
+ * Gets the default locale, with SSR-safe fallback
+ */
+function getDefaultLocale(): string {
+  return typeof navigator !== "undefined" ? navigator.language : "en-US";
+}
+
+/**
  * Checks if two dates represent the same calendar day
  */
 function isSameDay(date1: Date, date2: Date): boolean {
@@ -57,8 +65,9 @@ function isSameDay(date1: Date, date2: Date): boolean {
  * Gets the day difference between two dates (positive for future, negative for past)
  */
 function getDayDifference(targetDate: Date, referenceDate: Date): number {
-  // Use the configured timezone from environment
-  const tz = env.NEXT_PUBLIC_DB_TIMEZONE;
+  // Use the configured timezone from environment, with fallback
+  const tz =
+    (typeof env !== "undefined" && env.NEXT_PUBLIC_DB_TIMEZONE) || "UTC";
 
   // Helper to get the date parts in the specified timezone
   function getTzDateParts(date: Date) {
@@ -100,7 +109,7 @@ export function timeStampFormatter(
     case "relative": {
       const rtfCache = new Map<string, Intl.RelativeTimeFormat>();
 
-      return (timestamp, locale = navigator.language) => {
+      return (timestamp, locale = getDefaultLocale()) => {
         const now = Date.now();
         const diff = timestamp - now;
         const absDiff = Math.abs(diff);
@@ -123,7 +132,7 @@ export function timeStampFormatter(
       const rtfCache = new Map<string, Intl.RelativeTimeFormat>();
       const dtfCache = new Map<string, Intl.DateTimeFormat>();
 
-      return (timestamp, locale = navigator.language) => {
+      return (timestamp, locale = getDefaultLocale()) => {
         const targetDate = new Date(timestamp);
         const now = new Date();
         const timeDiff = timestamp - now.getTime();
@@ -183,7 +192,7 @@ export function timeStampFormatter(
 
       const dtfCache = new Map<string, Intl.DateTimeFormat>();
 
-      return (timestamp, locale = navigator.language) => {
+      return (timestamp, locale = getDefaultLocale()) => {
         if (!dtfCache.has(locale)) {
           dtfCache.set(locale, new Intl.DateTimeFormat(locale, options));
         }
@@ -208,7 +217,7 @@ export function timeStampFormatter(
 
       const dtfCache = new Map<string, Intl.DateTimeFormat>();
 
-      return (timestamp, locale = navigator.language) => {
+      return (timestamp, locale = getDefaultLocale()) => {
         if (!dtfCache.has(locale)) {
           dtfCache.set(locale, new Intl.DateTimeFormat(locale, options));
         }
@@ -216,4 +225,41 @@ export function timeStampFormatter(
       };
     }
   }
+}
+
+type FormatterResult = {
+  format: (timestamp: number, locale?: string) => string;
+  isHydrated: boolean;
+};
+
+/**
+ * Hook that provides SSR-safe timestamp formatting
+ * Returns a formatter function and hydration state
+ */
+export function useFormatter(variant: DateTimeFormatVariant): FormatterResult {
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
+
+  const format = (timestamp: number, locale?: string): string => {
+    if (!isHydrated) {
+      const fallbackFormatter = new Intl.DateTimeFormat(locale || "en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      });
+      return fallbackFormatter.format(new Date(timestamp));
+    }
+
+    // After hydration, use the full formatter with all features
+    const formatter = timeStampFormatter(variant);
+    return formatter(timestamp, locale);
+  };
+
+  return { format, isHydrated };
 }

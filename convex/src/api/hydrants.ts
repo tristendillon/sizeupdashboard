@@ -101,8 +101,8 @@ export const updateHydrant = authedOrThrowMutation({
     diff: v.object(
       partial({
         ...Hydrants.withoutSystemFields,
-        latitude: v.number(),
-        longitude: v.number(),
+        latitude: v.optional(v.number()),
+        longitude: v.optional(v.number()),
       })
     ),
   },

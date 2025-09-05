@@ -7,7 +7,7 @@ import { cn } from "@/utils/ui";
 import { toast } from "sonner";
 
 interface JsonCellProps extends Omit<CellProps, "variant" | "asChild"> {
-  data: Record<string, any> | null | undefined;
+  data: Record<string, unknown> | null | undefined;
   maxPreviewKeys?: number;
   emptyText?: string;
 }
@@ -26,16 +26,20 @@ export function JsonCell({
 
   const previewText = React.useMemo(() => {
     if (isEmpty) return emptyText;
-    
+
     const keys = Object.keys(data);
     if (keys.length <= maxPreviewKeys) {
-      return keys.map(key => `${key}: ${JSON.stringify(data[key])}`).join(", ");
+      return keys
+        .map((key) => `${key}: ${JSON.stringify(data[key])}`)
+        .join(", ");
     }
-    
+
     const visibleKeys = keys.slice(0, maxPreviewKeys);
     const remainingCount = keys.length - maxPreviewKeys;
-    const preview = visibleKeys.map(key => `${key}: ${JSON.stringify(data[key])}`).join(", ");
-    
+    const preview = visibleKeys
+      .map((key) => `${key}: ${JSON.stringify(data[key])}`)
+      .join(", ");
+
     return `${preview}, +${remainingCount} more`;
   }, [data, maxPreviewKeys, emptyText, isEmpty]);
 
@@ -48,7 +52,7 @@ export function JsonCell({
   const handleCopy = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     try {
       await navigator.clipboard.writeText(jsonString);
       toast.success("JSON copied to clipboard");
@@ -59,27 +63,28 @@ export function JsonCell({
 
   if (isEmpty) {
     return (
-      <Cell className={cn("text-muted-foreground italic", className)} {...props}>
-        <CellContent>
-          {emptyText}
-        </CellContent>
+      <Cell
+        className={cn("text-muted-foreground italic", className)}
+        {...props}
+      >
+        <CellContent>{emptyText}</CellContent>
       </Cell>
     );
   }
 
   return (
-    <Cell 
+    <Cell
       variant="expandable"
       className={cn("items-start py-2", className)}
       {...props}
     >
       <CellContent truncate={false} className="min-w-0">
         {expanded ? (
-          <pre className="text-xs font-mono whitespace-pre-wrap bg-muted/50 rounded p-2 overflow-x-auto">
+          <pre className="bg-muted/50 overflow-x-auto rounded p-2 font-mono text-xs whitespace-pre-wrap">
             {jsonString}
           </pre>
         ) : (
-          <div className="text-sm truncate" title={previewText}>
+          <div className="truncate text-sm" title={previewText}>
             {previewText}
           </div>
         )}
@@ -87,7 +92,7 @@ export function JsonCell({
       <CellAction className="flex-col gap-1">
         <button
           onClick={handleToggle}
-          className="flex items-center justify-center p-1 rounded hover:bg-muted"
+          className="hover:bg-muted flex items-center justify-center rounded p-1"
           aria-label={expanded ? "Collapse JSON" : "Expand JSON"}
         >
           {expanded ? (
@@ -99,7 +104,7 @@ export function JsonCell({
         {expanded && (
           <button
             onClick={handleCopy}
-            className="flex items-center justify-center p-1 rounded hover:bg-muted"
+            className="hover:bg-muted flex items-center justify-center rounded p-1"
             aria-label="Copy JSON"
           >
             <Copy className="h-4 w-4" />

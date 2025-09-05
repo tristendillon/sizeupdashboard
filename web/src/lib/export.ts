@@ -8,17 +8,17 @@ interface ExportOptions {
 
 export function exportTableToCSV<TData>(
   table: Table<TData>,
-  options: ExportOptions = {}
+  options: ExportOptions = {},
 ) {
   const {
     excludeColumns = [],
     onlySelected = false,
-    filename = "export.csv"
+    filename = "export.csv",
   } = options;
 
   // Get rows to export
-  const rows = onlySelected 
-    ? table.getFilteredSelectedRowModel().rows 
+  const rows = onlySelected
+    ? table.getFilteredSelectedRowModel().rows
     : table.getRowModel().rows;
 
   if (rows.length === 0) {
@@ -26,9 +26,9 @@ export function exportTableToCSV<TData>(
   }
 
   // Get visible columns, excluding specified ones
-  const columns = table.getVisibleLeafColumns().filter(
-    (column) => !excludeColumns.includes(column.id)
-  );
+  const columns = table
+    .getVisibleLeafColumns()
+    .filter((column) => !excludeColumns.includes(column.id));
 
   // Generate header row
   const headers = columns
@@ -39,8 +39,8 @@ export function exportTableToCSV<TData>(
       }
       if (typeof header === "function") {
         // For function headers, try to extract title from meta or use id
-        const meta = column.columnDef.meta as any;
-        return meta?.title || column.id;
+        const meta = column.columnDef.meta;
+        return meta?.label || column.id;
       }
       return column.id;
     })
@@ -53,7 +53,7 @@ export function exportTableToCSV<TData>(
         const value = row.getValue(column.id);
         return escapeCSVField(String(value ?? ""));
       })
-      .join(",")
+      .join(","),
   );
 
   // Combine header and data
@@ -62,7 +62,7 @@ export function exportTableToCSV<TData>(
   // Create and download file
   const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
   const link = document.createElement("a");
-  
+
   if (link.download !== undefined) {
     const url = URL.createObjectURL(blob);
     link.setAttribute("href", url);

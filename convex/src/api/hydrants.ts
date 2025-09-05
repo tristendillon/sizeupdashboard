@@ -171,7 +171,7 @@ export const paginatedDeleteHydrants = authedOrThrowMutation({
     })
     for (const hydrant of hydrants.page) {
       await ctx.db.delete(hydrant._id)
-      await HydrantsAggregate.delete(ctx, hydrant!)
+      await HydrantsAggregate.delete(ctx, hydrant)
       await geospatial.remove(ctx, hydrant._id)
     }
     return hydrants.continueCursor
@@ -238,8 +238,8 @@ export const backFillHydrantsAggregate = authedOrThrowMutation({
       .paginate(args.paginationOpts)
     for (const hydrant of hydrants.page) {
       try {
-        await HydrantsAggregate.insert(ctx, hydrant!)
-      } catch (error) {
+        await HydrantsAggregate.insert(ctx, hydrant)
+      } catch {
         continue
       }
     }

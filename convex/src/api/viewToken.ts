@@ -1,5 +1,4 @@
 import { v } from 'convex/values'
-import { query } from './_generated/server'
 import { authedOrThrowMutation, authedOrThrowQuery } from '../lib/auth'
 import { paginationOptsValidator } from 'convex/server'
 import { TableAggregate } from '@convex-dev/aggregate'
@@ -90,8 +89,8 @@ export const backFillViewTokensAggregate = authedOrThrowMutation({
       .paginate(args.paginationOpts)
     for (const viewToken of viewTokens.page) {
       try {
-        await ViewTokensAggregate.insert(ctx, viewToken!)
-      } catch (error) {
+        await ViewTokensAggregate.insert(ctx, viewToken)
+      } catch {
         continue
       }
     }

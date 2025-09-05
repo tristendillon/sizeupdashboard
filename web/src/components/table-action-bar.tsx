@@ -21,10 +21,10 @@ interface TableActionBarProps<TData> {
   entityName?: string;
 }
 
-export function TableActionBar<TData>({ 
-  table, 
+export function TableActionBar<TData>({
+  table,
   onDelete,
-  entityName = "items"
+  entityName = "items",
 }: TableActionBarProps<TData>) {
   const rows = table.getFilteredSelectedRowModel().rows;
   const [isPending, startTransition] = React.useTransition();
@@ -38,11 +38,11 @@ export function TableActionBar<TData>({
   const onExport = React.useCallback(() => {
     setCurrentAction("export");
     startTransition(() => {
-      const timestamp = new Date().toISOString().split('T')[0];
+      const timestamp = new Date().toISOString().split("T")[0];
       exportTableToCSV(table, {
         excludeColumns: ["select", "actions"],
         onlySelected: true,
-        filename: `${entityName}-${timestamp}.csv`
+        filename: `${entityName}-${timestamp}.csv`,
       });
       toast.success(`Exported ${rows.length} ${entityName} to CSV`);
     });
@@ -50,15 +50,17 @@ export function TableActionBar<TData>({
 
   const onDeleteItems = React.useCallback(() => {
     if (!onDelete) return;
-    
+
     setCurrentAction("delete");
     startTransition(async () => {
       try {
         // Extract IDs from rows - assuming each row has _id or id field
-        const ids = rows.map((row) => {
-          const data = row.original as any;
-          return data._id || data.id;
-        }).filter(Boolean);
+        const ids = rows
+          .map((row) => {
+            const data = row.original as Record<string, string>;
+            return data._id || data.id;
+          })
+          .filter(Boolean);
 
         if (ids.length === 0) {
           toast.error("No valid items selected for deletion");
@@ -69,7 +71,8 @@ export function TableActionBar<TData>({
         table.toggleAllRowsSelected(false);
         toast.success(`Deleted ${ids.length} ${entityName}`);
       } catch (error) {
-        const message = error instanceof Error ? error.message : "An error occurred";
+        const message =
+          error instanceof Error ? error.message : "An error occurred";
         toast.error(`Failed to delete ${entityName}: ${message}`);
       }
     });

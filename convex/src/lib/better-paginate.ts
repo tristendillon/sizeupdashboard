@@ -1,10 +1,6 @@
 import type { TableAggregate } from '@convex-dev/aggregate'
 import type { QueryCtx } from '../api/_generated/server'
-import type {
-  NamedTableInfo,
-  QueryInitializer,
-  TableNamesInDataModel,
-} from 'convex/server'
+import type { TableNamesInDataModel } from 'convex/server'
 import type { DataModel } from '../api/_generated/dataModel'
 import { v } from 'convex/values'
 import z from 'zod'

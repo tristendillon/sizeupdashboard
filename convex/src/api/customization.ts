@@ -6,7 +6,6 @@ import { components } from './_generated/api'
 import type { DataModel } from './_generated/dataModel'
 import { paginationOptsValidator } from 'convex/server'
 import { partial } from 'convex-helpers/validators'
-import { query } from './_generated/server'
 import {
   BetterPaginate,
   BetterPaginateValidator,
@@ -88,7 +87,7 @@ export const backFillDispatchTypesAggregate = authedOrThrowMutation({
       .paginate(args.paginationOpts)
     for (const dispatchType of dispatchTypes.page) {
       try {
-        await DispatchTypesAggregate.insert(ctx, dispatchType!)
+        await DispatchTypesAggregate.insert(ctx, dispatchType)
       } catch (error) {
         continue
       }

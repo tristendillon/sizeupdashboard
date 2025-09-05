@@ -349,8 +349,8 @@ export const backFillFieldTransformationsAggregate = authedOrThrowMutation({
       .paginate(args.paginationOpts)
     for (const fieldTransformation of fieldTransformations.page) {
       try {
-        await FieldTransformationsAggregate.insert(ctx, fieldTransformation!)
-      } catch (error) {
+        await FieldTransformationsAggregate.insert(ctx, fieldTransformation)
+      } catch {
         continue
       }
     }
@@ -370,8 +370,8 @@ export const backFillTransformationRulesAggregate = authedOrThrowMutation({
       .paginate(args.paginationOpts)
     for (const transformationRule of transformationRules.page) {
       try {
-        await TransformationRulesAggregate.insert(ctx, transformationRule!)
-      } catch (error) {
+        await TransformationRulesAggregate.insert(ctx, transformationRule)
+      } catch {
         continue
       }
     }

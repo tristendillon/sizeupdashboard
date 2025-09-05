@@ -1,6 +1,6 @@
 // convex/recipes.ts
 import { partial } from 'convex-helpers/validators'
-import { query, type QueryCtx } from './_generated/server'
+import { query } from './_generated/server'
 import { type DispatchWithType, DispatchesTable } from './schema'
 import { paginationOptsValidator } from 'convex/server'
 import { v } from 'convex/values'
@@ -42,7 +42,7 @@ export const paginatedClearDispatches = authedOrThrowMutation({
       .take(numItems)
     for (const dispatch of dispatches) {
       await ctx.db.delete(dispatch._id)
-      await DispatchAggregate.delete(ctx, dispatch!)
+      await DispatchAggregate.delete(ctx, dispatch)
     }
     if (dispatches.length < numItems) {
       return false
@@ -329,7 +329,7 @@ export const backFillDispatchAggregate = authedOrThrowMutation({
       .paginate(args.paginationOpts)
     for (const dispatch of dispatches.page) {
       try {
-        await DispatchAggregate.insert(ctx, dispatch!)
+        await DispatchAggregate.insert(ctx, dispatch)
       } catch (error) {
         continue
       }
@@ -347,7 +347,7 @@ export const unfillDispatchAggregate = authedOrThrowMutation({
       .query('dispatches')
       .paginate(args.paginationOpts)
     for (const dispatch of dispatches.page) {
-      await DispatchAggregate.delete(ctx, dispatch!)
+      await DispatchAggregate.delete(ctx, dispatch)
     }
     return !dispatches.isDone ? dispatches.continueCursor : null
   },

@@ -21,8 +21,8 @@ jobs:
       - name: Pull latest image
         run: docker pull kickedsoda/firstdue-listener:latest
 
-      - name: Stop and remove existing container (if any)
-        run: docker rm -f firstdue-listener || true
+      - name: Stop and remove existing containers (if any)
+        run: docker compose down || true
 
       - name: Generate .env file from template
         env:
@@ -42,12 +42,5 @@ jobs:
         run: |
           envsubst < firstdue-listener/.env.template > .env
 
-      - name: Run container with env file
-        run: |
-          docker run -d \
-            --name firstdue-listener \
-            --network nginx-net \
-            --restart unless-stopped \
-            --env-file .env \
-            -p "${{ secrets.PORT }}":"${{ secrets.PORT }}" \
-            kickedsoda/firstdue-listener:latest
+      - name: Start services with docker compose
+        run: docker compose up -d

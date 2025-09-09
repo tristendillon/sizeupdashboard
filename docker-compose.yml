@@ -1,6 +1,7 @@
 services:
   firstdue-listener:
     image: kickedsoda/firstdue-listener:latest
+
     env_file: .env
     ports:
       - "${PORT}:${PORT}"
@@ -19,4 +20,4 @@ services:
 
 networks:
   nginx-net:
-    external: true
+    driver: bridge

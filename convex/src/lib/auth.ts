@@ -29,7 +29,6 @@ const getAuthStatus = async (
         ? 'authenticated'
         : 'unauthorized'
 }
-
 export const authedOrThrowQuery = customQuery(query, {
   args: {
     apiKey: v.optional(v.string()),

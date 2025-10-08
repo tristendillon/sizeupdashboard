@@ -22,8 +22,11 @@ jobs:
             cd /root/sizeupdashboard
 
             echo "Pulling latest code..."
-            git fetch origin main
-            git reset --hard origin/main
+            if [ ! -d .git ]; then
+              git clone https://github.com/${{ github.repository }}.git .
+            fi
+            git fetch origin
+            git reset --hard ${{ github.sha }}
 
             echo "Pulling latest Docker image..."
             docker pull ${{ secrets.DOCKER_USERNAME }}/firstdue-listener:latest

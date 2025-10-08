@@ -45,7 +45,7 @@ jobs:
             EOF
 
             echo "Restarting containers..."
-            docker compose down || true
-            docker compose up -d
+            docker-compose down || true
+            docker-compose up -d
 
             echo "Deployment complete!"
